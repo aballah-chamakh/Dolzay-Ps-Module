@@ -165,18 +165,26 @@ class Notification {
 
     public function mark_notification_as_read($notif_id, $employee_id) {
 
-        // get the notfication with the id $notif_id
-        $stmt = $this->db->prepare("SELECT * FROM `".ModuleConfig::MODULE_PREFIX."notification` WHERE id = :notif_id");
+        // select the employee for update to lock the employee so that no other request can't delete the employee while the transaction of this request is running
+        $stmt = $this->db->prepare("SELECT * FROM `"._DB_PREFIX_."employee` WHERE id_employee = :employee_id FOR UPDATE");
+        $stmt->execute(['employee_id' => (int)$employee_id]);
+        $employee = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // if the requesting employee doesn't exist anymore the route will redirect the user to the login page
+        if (!$employee) {
+            return "REDIRECT_TO_LOGIN_PAGE" ;
+        }
+
+        // select the notfication for update to notfication the employee so that no other request can't delete the notfication while the transaction of this request is running
+        $stmt = $this->db->prepare("SELECT * FROM `".ModuleConfig::MODULE_PREFIX."notification` WHERE id = :notif_id FOR UPDATE");
         $stmt->execute(['notif_id' => (int)$notif_id]);
         $notification = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!$notification){
-            return;
-        }   
 
-        # delete the notifcation for testing
-        $stmt = $this->db->prepare("DELETE FROM `".ModuleConfig::MODULE_PREFIX."notification` WHERE id = :notif_id");
-        $stmt->execute(['notif_id' => (int)$notif_id]);
-
+        // if the requesting notfication doesn't exist anymore, the function will not throw an error ,it will act like it marked the notfication as read
+        // and it will leave the job of informing the user that the notfication doesn't exist anymore to the periodic refresh of the notifications list 
+        if (!$notification) {
+            return  ;
+        }
 
         // if the attribute  deletable_once_viewed_by_the_employee_with_the_id of the notfication equal the $emplyee id, delete the notfication
         if ($notification["deletable_once_viewed_by_the_employee_with_the_id"] == $employee_id){
@@ -192,11 +200,24 @@ class Notification {
     }
 
     public function mark_all_notifications_as_read($employee_id) {
-        // get all notifications
-        $query = "SELECT id,deletable_once_viewed_by_the_employee_with_the_id FROM `".ModuleConfig::MODULE_PREFIX."notification`";  
+
+        // select the employee for update to lock the employee so that no other request can't delete the employee while the transaction of this request is running
+        $stmt = $this->db->prepare("SELECT * FROM `"._DB_PREFIX_."employee` WHERE id_employee = :employee_id FOR UPDATE");
+        $stmt->execute(['employee_id' => (int)$employee_id]);
+        $employee = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // if the requesting employee doesn't exist anymore the route will redirect the user to the login page
+        if (!$employee) {
+            return "REDIRECT_TO_LOGIN_PAGE" ;
+        }
+
+
+        // get all notifications for update to lock the notifications so that no other request can't delete the notifications while the transaction of this request is running
+        $query = "SELECT id,deletable_once_viewed_by_the_employee_with_the_id FROM `".ModuleConfig::MODULE_PREFIX."notification` for update";  
         $stmt = $this->db->prepare($query);
         $stmt->execute();
         $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 
 
 
@@ -218,22 +239,34 @@ class Notification {
         }
     }
 
+
+    // todo : 
+    // 1. understand how range locking works exaclty
+    // 2. how the function behave with duplicate  viewed by or popped composite 
+
     public function mark_notifications_as_popped_up($notif_ids, $employee_id) {
+
+        // select the employee for update to lock the employee so that no other request can't delete the employee while the transaction of this request is running
+        $stmt = $this->db->prepare("SELECT * FROM `"._DB_PREFIX_."employee` WHERE id_employee = :employee_id FOR UPDATE");
+        $stmt->execute(['employee_id' => (int)$employee_id]);
+        $employee = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // if the requesting employee doesn't exist anymore the route will redirect the user to the login page
+        if (!$employee) {
+            return "REDIRECT_TO_LOGIN_PAGE" ;
+        }
 
         // Create placeholders for each ID
         $placeholders = implode(',', array_fill(0, count($notif_ids), '?'));
 
         // Prepare the query with placeholders
-        $query = "SELECT id FROM `".ModuleConfig::MODULE_PREFIX."notification` WHERE id IN ($placeholders)";
+        $query = "SELECT id FROM `".ModuleConfig::MODULE_PREFIX."notification` WHERE id IN ($placeholders) for update";
         $stmt = $this->db->prepare($query);
 
         // Execute the statement with the array of IDs
         $stmt->execute($notif_ids);
         $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        if (empty($notifications)) {
-            return;
-        }
 
         foreach ($notifications as $notification) {
             $stmt = $this->db->prepare("INSERT INTO `".ModuleConfig::MODULE_PREFIX."notification_popped_up_by` (employee_id, notif_id) VALUES (:employee_id, :notif_id)");

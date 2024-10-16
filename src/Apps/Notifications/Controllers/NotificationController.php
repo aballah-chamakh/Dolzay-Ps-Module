@@ -76,8 +76,11 @@ class NotificationController extends FrameworkBundleAdminController
 
     public function getNotificationsOverview(Request $request)
     {   
-        // get the employee id of the requesting user
-        $employeeId = $this->get_the_requesting_employee_id() ;
+        // get the employee id of the requesting user or return an error response if the user doesn't exist
+        $employee_id = get_the_requesting_employee_id() ;
+        if($employee_id instanceof JsonResponse){
+            return $employee_id ;
+        }
         
         //   -- validate the query parameters -- 
 
@@ -115,7 +118,10 @@ class NotificationController extends FrameworkBundleAdminController
         // note : I need to check if the employee exists within the same transaction that retrieves the notifications overview data.
         //        This ensures that I don't get invalid notifications overview data due to the employee being deleted, as their viewed_by and popped_up_by rows 
         //        would also be deleted along with them.
-        $this->check_if_the_employee_exists($db,$employeeId);
+        $res = $this->check_if_the_employee_exists($db,$employeeId);
+        if ($res instanceof JsonResponse){
+            return $res ;
+        }
 
         // get the notifications overview data whitin the transaction
         $notification = new Notification($db);
@@ -139,9 +145,11 @@ class NotificationController extends FrameworkBundleAdminController
 
     public function getNotificationsList(Request $request)
     {
-
-        // get the employee id of the requesting user
-        $employeeId = $this->get_the_requesting_employee_id() ;
+        // get the employee id of the requesting user or return an error response if the user doesn't exist
+        $employee_id = get_the_requesting_employee_id() ;
+        if($employee_id instanceof JsonResponse){
+            return $employee_id ;
+        }
 
         $query_parameter = [
             'notif_type' => $request->query->get('notif_type'),
@@ -173,20 +181,25 @@ class NotificationController extends FrameworkBundleAdminController
         }
 
         // initiate the db connection and start a transaction
-        $db =  DzDb::getInstance();
+        $db = DzDb::getInstance();
         $db->beginTransaction();
 
         // check if the employee with the id $employeeId exists
         // note : I need to check if the employee exists within the same transaction that retrieves the notifications list.
         //        This ensures that I don't get an invalid notifications list due to the employee being deleted, as their viewed_by and popped_up_by rows 
         //        would also be deleted along with them.
-        $this->check_if_the_employee_exists($db,$employeeId);
+        $res = $this->check_if_the_employee_exists($db,$employeeId);
+        if ($res instanceof JsonResponse){
+            return $res ;
+        }
+
 
         $notification = new Notification($db);
         
         // $notif_type, $page_nb, $batch_size, $employee_id
         $notifications = $notification->get_notifications($query_parameter["notif_type"], $query_parameter["page_nb"], $query_parameter["batch_size"], $employeeId);
 
+        $db->commit();
         return new JsonResponse([
             "status" => "success",
             "data" => ["notifications" =>$notifications]
@@ -196,9 +209,24 @@ class NotificationController extends FrameworkBundleAdminController
 
     public function markNotificationAsRead($notif_id, Request $request)
     {
-        $employeeId = $this->getUser()->getId();
+        $employee_id = get_the_requesting_employee_id();
+        
+        // initiate the db connection and start a transaction
+        $db = DzDb::getInstance();
+        $db->beginTransaction();
+
         $notification = new Notification($this->getParameter('module_table_prefix'));
-        $notification->mark_notification_as_read($notif_id, $employeeId);
+        $res = $notification->mark_notification_as_read($notif_id, $employeeId);
+        $db->commit();
+
+        if($res == "REDIRECT_TO_LOGIN_PAGE"){
+            $db->commit();
+            return new JsonResponse([
+                "status" => "error",
+                "data" => ["message" => "this employee doesn't exist anymore"]
+            ], 401);
+        }
+
 
         return new JsonResponse(['status' => 'success']);
     }
@@ -207,8 +235,11 @@ class NotificationController extends FrameworkBundleAdminController
     public function markAllNotificationsAsRead(Request $request)
     {
         $employeeId = $this->getUser()->getId();
+
+        $db->beginTransaction();
         $notification = new Notification($this->getParameter('module_table_prefix'));
         $notification->mark_all_notifications_as_read($employeeId);
+        $db->commit();
 
         return new JsonResponse(['status' => 'success']);
     }
