@@ -1,0 +1,9 @@
+
+
+notifications_routes:
+    resource: '../src/Apps/Notifications/routes.yaml'
+
+
+
+
+

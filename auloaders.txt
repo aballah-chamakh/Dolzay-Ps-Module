@@ -1,0 +1,55 @@
+MyTest is constructedArray
+(
+    [0] => Array
+        (
+            [0] => Composer\Autoload\ClassLoader Object
+                (
+                    [vendorDir:Composer\Autoload\ClassLoader:private] => C:\xampp\htdocs\prestashop\modules\dolzay\vendor
+                    [prefixLengthsPsr4:Composer\Autoload\ClassLoader:private] => Array
+                        (
+                            [D] => Array
+                                (
+                                    [Dolzay\] => 7
+                                )
+
+                        )
+
+                    [prefixDirsPsr4:Composer\Autoload\ClassLoader:private] => Array
+                        (
+                            [Dolzay\] => Array
+                                (
+                                    [0] => C:\xampp\htdocs\prestashop\modules\dolzay\vendor\composer/../../src
+                                )
+
+                        )
+
+                    [fallbackDirsPsr4:Composer\Autoload\ClassLoader:private] => Array
+                        (
+                        )
+
+                    [prefixesPsr0:Composer\Autoload\ClassLoader:private] => Array
+                        (
+                        )
+
+                    [fallbackDirsPsr0:Composer\Autoload\ClassLoader:private] => Array
+                        (
+                        )
+
+                    [useIncludePath:Composer\Autoload\ClassLoader:private] => 
+                    [classMap:Composer\Autoload\ClassLoader:private] => Array
+                        (
+                            [Composer\InstalledVersions] => C:\xampp\htdocs\prestashop\modules\dolzay\vendor\composer/../composer/InstalledVersions.php
+                        )
+
+                    [classMapAuthoritative:Composer\Autoload\ClassLoader:private] => 
+                    [missingClasses:Composer\Autoload\ClassLoader:private] => Array
+                        (
+                        )
+
+                    [apcuPrefix:Composer\Autoload\ClassLoader:private] => 
+                )
+
+            [1] => loadClassDz
+        )
+
+)

@@ -1,0 +1,41 @@
+dz_notifications_overview:
+  path: /dz/notifications_overview
+  methods: [GET]
+  defaults:
+    _controller: 'Dolzay\Apps\Notifications\Controllers\NotificationController::getNotificationsOverview'
+    _disable_module_prefix: true
+
+
+dz_notifications_list :
+  path: /dz/notifications/list
+  methods: [GET]
+  defaults:
+    _controller: 'Dolzay\Apps\Notifications\Controllers\NotificationController::getNotificationsList'
+    _disable_module_prefix: true
+
+
+dz_mark_notification_as_read:
+  path: /dz/notifications/{notif_id}/mark_as_read
+  methods: [PUT]
+  defaults:
+    _controller: 'Dolzay\Apps\Notifications\Controllers\NotificationController::markNotificationAsRead'
+    _disable_module_prefix: true
+
+
+dz_mark_all_notifications_as_read:
+  path: /dz/notifications/mark_all_as_read
+  methods: [PUT]
+  defaults:
+    _controller: 'Dolzay\Apps\Notifications\Controllers\NotificationController::markAllNotificationsAsRead'
+    _disable_module_prefix: true
+
+
+dz_mark_notification_as_popped_up:
+  path: /dz/notifications/mark_them_as_popped_up
+  methods: [PUT]
+  defaults:
+    _controller: 'Dolzay\Apps\Notifications\Controllers\NotificationController::markNotificationAsPoppedUp'
+    _disable_module_prefix: true
+
+
+

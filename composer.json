@@ -1,0 +1,13 @@
+{
+    "name": "dolzay/dolzay",
+    "description": "My Dolzay plugin",
+    "autoload": {
+      "psr-4": {
+        "Dolzay\\": "src/"
+      }
+    },
+    "config": {
+        "prepend-autoloader": false
+    },
+    "type": "prestashop-module"
+  }

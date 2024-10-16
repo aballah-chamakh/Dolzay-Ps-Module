@@ -1,0 +1,1401 @@
+
+block
+ 9 of 10  @PrestaShop/Admin/layout.html.twig on line 37:
+"""
+<!DOCTYPE html>\n
+<html lang="en">\n
+<head>\n
+  <meta charset="utf-8">\n
+<meta name="viewport" content="width=device-width, initial-scale=1">\n
+<meta name="apple-mobile-web-app-capable" content="yes">\n
+<meta name="robots" content="NOFOLLOW, NOINDEX">\n
+\n
+<link rel="icon" type="image/x-icon" href="/prestashop/img/favicon.ico" />\n
+<link rel="apple-touch-icon" href="/prestashop/img/app_icon.png" />\n
+\n
+<title>DolzayNotificationController • dolzay</title>\n
+\n
+  <script type="text/javascript">\n
+    var help_class_name = 'DolzayNotificationController';\n
+    var iso_user = 'en';\n
+    var lang_is_rtl = '0';\n
+    var full_language_code = 'en-us';\n
+    var full_cldr_language_code = 'en-US';\n
+    var country_iso_code = 'TN';\n
+    var _PS_VERSION_ = '1.7.8.0';\n
+    var roundMode = 2;\n
+    var youEditFieldFor = '';\n
+        var new_order_msg = 'A new order has been placed on your shop.';\n
+    var order_number_msg = 'Order number: ';\n
+    var total_msg = 'Total: ';\n
+    var from_msg = 'From: ';\n
+    var see_order_msg = 'View this order';\n
+    var new_customer_msg = 'A new customer registered on your shop.';\n
+    var customer_name_msg = 'Customer name: ';\n
+    var new_msg = 'A new message was posted on your shop.';\n
+    var see_msg = 'Read this message';\n
+    var token = '54454035917003f8ef51416bffa6d121';\n
+    var token_admin_orders = tokenAdminOrders = 'ccef24d0c787ed139e8195c1a4927e3f';\n
+    var token_admin_customers = '695c145da8fb0cda3c9ba7adf6984606';\n
+    var token_admin_customer_threads = tokenAdminCustomerThreads = '0cda7a8f0a536a08264b8dae17a6c7c1';\n
+    var currentIndex = 'index.php?controller=DolzayNotificationController';\n
+    var employee_token = '21da59ff862f667105f37d5a73ce69af';\n
+    var choose_language_translate = 'Choose language:';\n
+    var default_language = '1';\n
+    var admin_modules_link = '/prestashop/admin0764zityj/improve/modules/catalog/recommended?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8';\n
+    var admin_notification_get_link = '/prestashop/admin0764zityj/common/notifications?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8';\n
+    var admin_notification_push_link = adminNotificationPushLink = '/prestashop/admin0764zityj/common/notifications/ack?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuI ▶
+    var tab_modules_list = '';\n
+    var update_success_msg = 'Update successful';\n
+    var errorLogin = 'PrestaShop was unable to log in to Addons. Please check your credentials and your Internet connection.';\n
+    var search_product_msg = 'Search for a product';\n
+  </script>\n
+\n
+      <link href="/prestashop/admin0764zityj/themes/new-theme/public/theme.css" rel="stylesheet" type="text/css"/>\n
+      <link href="/prestashop/js/jquery/plugins/chosen/jquery.chosen.css" rel="stylesheet" type="text/css"/>\n
+      <link href="/prestashop/js/jquery/plugins/fancybox/jquery.fancybox.css" rel="stylesheet" type="text/css"/>\n
+      <link href="/prestashop/modules/blockwishlist/public/backoffice.css" rel="stylesheet" type="text/css"/>\n
+      <link href="/prestashop/admin0764zityj/themes/default/css/vendor/nv.d3.css" rel="stylesheet" type="text/css"/>\n
+      <link href="/prestashop/modules/gamification/views/css/gamification.css" rel="stylesheet" type="text/css"/>\n
+      <link href="/prestashop/modules/ps_mbo/views/css/catalog.css?v=3.1.1" rel="stylesheet" type="text/css"/>\n
+      <link href="/prestashop/modules/ps_mbo/views/css/connection-toolbar.css" rel="stylesheet" type="text/css"/>\n
+      <link href="/prestashop/modules/welcome/public/module.css" rel="stylesheet" type="text/css"/>\n
+      <link href="/prestashop/modules/ps_facebook/views/css/admin/menu.css" rel="stylesheet" type="text/css"/>\n
+      <link href="/prestashop/modules/psxmarketingwithgoogle/views/css/admin/menu.css" rel="stylesheet" type="text/css"/>\n
+  \n
+  <script type="text/javascript">\n
+var baseAdminDir = "\/prestashop\/admin0764zityj\/";\n
+var baseDir = "\/prestashop\/";\n
+var changeFormLanguageUrl = "\/prestashop\/admin0764zityj\/configure\/advanced\/employees\/change-form-language?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqr ▶
+var currency = {"iso_code":"TND","sign":"TND","name":"Tunisian Dinar","format":null};\n
+var currency_specifications = {"symbol":[".",",",";","%","-","+","E","\u00d7","\u2030","\u221e","NaN"],"currencyCode":"TND","currencySymbol":"TND","numberSymbol ▶
+var host_mode = false;\n
+var number_specifications = {"symbol":[".",",",";","%","-","+","E","\u00d7","\u2030","\u221e","NaN"],"numberSymbols":[".",",",";","%","-","+","E","\u00d7","\u20 ▶
+var prestashop = {"debug":true};\n
+var show_new_customers = "1";\n
+var show_new_messages = "1";\n
+var show_new_orders = "1";\n
+</script>\n
+<script type="text/javascript" src="/prestashop/admin0764zityj/themes/new-theme/public/main.bundle.js"></script>\n
+<script type="text/javascript" src="/prestashop/js/jquery/plugins/jquery.chosen.js"></script>\n
+<script type="text/javascript" src="/prestashop/js/jquery/plugins/fancybox/jquery.fancybox.js"></script>\n
+<script type="text/javascript" src="/prestashop/js/admin.js?v=1.7.8.0"></script>\n
+<script type="text/javascript" src="/prestashop/admin0764zityj/themes/new-theme/public/cldr.bundle.js"></script>\n
+<script type="text/javascript" src="/prestashop/js/tools.js?v=1.7.8.0"></script>\n
+<script type="text/javascript" src="/prestashop/js/vendor/d3.v3.min.js"></script>\n
+<script type="text/javascript" src="/prestashop/admin0764zityj/themes/default/js/vendor/nv.d3.min.js"></script>\n
+<script type="text/javascript" src="/prestashop/modules/gamification/views/js/gamification_bt.js"></script>\n
+<script type="text/javascript" src="/prestashop/modules/ps_mbo/views/js/recommended-modules.js?v=3.1.1"></script>\n
+<script type="text/javascript" src="/prestashop/modules/ps_faviconnotificationbo/views/js/favico.js"></script>\n
+<script type="text/javascript" src="/prestashop/modules/ps_faviconnotificationbo/views/js/ps_faviconnotificationbo.js"></script>\n
+<script type="text/javascript" src="/prestashop/modules/welcome/public/module.js"></script>\n
+\n
+  <script>\n
+  if (undefined !== ps_faviconnotificationbo) {\n
+    ps_faviconnotificationbo.initialize({\n
+      backgroundColor: '#DF0067',\n
+      textColor: '#FFFFFF',\n
+      notificationGetUrl: '/prestashop/admin0764zityj/common/notifications?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8',\n
+      CHECKBOX_ORDER: 1,\n
+      CHECKBOX_CUSTOMER: 1,\n
+      CHECKBOX_MESSAGE: 1,\n
+      timer: 120000, // Refresh every 2 minutes\n
+    });\n
+  }\n
+</script>\n
+<script>\n
+            var admin_gamification_ajax_url = "http:\/\/localhost\/prestashop\/admin0764zityj\/index.php?controller=AdminGamification&token=1119438b1453ebbcaa65 ▶
+            var current_id_tab = 182;\n
+        </script>\n
+\n
+{% block stylesheets %}{% endblock %}{% block extra_stylesheets %}{% endblock %}</head>\n
+\n
+<body\n
+  class="lang-en dolzaynotificationcontroller"\n
+  data-base-url="/prestashop/admin0764zityj"  data-token="7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8">\n
+\n
+  <header id="header" class="d-print-none">\n
+\n
+    <nav id="header_infos" class="main-header">\n
+      <button class="btn btn-primary-reverse onclick btn-lg unbind ajax-spinner"></button>\n
+\n
+            <i class="material-icons js-mobile-menu">menu</i>\n
+      <a id="header_logo" class="logo float-left" href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminDashboard&amp;token=145cdce5d31af59 ▶
+      <span id="shop_version">1.7.8.0</span>\n
+\n
+      <div class="component" id="quick-access-container">\n
+        <div class="dropdown quick-accesses">\n
+  <button class="btn btn-link btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="quick_select">\n
+    Quick Access\n
+  </button>\n
+  <div class="dropdown-menu">\n
+          <a class="dropdown-item quick-row-link"\n
+         href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminStats&amp;module=statscheckup&amp;token=a53c43e1635e6029b6a8fa9a4be7ba47"\n
+                 data-item="Catalog evaluation"\n
+      >Catalog evaluation</a>\n
+          <a class="dropdown-item quick-row-link"\n
+         href="http://localhost/prestashop/admin0764zityj/index.php/improve/modules/manage?token=156d7fcf90f1fa8cc7c03f2979678960"\n
+                 data-item="Installed modules"\n
+      >Installed modules</a>\n
+          <a class="dropdown-item quick-row-link"\n
+         href="http://localhost/prestashop/admin0764zityj/index.php/sell/catalog/categories/new?token=156d7fcf90f1fa8cc7c03f2979678960"\n
+                 data-item="New category"\n
+      >New category</a>\n
+          <a class="dropdown-item quick-row-link"\n
+         href="http://localhost/prestashop/admin0764zityj/index.php/sell/catalog/products/new?token=156d7fcf90f1fa8cc7c03f2979678960"\n
+                 data-item="New product"\n
+      >New product</a>\n
+          <a class="dropdown-item quick-row-link"\n
+         href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminCartRules&amp;addcart_rule&amp;token=01d196164421c8b90487e540101d41e1"\n
+                 data-item="New voucher"\n
+      >New voucher</a>\n
+          <a class="dropdown-item quick-row-link"\n
+         href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminOrders&amp;token=ccef24d0c787ed139e8195c1a4927e3f"\n
+                 data-item="Orders"\n
+      >Orders</a>\n
+        <div class="dropdown-divider"></div>\n
+          <a id="quick-add-link"\n
+        class="dropdown-item js-quick-link"\n
+        href="#"\n
+        data-rand="62"\n
+        data-icon=""\n
+        data-method="add"\n
+        data-url="index.php/dz/notifications"\n
+        data-post-link="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminQuickAccesses&token=42e047ad917c1991cda75f4f8e138900"\n
+        data-prompt-text="Please name this shortcut:"\n
+        data-link="DolzayNotificationController..."\n
+      >\n
+        <i class="material-icons">add_circle</i>\n
+        Add current page to Quick Access\n
+      </a>\n
+        <a id="quick-manage-link" class="dropdown-item" href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminQuickAccesses&token=42e047ad9 ▶
+      <i class="material-icons">settings</i>\n
+      Manage your quick accesses\n
+    </a>\n
+  </div>\n
+</div>\n
+      </div>\n
+      <div class="component" id="header-search-container">\n
+        <form id="header_search"\n
+      class="bo_search_form dropdown-form js-dropdown-form collapsed"\n
+      method="post"\n
+      action="/prestashop/admin0764zityj/index.php?controller=AdminSearch&amp;token=961df3647cfde9930a217ba490224573"\n
+      role="search">\n
+  <input type="hidden" name="bo_search_type" id="bo_search_type" class="js-search-type" />\n
+    <div class="input-group">\n
+    <input type="text" class="form-control js-form-search" id="bo_query" name="bo_query" value="" placeholder="Search (e.g.: product reference, customer name…)" ▶
+    <div class="input-group-append">\n
+      <button type="button" class="btn btn-outline-secondary dropdown-toggle js-dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="fals ▶
+        Everywhere\n
+      </button>\n
+      <div class="dropdown-menu js-items-list">\n
+        <a class="dropdown-item" data-item="Everywhere" href="#" data-value="0" data-placeholder="What are you looking for?" data-icon="icon-search"><i class="m ▶
+        <div class="dropdown-divider"></div>\n
+        <a class="dropdown-item" data-item="Catalog" href="#" data-value="1" data-placeholder="Product name, reference, etc." data-icon="icon-book"><i class="ma ▶
+        <a class="dropdown-item" data-item="Customers by name" href="#" data-value="2" data-placeholder="Name" data-icon="icon-group"><i class="material-icons"> ▶
+        <a class="dropdown-item" data-item="Customers by ip address" href="#" data-value="6" data-placeholder="123.45.67.89" data-icon="icon-desktop"><i class=" ▶
+        <a class="dropdown-item" data-item="Orders" href="#" data-value="3" data-placeholder="Order ID" data-icon="icon-credit-card"><i class="material-icons">s ▶
+        <a class="dropdown-item" data-item="Invoices" href="#" data-value="4" data-placeholder="Invoice number" data-icon="icon-book"><i class="material-icons"> ▶
+        <a class="dropdown-item" data-item="Carts" href="#" data-value="5" data-placeholder="Cart ID" data-icon="icon-shopping-cart"><i class="material-icons">s ▶
+        <a class="dropdown-item" data-item="Modules" href="#" data-value="7" data-placeholder="Module name" data-icon="icon-puzzle-piece"><i class="material-ico ▶
+      </div>\n
+      <button class="btn btn-primary" type="submit"><span class="d-none">SEARCH</span><i class="material-icons">search</i></button>\n
+    </div>\n
+  </div>\n
+</form>\n
+\n
+<script type="text/javascript">\n
+ $(document).ready(function(){\n
+    $('#bo_query').one('click', function() {\n
+    $(this).closest('form').removeClass('collapsed');\n
+  });\n
+});\n
+</script>\n
+      </div>\n
+\n
+              <div class="component hide-mobile-sm" id="header-debug-mode-container">\n
+          <a class="link shop-state"\n
+             id="debug-mode"\n
+             data-toggle="pstooltip"\n
+             data-placement="bottom"\n
+             data-html="true"\n
+             title="<p class='text-left'><strong>Your shop is in debug mode.</strong></p><p class='text-left'>All the PHP errors and messages are displayed. Whe ▶
+             href="/prestashop/admin0764zityj/configure/advanced/performance/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8"\n
+          >\n
+            <i class="material-icons">bug_report</i>\n
+            <span>Debug mode</span>\n
+          </a>\n
+        </div>\n
+      \n
+      \n
+              <div class="component" id="header-shop-list-container">\n
+            <div class="shop-list">\n
+    <a class="link" id="header_shopname" href="http://localhost/prestashop/" target= "_blank">\n
+      <i class="material-icons">visibility</i>\n
+      <span>View my store</span>\n
+    </a>\n
+  </div>\n
+        </div>\n
+                    <div class="component header-right-component" id="header-notifications-container">\n
+          <div id="notif" class="notification-center dropdown dropdown-clickable">\n
+  <button class="btn notification js-notification dropdown-toggle" data-toggle="dropdown">\n
+    <i class="material-icons">notifications_none</i>\n
+    <span id="notifications-total" class="count hide">0</span>\n
+  </button>\n
+  <div class="dropdown-menu dropdown-menu-right js-notifs_dropdown">\n
+    <div class="notifications">\n
+      <ul class="nav nav-tabs" role="tablist">\n
+                          <li class="nav-item">\n
+            <a\n
+              class="nav-link active"\n
+              id="orders-tab"\n
+              data-toggle="tab"\n
+              data-type="order"\n
+              href="#orders-notifications"\n
+              role="tab"\n
+            >\n
+              Orders<span id="_nb_new_orders_"></span>\n
+            </a>\n
+          </li>\n
+                                    <li class="nav-item">\n
+            <a\n
+              class="nav-link "\n
+              id="customers-tab"\n
+              data-toggle="tab"\n
+              data-type="customer"\n
+              href="#customers-notifications"\n
+              role="tab"\n
+            >\n
+              Customers<span id="_nb_new_customers_"></span>\n
+            </a>\n
+          </li>\n
+                                    <li class="nav-item">\n
+            <a\n
+              class="nav-link "\n
+              id="messages-tab"\n
+              data-toggle="tab"\n
+              data-type="customer_message"\n
+              href="#messages-notifications"\n
+              role="tab"\n
+            >\n
+              Messages<span id="_nb_new_messages_"></span>\n
+            </a>\n
+          </li>\n
+                        </ul>\n
+\n
+      <!-- Tab panes -->\n
+      <div class="tab-content">\n
+                          <div class="tab-pane active empty" id="orders-notifications" role="tabpanel">\n
+            <p class="no-notification">\n
+              No new order for now :(<br>\n
+              Have you checked your <strong><a href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminCarts&action=filterOnlyAbandonedCarts& ▶
+            </p>\n
+            <div class="notification-elements"></div>\n
+          </div>\n
+                                    <div class="tab-pane  empty" id="customers-notifications" role="tabpanel">\n
+            <p class="no-notification">\n
+              No new customer for now :(<br>\n
+              Are you active on social media these days?\n
+            </p>\n
+            <div class="notification-elements"></div>\n
+          </div>\n
+                                    <div class="tab-pane  empty" id="messages-notifications" role="tabpanel">\n
+            <p class="no-notification">\n
+              No new message for now.<br>\n
+              Seems like all your customers are happy :)\n
+            </p>\n
+            <div class="notification-elements"></div>\n
+          </div>\n
+                        </div>\n
+    </div>\n
+  </div>\n
+</div>\n
+\n
+  <script type="text/html" id="order-notification-template">\n
+    <a class="notif" href='order_url'>\n
+      #_id_order_ -\n
+      from <strong>_customer_name_</strong> (_iso_code_)_carrier_\n
+      <strong class="float-sm-right">_total_paid_</strong>\n
+    </a>\n
+  </script>\n
+\n
+  <script type="text/html" id="customer-notification-template">\n
+    <a class="notif" href='customer_url'>\n
+      #_id_customer_ - <strong>_customer_name_</strong>_company_ - registered <strong>_date_add_</strong>\n
+    </a>\n
+  </script>\n
+\n
+  <script type="text/html" id="message-notification-template">\n
+    <a class="notif" href='message_url'>\n
+    <span class="message-notification-status _status_">\n
+      <i class="material-icons">fiber_manual_record</i> _status_\n
+    </span>\n
+      - <strong>_customer_name_</strong> (_company_) - <i class="material-icons">access_time</i> _date_add_\n
+    </a>\n
+  </script>\n
+        </div>\n
+      \n
+      <div class="component" id="header-employee-container">\n
+        <div class="dropdown employee-dropdown">\n
+  <div class="rounded-circle person" data-toggle="dropdown">\n
+    <i class="material-icons">account_circle</i>\n
+  </div>\n
+  <div class="dropdown-menu dropdown-menu-right">\n
+    <div class="employee-wrapper-avatar">\n
+\n
+      <span class="employee-avatar"><img class="avatar rounded-circle" src="http://localhost/prestashop/img/pr/default.jpg" /></span>\n
+      <span class="employee_profile">Welcome back Abdallah</span>\n
+      <a class="dropdown-item employee-link profile-link" href="/prestashop/admin0764zityj/configure/advanced/employees/1/edit?_token=7wUb5BatWqY1zXCYKv7vgxdk53 ▶
+      <i class="material-icons">edit</i>\n
+      <span>Your profile</span>\n
+    </a>\n
+    </div>\n
+\n
+    <p class="divider"></p>\n
+    <a class="dropdown-item" href="https://www.prestashop.com/en/resources/documentations?utm_source=back-office&amp;utm_medium=profile&amp;utm_campaign=resourc ▶
+    <a class="dropdown-item" href="https://www.prestashop.com/en/training?utm_source=back-office&amp;utm_medium=profile&amp;utm_campaign=training-en&amp;utm_con ▶
+    <a class="dropdown-item" href="https://www.prestashop.com/en/experts?utm_source=back-office&amp;utm_medium=profile&amp;utm_campaign=expert-en&amp;utm_conten ▶
+    <a class="dropdown-item" href="https://addons.prestashop.com?utm_source=back-office&amp;utm_medium=profile&amp;utm_campaign=addons-en&amp;utm_content=downlo ▶
+    <a class="dropdown-item" href="https://www.prestashop.com/en/contact?utm_source=back-office&amp;utm_medium=profile&amp;utm_campaign=help-center-en&amp;utm_c ▶
+    <p class="divider"></p>\n
+    <a class="dropdown-item employee-link text-center" id="header_logout" href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminLogin&amp;l ▶
+      <i class="material-icons d-lg-none">power_settings_new</i>\n
+      <span>Sign out</span>\n
+    </a>\n
+  </div>\n
+</div>\n
+      </div>\n
+          </nav>\n
+  </header>\n
+\n
+  <nav class="nav-bar d-none d-print-none d-md-block">\n
+  <span class="menu-collapse" data-toggle-url="/prestashop/admin0764zityj/configure/advanced/employees/toggle-navigation?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89Ru ▶
+    <i class="material-icons">chevron_left</i>\n
+    <i class="material-icons">chevron_left</i>\n
+  </span>\n
+\n
+  <div class="nav-bar-overflow">\n
+      <ul class="main-menu">\n
+              \n
+                    \n
+                    \n
+          \n
+            <li class="link-levelone" data-submenu="1" id="tab-AdminDashboard">\n
+              <a href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminDashboard&amp;token=145cdce5d31af59f9e59db912dacb23e" class="link" > ▶
+                <i class="material-icons">trending_up</i> <span>Dashboard</span>\n
+              </a>\n
+            </li>\n
+\n
+          \n
+                      \n
+                                          \n
+                    \n
+          \n
+            <li class="category-title" data-submenu="2" id="tab-SELL">\n
+                <span class="title">Sell</span>\n
+            </li>\n
+\n
+                              \n
+                  \n
+                                                      \n
+                  \n
+                  <li class="link-levelone has_submenu" data-submenu="3" id="subtab-AdminParentOrders">\n
+                    <a href="/prestashop/admin0764zityj/sell/orders/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link">\n
+                      <i class="material-icons mi-shopping_basket">shopping_basket</i>\n
+                      <span>\n
+                      Orders\n
+                      </span>\n
+                                                    <i class="material-icons sub-tabs-arrow">\n
+                                                                    keyboard_arrow_down\n
+                                                            </i>\n
+                                            </a>\n
+                                              <ul id="collapse-3" class="submenu panel-collapse">\n
+                                                      \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="4" id="subtab-AdminOrders">\n
+                                <a href="/prestashop/admin0764zityj/sell/orders/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> Orders\n
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="5" id="subtab-AdminInvoices">\n
+                                <a href="/prestashop/admin0764zityj/sell/orders/invoices/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> Invo ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="6" id="subtab-AdminSlip">\n
+                                <a href="/prestashop/admin0764zityj/sell/orders/credit-slips/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link">  ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="7" id="subtab-AdminDeliverySlip">\n
+                                <a href="/prestashop/admin0764zityj/sell/orders/delivery-slips/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link" ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="8" id="subtab-AdminCarts">\n
+                                <a href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminCarts&amp;token=0392aaa24984f86801196465b72a2019"  ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                              </ul>\n
+                                        </li>\n
+                                              \n
+                  \n
+                                                      \n
+                  \n
+                  <li class="link-levelone has_submenu" data-submenu="9" id="subtab-AdminCatalog">\n
+                    <a href="/prestashop/admin0764zityj/sell/catalog/products?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link">\n
+                      <i class="material-icons mi-store">store</i>\n
+                      <span>\n
+                      Catalog\n
+                      </span>\n
+                                                    <i class="material-icons sub-tabs-arrow">\n
+                                                                    keyboard_arrow_down\n
+                                                            </i>\n
+                                            </a>\n
+                                              <ul id="collapse-9" class="submenu panel-collapse">\n
+                                                      \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="10" id="subtab-AdminProducts">\n
+                                <a href="/prestashop/admin0764zityj/sell/catalog/products?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> Prod ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="11" id="subtab-AdminCategories">\n
+                                <a href="/prestashop/admin0764zityj/sell/catalog/categories?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> Ca ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="12" id="subtab-AdminTracking">\n
+                                <a href="/prestashop/admin0764zityj/sell/catalog/monitoring/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> M ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="13" id="subtab-AdminParentAttributesGroups">\n
+                                <a href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminAttributesGroups&amp;token=9c0ab5ee1d124222cfd3aa7 ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="16" id="subtab-AdminParentManufacturers">\n
+                                <a href="/prestashop/admin0764zityj/sell/catalog/brands/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> Brand ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="19" id="subtab-AdminAttachments">\n
+                                <a href="/prestashop/admin0764zityj/sell/attachments/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> Files\n
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="20" id="subtab-AdminParentCartRules">\n
+                                <a href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminCartRules&amp;token=01d196164421c8b90487e540101d41 ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="23" id="subtab-AdminStockManagement">\n
+                                <a href="/prestashop/admin0764zityj/sell/stocks/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> Stock\n
+                                </a>\n
+                              </li>\n
+\n
+                                                                              </ul>\n
+                                        </li>\n
+                                              \n
+                  \n
+                                                      \n
+                  \n
+                  <li class="link-levelone has_submenu" data-submenu="24" id="subtab-AdminParentCustomer">\n
+                    <a href="/prestashop/admin0764zityj/sell/customers/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link">\n
+                      <i class="material-icons mi-account_circle">account_circle</i>\n
+                      <span>\n
+                      Customers\n
+                      </span>\n
+                                                    <i class="material-icons sub-tabs-arrow">\n
+                                                                    keyboard_arrow_down\n
+                                                            </i>\n
+                                            </a>\n
+                                              <ul id="collapse-24" class="submenu panel-collapse">\n
+                                                      \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="25" id="subtab-AdminCustomers">\n
+                                <a href="/prestashop/admin0764zityj/sell/customers/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> Customers\ ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="26" id="subtab-AdminAddresses">\n
+                                <a href="/prestashop/admin0764zityj/sell/addresses/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> Addresses\ ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                                                                    </ul>\n
+                                        </li>\n
+                                              \n
+                  \n
+                                                      \n
+                  \n
+                  <li class="link-levelone has_submenu" data-submenu="28" id="subtab-AdminParentCustomerThreads">\n
+                    <a href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminCustomerThreads&amp;token=0cda7a8f0a536a08264b8dae17a6c7c1" cl ▶
+                      <i class="material-icons mi-chat">chat</i>\n
+                      <span>\n
+                      Customer Service\n
+                      </span>\n
+                                                    <i class="material-icons sub-tabs-arrow">\n
+                                                                    keyboard_arrow_down\n
+                                                            </i>\n
+                                            </a>\n
+                                              <ul id="collapse-28" class="submenu panel-collapse">\n
+                                                      \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="29" id="subtab-AdminCustomerThreads">\n
+                                <a href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminCustomerThreads&amp;token=0cda7a8f0a536a08264b8dae ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="30" id="subtab-AdminOrderMessage">\n
+                                <a href="/prestashop/admin0764zityj/sell/customer-service/order-messages/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" cl ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="31" id="subtab-AdminReturn">\n
+                                <a href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminReturn&amp;token=193a7f6d883ff3501f0f7d9b9b250086" ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                              </ul>\n
+                                        </li>\n
+                                              \n
+                  \n
+                                                      \n
+                  \n
+                  <li class="link-levelone has_submenu" data-submenu="32" id="subtab-AdminStats">\n
+                    <a href="/prestashop/admin0764zityj/modules/metrics/legacy/stats?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link">\n
+                      <i class="material-icons mi-assessment">assessment</i>\n
+                      <span>\n
+                      Stats\n
+                      </span>\n
+                                                    <i class="material-icons sub-tabs-arrow">\n
+                                                                    keyboard_arrow_down\n
+                                                            </i>\n
+                                            </a>\n
+                                              <ul id="collapse-32" class="submenu panel-collapse">\n
+                                                      \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="143" id="subtab-AdminMetricsLegacyStatsController">\n
+                                <a href="/prestashop/admin0764zityj/modules/metrics/legacy/stats?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="144" id="subtab-AdminMetricsController">\n
+                                <a href="/prestashop/admin0764zityj/modules/metrics?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> PrestaShop ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                              </ul>\n
+                                        </li>\n
+                              \n
+          \n
+                      \n
+                                          \n
+                    \n
+          \n
+            <li class="category-title" data-submenu="42" id="tab-IMPROVE">\n
+                <span class="title">Improve</span>\n
+            </li>\n
+\n
+                              \n
+                  \n
+                                                      \n
+                  \n
+                  <li class="link-levelone has_submenu" data-submenu="43" id="subtab-AdminParentModulesSf">\n
+                    <a href="/prestashop/admin0764zityj/modules/addons/modules/catalog?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link">\n
+                      <i class="material-icons mi-extension">extension</i>\n
+                      <span>\n
+                      Modules\n
+                      </span>\n
+                                                    <i class="material-icons sub-tabs-arrow">\n
+                                                                    keyboard_arrow_down\n
+                                                            </i>\n
+                                            </a>\n
+                                              <ul id="collapse-43" class="submenu panel-collapse">\n
+                                                      \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="48" id="subtab-AdminParentModulesCatalog">\n
+                                <a href="/prestashop/admin0764zityj/modules/addons/modules/catalog?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="li ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="44" id="subtab-AdminModulesSf">\n
+                                <a href="/prestashop/admin0764zityj/improve/modules/manage?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> Mod ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                                                                                                 ▶
+                                        </li>\n
+                                              \n
+                  \n
+                                                      \n
+                  \n
+                  <li class="link-levelone has_submenu" data-submenu="52" id="subtab-AdminParentThemes">\n
+                    <a href="/prestashop/admin0764zityj/modules/addons/themes/catalog?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link">\n
+                      <i class="material-icons mi-desktop_mac">desktop_mac</i>\n
+                      <span>\n
+                      Design\n
+                      </span>\n
+                                                    <i class="material-icons sub-tabs-arrow">\n
+                                                                    keyboard_arrow_down\n
+                                                            </i>\n
+                                            </a>\n
+                                              <ul id="collapse-52" class="submenu panel-collapse">\n
+                                                      \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="140" id="subtab-AdminPsMboTheme">\n
+                                <a href="/prestashop/admin0764zityj/modules/addons/themes/catalog?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="lin ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="130" id="subtab-AdminThemesParent">\n
+                                <a href="/prestashop/admin0764zityj/improve/design/themes/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> The ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                                                                        \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="55" id="subtab-AdminParentMailTheme">\n
+                                <a href="/prestashop/admin0764zityj/improve/design/mail_theme/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="57" id="subtab-AdminCmsContent">\n
+                                <a href="/prestashop/admin0764zityj/improve/design/cms-pages/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link">  ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="58" id="subtab-AdminModulesPositions">\n
+                                <a href="/prestashop/admin0764zityj/improve/design/modules/positions/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class= ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="59" id="subtab-AdminImages">\n
+                                <a href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminImages&amp;token=65e78ad5ddf85f644dd0dff71cdb9d82" ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="129" id="subtab-AdminLinkWidget">\n
+                                <a href="/prestashop/admin0764zityj/modules/link-widget/list?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> L ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                              </ul>\n
+                                        </li>\n
+                                              \n
+                  \n
+                                                      \n
+                  \n
+                  <li class="link-levelone has_submenu" data-submenu="60" id="subtab-AdminParentShipping">\n
+                    <a href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminCarriers&amp;token=48525a6b8774e0d2e2e6cad6954d6195" class="li ▶
+                      <i class="material-icons mi-local_shipping">local_shipping</i>\n
+                      <span>\n
+                      Shipping\n
+                      </span>\n
+                                                    <i class="material-icons sub-tabs-arrow">\n
+                                                                    keyboard_arrow_down\n
+                                                            </i>\n
+                                            </a>\n
+                                              <ul id="collapse-60" class="submenu panel-collapse">\n
+                                                      \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="61" id="subtab-AdminCarriers">\n
+                                <a href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminCarriers&amp;token=48525a6b8774e0d2e2e6cad6954d619 ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="62" id="subtab-AdminShipping">\n
+                                <a href="/prestashop/admin0764zityj/improve/shipping/preferences/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="lin ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="181" id="subtab-Container">\n
+                                <a href="/prestashop/admin0764zityj/container?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> Dolzay\n
+                                </a>\n
+                              </li>\n
+\n
+                                                                              </ul>\n
+                                        </li>\n
+                                              \n
+                  \n
+                                                      \n
+                  \n
+                  <li class="link-levelone has_submenu" data-submenu="63" id="subtab-AdminParentPayment">\n
+                    <a href="/prestashop/admin0764zityj/improve/payment/payment_methods?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link">\n
+                      <i class="material-icons mi-payment">payment</i>\n
+                      <span>\n
+                      Payment\n
+                      </span>\n
+                                                    <i class="material-icons sub-tabs-arrow">\n
+                                                                    keyboard_arrow_down\n
+                                                            </i>\n
+                                            </a>\n
+                                              <ul id="collapse-63" class="submenu panel-collapse">\n
+                                                      \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="64" id="subtab-AdminPayment">\n
+                                <a href="/prestashop/admin0764zityj/improve/payment/payment_methods?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="l ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="65" id="subtab-AdminPaymentPreferences">\n
+                                <a href="/prestashop/admin0764zityj/improve/payment/preferences?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link" ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                              </ul>\n
+                                        </li>\n
+                                              \n
+                  \n
+                                                      \n
+                  \n
+                  <li class="link-levelone has_submenu" data-submenu="66" id="subtab-AdminInternational">\n
+                    <a href="/prestashop/admin0764zityj/improve/international/localization/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link">\n
+                      <i class="material-icons mi-language">language</i>\n
+                      <span>\n
+                      International\n
+                      </span>\n
+                                                    <i class="material-icons sub-tabs-arrow">\n
+                                                                    keyboard_arrow_down\n
+                                                            </i>\n
+                                            </a>\n
+                                              <ul id="collapse-66" class="submenu panel-collapse">\n
+                                                      \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="67" id="subtab-AdminParentLocalization">\n
+                                <a href="/prestashop/admin0764zityj/improve/international/localization/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" clas ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="72" id="subtab-AdminParentCountries">\n
+                                <a href="/prestashop/admin0764zityj/improve/international/zones/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="76" id="subtab-AdminParentTaxes">\n
+                                <a href="/prestashop/admin0764zityj/improve/international/taxes/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="79" id="subtab-AdminTranslations">\n
+                                <a href="/prestashop/admin0764zityj/improve/international/translations/settings?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqr ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                              </ul>\n
+                                        </li>\n
+                                              \n
+                  \n
+                                                      \n
+                  \n
+                  <li class="link-levelone has_submenu" data-submenu="145" id="subtab-Marketing">\n
+                    <a href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminPsfacebookModule&amp;token=202322684ed428dd2227b2fde87d69cd" c ▶
+                      <i class="material-icons mi-campaign">campaign</i>\n
+                      <span>\n
+                      Marketing\n
+                      </span>\n
+                                                    <i class="material-icons sub-tabs-arrow">\n
+                                                                    keyboard_arrow_down\n
+                                                            </i>\n
+                                            </a>\n
+                                              <ul id="collapse-145" class="submenu panel-collapse">\n
+                                                      \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="146" id="subtab-AdminPsfacebookModule">\n
+                                <a href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminPsfacebookModule&amp;token=202322684ed428dd2227b2f ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="148" id="subtab-AdminPsxMktgWithGoogleModule">\n
+                                <a href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminPsxMktgWithGoogleModule&amp;token=2a38cc8ac1fdd4b2 ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                              </ul>\n
+                                        </li>\n
+                              \n
+          \n
+                      \n
+                                          \n
+                    \n
+          \n
+            <li class="category-title" data-submenu="80" id="tab-CONFIGURE">\n
+                <span class="title">Configure</span>\n
+            </li>\n
+\n
+                              \n
+                  \n
+                                                      \n
+                  \n
+                  <li class="link-levelone has_submenu" data-submenu="81" id="subtab-ShopParameters">\n
+                    <a href="/prestashop/admin0764zityj/configure/shop/preferences/preferences?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> ▶
+                      <i class="material-icons mi-settings">settings</i>\n
+                      <span>\n
+                      Shop Parameters\n
+                      </span>\n
+                                                    <i class="material-icons sub-tabs-arrow">\n
+                                                                    keyboard_arrow_down\n
+                                                            </i>\n
+                                            </a>\n
+                                              <ul id="collapse-81" class="submenu panel-collapse">\n
+                                                      \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="82" id="subtab-AdminParentPreferences">\n
+                                <a href="/prestashop/admin0764zityj/configure/shop/preferences/preferences?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" c ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="85" id="subtab-AdminParentOrderPreferences">\n
+                                <a href="/prestashop/admin0764zityj/configure/shop/order-preferences/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class= ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="88" id="subtab-AdminPPreferences">\n
+                                <a href="/prestashop/admin0764zityj/configure/shop/product-preferences/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" clas ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="89" id="subtab-AdminParentCustomerPreferences">\n
+                                <a href="/prestashop/admin0764zityj/configure/shop/customer-preferences/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" cla ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="93" id="subtab-AdminParentStores">\n
+                                <a href="/prestashop/admin0764zityj/configure/shop/contacts/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> C ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="96" id="subtab-AdminParentMeta">\n
+                                <a href="/prestashop/admin0764zityj/configure/shop/seo-urls/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> T ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="100" id="subtab-AdminParentSearchConf">\n
+                                <a href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminSearchConf&amp;token=dfdc48dc395d7fc0a6190a4f9bc2e ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="134" id="subtab-AdminGamification">\n
+                                <a href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminGamification&amp;token=1119438b1453ebbcaa65771f9e8 ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                              </ul>\n
+                                        </li>\n
+                                              \n
+                  \n
+                                                      \n
+                  \n
+                  <li class="link-levelone has_submenu" data-submenu="103" id="subtab-AdminAdvancedParameters">\n
+                    <a href="/prestashop/admin0764zityj/configure/advanced/system-information/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> ▶
+                      <i class="material-icons mi-settings_applications">settings_applications</i>\n
+                      <span>\n
+                      Advanced Parameters\n
+                      </span>\n
+                                                    <i class="material-icons sub-tabs-arrow">\n
+                                                                    keyboard_arrow_down\n
+                                                            </i>\n
+                                            </a>\n
+                                              <ul id="collapse-103" class="submenu panel-collapse">\n
+                                                      \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="104" id="subtab-AdminInformation">\n
+                                <a href="/prestashop/admin0764zityj/configure/advanced/system-information/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" c ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="105" id="subtab-AdminPerformance">\n
+                                <a href="/prestashop/admin0764zityj/configure/advanced/performance/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="l ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="106" id="subtab-AdminAdminPreferences">\n
+                                <a href="/prestashop/admin0764zityj/configure/advanced/administration/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="107" id="subtab-AdminEmails">\n
+                                <a href="/prestashop/admin0764zityj/configure/advanced/emails/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="108" id="subtab-AdminImport">\n
+                                <a href="/prestashop/admin0764zityj/configure/advanced/import/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="109" id="subtab-AdminParentEmployees">\n
+                                <a href="/prestashop/admin0764zityj/configure/advanced/employees/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="lin ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="113" id="subtab-AdminParentRequestSql">\n
+                                <a href="/prestashop/admin0764zityj/configure/advanced/sql-requests/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class=" ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="116" id="subtab-AdminLogs">\n
+                                <a href="/prestashop/admin0764zityj/configure/advanced/logs/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class="link"> L ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                  \n
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="117" id="subtab-AdminWebservice">\n
+                                <a href="/prestashop/admin0764zityj/configure/advanced/webservice-keys/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" clas ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                                                                                                                 ▶
+                              \n
+                                                            \n
+                              <li class="link-leveltwo" data-submenu="120" id="subtab-AdminFeatureFlag">\n
+                                <a href="/prestashop/admin0764zityj/configure/advanced/feature-flags/?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" class= ▶
+                                </a>\n
+                              </li>\n
+\n
+                                                                              </ul>\n
+                                        </li>\n
+                              \n
+          \n
+                  </ul>\n
+  </div>\n
+  <div class="onboarding-navbar bootstrap">\n
+  <div class="row text">\n
+    <div class="col-md-8">\n
+      Launch your shop!\n
+    </div>\n
+    <div class="col-md-4 text-right text-md-right">0%</div>\n
+  </div>\n
+  <div class="progress">\n
+    <div class="bar" role="progressbar" style="width:0%;"></div>\n
+  </div>\n
+  <div>\n
+    <button class="btn btn-main btn-sm onboarding-button-resume">Resume</button>\n
+  </div>\n
+  <div>\n
+    <a class="btn -small btn-main btn-sm onboarding-button-stop">Stop the OnBoarding</a>\n
+  </div>\n
+</div>\n
+\n
+</nav>\n
+\n
+<div id="main-div">\n
+          \n
+<div class="header-toolbar d-print-none">\n
+    \n
+  <div class="container-fluid">\n
+\n
+    \n
+      <nav aria-label="Breadcrumb">\n
+        <ol class="breadcrumb">\n
+          \n
+                      <li class="breadcrumb-item active">\n
+              <a href="/prestashop/admin0764zityj/dz/notifications?_token=7wUb5BatWqY1zXCYKv7vgxdk53hd89RuIuKyfxBqrp8" aria-current="page">DolzayNotificationCon ▶
+            </li>\n
+                  </ol>\n
+      </nav>\n
+    \n
+\n
+    <div class="title-row">\n
+      \n
+          <h1 class="title">\n
+            DolzayNotificationController          </h1>\n
+      \n
+\n
+      \n
+        <div class="toolbar-icons">\n
+          <div class="wrapper">\n
+            \n
+                        \n
+            \n
+                              <a class="btn btn-outline-secondary btn-help" href="https://help.prestashop.com/en/doc/DolzayNotificationController?version=1.7.8. ▶
+                  Help\n
+                </a>\n
+                                    </div>\n
+        </div>\n
+\n
+      \n
+    </div>\n
+  </div>\n
+\n
+  \n
+  \n
+  <div class="btn-floating">\n
+    <button class="btn btn-primary collapsed" data-toggle="collapse" data-target=".btn-floating-container" aria-expanded="false">\n
+      <i class="material-icons">add</i>\n
+    </button>\n
+    <div class="btn-floating-container collapse">\n
+      <div class="btn-floating-menu">\n
+        \n
+        \n
+                              <a class="btn btn-floating-item btn-help" href="https://help.prestashop.com/en/doc/DolzayNotificationController?version=1.7.8.0&am ▶
+              Help\n
+            </a>\n
+                        </div>\n
+    </div>\n
+  </div>\n
+  <!-- begin C:\xampp\htdocs\prestashop/modules/ps_mbo/views/templates/hook/recommended-modules.tpl -->\n
+<script>\n
+  if (undefined !== mbo) {\n
+    mbo.initialize({\n
+      translations: {\n
+        'Recommended Modules and Services': 'Recommended modules',\n
+        'description': "Here\'s a selection of modules,<strong> compatible with your store<\/strong>, to help you achieve your goals",\n
+        'Close': 'Close',\n
+      },\n
+      recommendedModulesUrl: '/prestashop/admin0764zityj/modules/addons/modules/recommended?tabClassName=DolzayNotificationController&_token=7wUb5BatWqY1zXCYKv7 ▶
+      shouldAttachRecommendedModulesAfterContent: 0,\n
+      shouldAttachRecommendedModulesButton: 0,\n
+      shouldUseLegacyTheme: 0,\n
+    });\n
+  }\n
+</script>\n
+\n
+<!-- end C:\xampp\htdocs\prestashop/modules/ps_mbo/views/templates/hook/recommended-modules.tpl -->\n
+</div>\n
+      \n
+      <div class="content-div  ">\n
+\n
+        \n
+<div class="onboarding-advancement" style="display: none">\n
+  <div class="advancement-groups">\n
+          <div class="group group-0" style="width: 7.1428571428571%;">\n
+        <div class="advancement" style="width: 0%;"></div>\n
+        <div class="id">1</div>\n
+      </div>\n
+          <div class="group group-1" style="width: 35.714285714286%;">\n
+        <div class="advancement" style="width: 0%;"></div>\n
+        <div class="id">2</div>\n
+      </div>\n
+          <div class="group group-2" style="width: 14.285714285714%;">\n
+        <div class="advancement" style="width: 0%;"></div>\n
+        <div class="id">3</div>\n
+      </div>\n
+          <div class="group group-3" style="width: 14.285714285714%;">\n
+        <div class="advancement" style="width: 0%;"></div>\n
+        <div class="id">4</div>\n
+      </div>\n
+          <div class="group group-4" style="width: 14.285714285714%;">\n
+        <div class="advancement" style="width: 0%;"></div>\n
+        <div class="id">5</div>\n
+      </div>\n
+          <div class="group group-5" style="width: 14.285714285714%;">\n
+        <div class="advancement" style="width: 0%;"></div>\n
+        <div class="id">6</div>\n
+      </div>\n
+      </div>\n
+  <div class="col-md-8">\n
+    <h4 class="group-title"></h4>\n
+    <div class="step-title step-title-1"></div>\n
+    <div class="step-title step-title-2"></div>\n
+  </div>\n
+  <button class="btn btn-primary onboarding-button-next">Continue</button>\n
+  <a class="onboarding-button-shut-down">Skip this tutorial</a>\n
+</div>\n
+\n
+<script type="text/javascript">\n
+\n
+  var onBoarding;\n
+\n
+  $(function(){\n
+    onBoarding = new OnBoarding(0, {"groups":[{"steps":[{"type":"popup","text":"<div class=\"onboarding-welcome\">\n  <i class=\"material-icons onboarding-butto ▶
+\n
+          onBoarding.addTemplate('lost', '<div class="onboarding onboarding-popup bootstrap">  <div class="content">    <p>Hey! Are you lost?</p>    <p>To conti ▶
+          onBoarding.addTemplate('popup', '<div class="onboarding-popup bootstrap">  <div class="content"></div></div>');\n
+          onBoarding.addTemplate('tooltip', '<div class="onboarding-tooltip">  <div class="content"></div>  <div class="onboarding-tooltipsteps">    <div class= ▶
+    \n
+    onBoarding.showCurrentStep();\n
+\n
+    var body = $("body");\n
+\n
+    body.delegate(".onboarding-button-next", "click", function(){\n
+      if ($(this).is('.with-spinner')) {\n
+        if (!$(this).is('.animated')) {\n
+          $(this).addClass('animated');\n
+          onBoarding.gotoNextStep();\n
+        }\n
+      } else {\n
+        onBoarding.gotoNextStep();\n
+      }\n
+    }).delegate(".onboarding-button-shut-down", "click", function(){\n
+      onBoarding.setShutDown(true);\n
+    }).delegate(".onboarding-button-resume", "click", function(){\n
+      onBoarding.setShutDown(false);\n
+    }).delegate(".onboarding-button-goto-current", "click", function(){\n
+      onBoarding.gotoLastSavePoint();\n
+    }).delegate(".onboarding-button-stop", "click", function(){\n
+      onBoarding.stop();\n
+    });\n
+\n
+  });\n
+\n
+</script>\n
+\n
+\n
+                                                        \n
+        <div class="row ">\n
+          <div class="col-sm-12">\n
+            <div id="ajax_confirmation" class="alert alert-success" style="display: none;"></div>\n
+\n
+\n
+  {% block content_header %}{% endblock %}\n
+                 {% block content %}{% endblock %}\n
+                 {% block content_footer %}{% endblock %}\n
+                 {% block sidebar_right %}{% endblock %}\n
+\n
+            \n
+          </div>\n
+        </div>\n
+\n
+      </div>\n
+    </div>\n
+\n
+  <div id="non-responsive" class="js-non-responsive">\n
+  <h1>Oh no!</h1>\n
+  <p class="mt-3">\n
+    The mobile version of this page is not available yet.\n
+  </p>\n
+  <p class="mt-2">\n
+    Please use a desktop computer to access this page, until is adapted to mobile.\n
+  </p>\n
+  <p class="mt-2">\n
+    Thank you.\n
+  </p>\n
+  <a href="http://localhost/prestashop/admin0764zityj/index.php?controller=AdminDashboard&amp;token=145cdce5d31af59f9e59db912dacb23e" class="btn btn-primary py- ▶
+    <i class="material-icons">arrow_back</i>\n
+    Back\n
+  </a>\n
+</div>\n
+  <div class="mobile-layer"></div>\n
+\n
+      <div id="footer" class="bootstrap">\n
+    \n
+</div>\n
+  \n
+\n
+      <div class="bootstrap">\n
+      <div class="modal fade" id="modal_addons_connect" tabindex="-1">\n
+\t<div class="modal-dialog modal-md">\n
+\t\t<div class="modal-content">\n
+\t\t\t\t\t\t<div class="modal-header">\n
+\t\t\t\t<button type="button" class="close" data-dismiss="modal">&times;</button>\n
+\t\t\t\t<h4 class="modal-title"><i class="icon-puzzle-piece"></i> <a target="_blank" href="https://addons.prestashop.com/?utm_source=back-office&utm_medium=modu ▶
+\t\t\t</div>\n
+\t\t\t\n
+\t\t\t<div class="modal-body">\n
+\t\t\t\t\t\t<!--start addons login-->\n
+\t\t\t<form id="addons_login_form" method="post" >\n
+\t\t\t\t<div>\n
+\t\t\t\t\t<a href="https://addons.prestashop.com/en/login?email=chamakhabdallah8%40gmail.com&amp;firstname=Abdallah&amp;lastname=Chamakh&amp;website=http%3A%2F% ▶
+\t\t\t\t\t<h3 class="text-center">Connect your shop to PrestaShop's marketplace in order to automatically import all your Addons purchases.</h3>\n
+\t\t\t\t\t<hr />\n
+\t\t\t\t</div>\n
+\t\t\t\t<div class="row">\n
+\t\t\t\t\t<div class="col-md-6">\n
+\t\t\t\t\t\t<h4>Don't have an account?</h4>\n
+\t\t\t\t\t\t<p class='text-justify'>Discover the Power of PrestaShop Addons! Explore the PrestaShop Official Marketplace and find over 3 500 innovative modules  ▶
+\t\t\t\t\t</div>\n
+\t\t\t\t\t<div class="col-md-6">\n
+\t\t\t\t\t\t<h4>Connect to PrestaShop Addons</h4>\n
+\t\t\t\t\t\t<div class="form-group">\n
+\t\t\t\t\t\t\t<div class="input-group">\n
+\t\t\t\t\t\t\t\t<div class="input-group-prepend">\n
+\t\t\t\t\t\t\t\t\t<span class="input-group-text"><i class="icon-user"></i></span>\n
+\t\t\t\t\t\t\t\t</div>\n
+\t\t\t\t\t\t\t\t<input id="username_addons" name="username_addons" type="text" value="" autocomplete="off" class="form-control ac_input">\n
+\t\t\t\t\t\t\t</div>\n
+\t\t\t\t\t\t</div>\n
+\t\t\t\t\t\t<div class="form-group">\n
+\t\t\t\t\t\t\t<div class="input-group">\n
+\t\t\t\t\t\t\t\t<div class="input-group-prepend">\n
+\t\t\t\t\t\t\t\t\t<span class="input-group-text"><i class="icon-key"></i></span>\n
+\t\t\t\t\t\t\t\t</div>\n
+\t\t\t\t\t\t\t\t<input id="password_addons" name="password_addons" type="password" value="" autocomplete="off" class="form-control ac_input">\n
+\t\t\t\t\t\t\t</div>\n
+\t\t\t\t\t\t\t<a class="btn btn-link float-right _blank" href="//addons.prestashop.com/en/forgot-your-password">I forgot my password</a>\n
+\t\t\t\t\t\t\t<br>\n
+\t\t\t\t\t\t</div>\n
+\t\t\t\t\t</div>\n
+\t\t\t\t</div>\n
+\n
+\t\t\t\t<div class="row row-padding-top">\n
+\t\t\t\t\t<div class="col-md-6">\n
+\t\t\t\t\t\t<div class="form-group">\n
+\t\t\t\t\t\t\t<a class="btn btn-default btn-block btn-lg _blank" href="https://addons.prestashop.com/en/login?email=chamakhabdallah8%40gmail.com&amp;firstname=A ▶
+\t\t\t\t\t\t\t\tCreate an Account\n
+\t\t\t\t\t\t\t\t<i class="icon-external-link"></i>\n
+\t\t\t\t\t\t\t</a>\n
+\t\t\t\t\t\t</div>\n
+\t\t\t\t\t</div>\n
+\t\t\t\t\t<div class="col-md-6">\n
+\t\t\t\t\t\t<div class="form-group">\n
+\t\t\t\t\t\t\t<button id="addons_login_button" class="btn btn-primary btn-block btn-lg" type="submit">\n
+\t\t\t\t\t\t\t\t<i class="icon-unlock"></i> Sign in\n
+\t\t\t\t\t\t\t</button>\n
+\t\t\t\t\t\t</div>\n
+\t\t\t\t\t</div>\n
+\t\t\t\t</div>\n
+\n
+\t\t\t\t<div id="addons_loading" class="help-block"></div>\n
+\n
+\t\t\t</form>\n
+\t\t\t<!--end addons login-->\n
+\t\t\t</div>\n
+\n
+\n
+\t\t\t\t\t</div>\n
+\t</div>\n
+</div>\n
+\n
+    </div>\n
+  \n
+{% block javascripts %}{% endblock %}{% block extra_javascripts %}{% endblock %}{% block translate_javascripts %}{% endblock %}</body>\n
+</html>
+"""
+My Custom Module Page
+Loading...
