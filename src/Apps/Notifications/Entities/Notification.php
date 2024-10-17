@@ -213,7 +213,7 @@ class Notification {
 
 
         // get all notifications for update to lock the notifications so that no other request can't delete the notifications while the transaction of this request is running
-        $query = "SELECT id,deletable_once_viewed_by_the_employee_with_the_id FROM `".ModuleConfig::MODULE_PREFIX."notification` for update";  
+        $query = "SELECT id,deletable_once_viewed_by_the_employee_with_the_id FROM `".ModuleConfig::MODULE_PREFIX."notification` FOR UPDATE";  
         $stmt = $this->db->prepare($query);
         $stmt->execute();
         $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
