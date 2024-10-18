@@ -16,8 +16,13 @@ use Dolzay\Apps\Notifications\Entities\Notification ;
 
 class Dolzay extends Module
 {
-    const APPS = [
+    const APPS_INIT_ORDER = [
+        "Settings",
         "Notifications"
+    ]  ;
+    const APPS_UNINIT_ORDER = [
+        "Notifications",
+        "Settings"
     ]  ;
 
     const APPS_BASE_NAMESPACES = "Dolzay\\Apps\\" ;
@@ -51,7 +56,7 @@ class Dolzay extends Module
 
     public function uninstall()
     {
-        return parent::uninstall() && $this->drop_app_tables() && $this->unregisterTabs(); ; 
+        return parent::uninstall() && $this->drop_app_tables()  ; 
     }
 
     public function create_app_tables() {
@@ -59,10 +64,11 @@ class Dolzay extends Module
             $db = Db::getInstance();
 
             // FOR EACH APP CREATE TABLES OF HER ENTITIES 
-            foreach (self::APPS as $app) {
+            foreach (self::APPS_INIT_ORDER as $app) {
 
                 // CONSTRUCT THE APP CONFIG CLASS NAME NAMESPACED
                 $app_config_class = self::APPS_BASE_NAMESPACES . $app . "\\Config" ;
+                PrestaShopLogger::addLog("the constructed config class : ".$app_config_class,1, null, 'Dolzay') ;
 
                 // CHECK IF THE APP CONFIG CLASS EXISTS AND HAS THE STATIC PROPERTY $create_app_entities_order OTHERWISE QUIT THE INSTALLATION
                 if (!class_exists($app_config_class)) {
@@ -123,10 +129,11 @@ class Dolzay extends Module
             $db = Db::getInstance();
 
             // FOR EACH APP, DROP TABLES OF ITS ENTITIES 
-            foreach (self::APPS as $app) {
+            foreach (self::APPS_UNINIT_ORDER as $app) {
 
                 // CONSTRUCT THE APP CONFIG CLASS NAME NAMESPACED
                 $app_config_class = self::APPS_BASE_NAMESPACES . $app . "\\Config" ;
+                PrestaShopLogger::addLog("the constructed config class : ".$app_config_class,1, null, 'Dolzay') ;
 
                 // CHECK IF THE APP CONFIG CLASS EXISTS AND HAS THE STATIC PROPERTY $drop_app_entities_order OTHERWISE QUIT THE INSTALLATION
                 if (!class_exists($app_config_class)) {
@@ -180,16 +187,7 @@ class Dolzay extends Module
         }
     }
 
-    private function unregisterTabs()
-    {
-        $tabId = Tab::getIdFromClassName('DolzayNotificationController');
-        if ($tabId) {
-            $tab = new Tab($tabId);
-            $tab->delete();
-        }
 
-        return true;
-    }
 
 
 }

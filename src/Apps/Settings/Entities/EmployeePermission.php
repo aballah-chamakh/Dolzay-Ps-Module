@@ -1,12 +1,13 @@
 <?php
 
-namespace Dolzay\Apps\Notifications\Entities ;
+namespace Dolzay\Apps\Settings\Entities ;
 
 use Dolzay\ModuleConfig ;
 
-class ProfilePermission {
+class EmployeePermission {
 
-    const TABLE_NAME = "profile_permission" ;
+    const TABLE_NAME = "employee_permission" ;
+    public static $name = "default" ;
 
 
     public const CREATE_TABLE_SQL = 'CREATE TABLE IF NOT EXISTS `' . ModuleConfig::MODULE_PREFIX . self::TABLE_NAME . '` (
@@ -20,5 +21,22 @@ class ProfilePermission {
 
     public const DROP_TABLE_SQL = 'DROP TABLE IF EXISTS `' . ModuleConfig::MODULE_PREFIX . self::TABLE_NAME . '`;';
 
+    public static function init($db, $employee_id)
+    {
+        self::$db = $db;
+        self::$employee_id = $employee_id;
+    }
+
+
+    public static function get_permissions()
+    {
+        $query = "SELECT permission_id FROM `" . ModuleConfig::MODULE_PREFIX . "employee_permission` WHERE employee_id = :employee_id";
+        $stmt = self::$db->prepare($query);
+        $stmt->bindParam(':employee_id', self::$employee_id, \PDO::PARAM_INT);
+        $stmt->execute();
+        $permission_ids = $stmt->fetchAll();
+
+        return $permission_ids;
+    }
 
 }

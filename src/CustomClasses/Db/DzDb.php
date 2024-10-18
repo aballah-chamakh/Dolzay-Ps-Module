@@ -24,11 +24,7 @@ class DzDb {
                 $conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
                 $conn->exec("SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ");
                 return $conn;
-
-
-
-
-
+                
     }
 
 
