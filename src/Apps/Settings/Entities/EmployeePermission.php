@@ -7,7 +7,9 @@ use Dolzay\ModuleConfig ;
 class EmployeePermission {
 
     const TABLE_NAME = "employee_permission" ;
-    public static $name = "default" ;
+    public static $db ;
+    public static $employee_id ;
+
 
 
     public const CREATE_TABLE_SQL = 'CREATE TABLE IF NOT EXISTS `' . ModuleConfig::MODULE_PREFIX . self::TABLE_NAME . '` (
@@ -34,7 +36,7 @@ class EmployeePermission {
         $stmt = self::$db->prepare($query);
         $stmt->bindParam(':employee_id', self::$employee_id, \PDO::PARAM_INT);
         $stmt->execute();
-        $permission_ids = $stmt->fetchAll();
+        $permission_ids = $stmt->fetchAll(\PDO::FETCH_COLUMN);
 
         return $permission_ids;
     }

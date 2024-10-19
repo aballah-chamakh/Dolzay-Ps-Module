@@ -17,6 +17,8 @@ dz_notifications_list :
 dz_mark_notification_as_read:
   path: /dz/notifications/{notif_id}/mark_as_read
   methods: [PUT]
+  requirements:
+    notif_id: \d+
   defaults:
     _controller: 'Dolzay\Apps\Notifications\Controllers\NotificationController::markNotificationAsRead'
     _disable_module_prefix: true

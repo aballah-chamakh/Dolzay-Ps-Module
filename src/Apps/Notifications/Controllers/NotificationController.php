@@ -20,27 +20,25 @@ class NotificationController extends FrameworkBundleAdminController
     public function get_the_requesting_employee_id(){
 
         // get the employee id of the requesting user
-        $employeeId = $this->getUser()->getId();
-
-        // check if the requesting user still exists
-        if(!$employeeId){
+        $user = $this->getUser();
+        if (!$user) {
             return new JsonResponse([
                 "status" => "error",
                 "data" => ["message" => "this employee doesn't exist anymore"]
             ], 401);
         }
 
-        return $employeeId ;
+        return $user->getId() ;
                 
     }
 
     public function check_if_the_employee_exists($db,$employee_id){
         
         
-        // check if the employee with the id $employeeId exists
-        $checkEmployeeQuery = "SELECT COUNT(*) FROM ". _DB_PREFIX_ ."employee WHERE id_employee = :employeeId";
+        // check if the employee with the id $employee_id exists
+        $checkEmployeeQuery = "SELECT COUNT(*) FROM ". _DB_PREFIX_ ."employee WHERE id_employee = :employee_id";
         $stmt = $db->prepare($checkEmployeeQuery);
-        $stmt->bindParam(':employeeId', $employee_id, \PDO::PARAM_INT);
+        $stmt->bindParam(':employee_id', $employee_id, \PDO::PARAM_INT);
         $stmt->execute();
         $employeeExists = $stmt->fetchColumn();
 
@@ -52,7 +50,7 @@ class NotificationController extends FrameworkBundleAdminController
             ], 401);
         }
 
-        return $employeeExists ;
+        return true ;
     }
 
     public function validateData($data, $constraints)
@@ -79,9 +77,7 @@ class NotificationController extends FrameworkBundleAdminController
 
     public function getNotificationsOverview(Request $request)
     {   
-        $reflection = new \ReflectionClass("Symfony\\Bundle\\FrameworkBundle\\Controller\\Controller");
-        $path = $reflection->getFileName();
-        return new JsonResponse(["path" => $path]);
+
 
         // get the employee id of the requesting user or return an error response if the user doesn't exist
         $employee_id = $this->get_the_requesting_employee_id() ;
@@ -121,21 +117,19 @@ class NotificationController extends FrameworkBundleAdminController
         $db =  DzDb::getInstance();
         $db->beginTransaction();
 
-        // check if the employee with the id $employeeId exists
-        // note : I need to check if the employee exists within the same transaction that retrieves the notifications overview data.
-        //        This ensures that I don't get invalid notifications overview data due to the employee being deleted, as their viewed_by and popped_up_by rows 
-        //        would also be deleted along with them.
+        // check if the employee with the id $employeeId still exists within this transaction
         $res = $this->check_if_the_employee_exists($db,$employee_id);
         if ($res instanceof JsonResponse){
             return $res ;
         }
 
-        // get the perssion ids of the employee
+        // get the permission ids of the employee
         EmployeePermission::init($db,$employee_id);
-        $permission_ids = EmployeePermission::get_permissions();
+        $employee_permission_ids = EmployeePermission::get_permissions();
+
 
         // get the notifications overview data whitin the transaction
-        Notification::init($db,$employee_id,$permission_ids);
+        Notification::init($db,$employee_id,$employee_permission_ids);
         $all_notifs_count = Notification::get_all_notifications_count();
         [$unpopped_up_notifs_count,$unpopped_up_notifications] = Notification::get_the_unpopped_up_notifications_by_the_empolyee($query_parameter["page_nb"],$query_parameter["batch_size"]);  
         
@@ -196,17 +190,18 @@ class NotificationController extends FrameworkBundleAdminController
         $db = DzDb::getInstance();
         $db->beginTransaction();
 
-        // check if the employee with the id $employeeId exists
-        // note : I need to check if the employee exists within the same transaction that retrieves the notifications list.
-        //        This ensures that I don't get an invalid notifications list due to the employee being deleted, as their viewed_by and popped_up_by rows 
-        //        would also be deleted along with them.
+        // check if the employee with the id $employeeId still exists within this transaction
         $res = $this->check_if_the_employee_exists($db,$employeeId);
         if ($res instanceof JsonResponse){
             return $res ;
         }
 
+        // get the permission ids of the employee
+        EmployeePermission::init($db,$employee_id);
+        $employee_permission_ids = EmployeePermission::get_permissions();
+
         // get the notification list
-        Notification::init($db,$employee_id,$permission_ids);
+        Notification::init($db,$employee_id,$employee_permission_ids);
         $notifications = Notification::get_notifications($query_parameter["notif_type"], $query_parameter["page_nb"], $query_parameter["batch_size"]);
 
         $db->commit();
@@ -221,6 +216,7 @@ class NotificationController extends FrameworkBundleAdminController
 
     public function markNotificationAsRead($notif_id, Request $request)
     {
+
         // get the employee id of the requesting user or return an error response if the user doesn't exist
         $employee_id = $this->get_the_requesting_employee_id() ;
         if($employee_id instanceof JsonResponse){
@@ -229,26 +225,22 @@ class NotificationController extends FrameworkBundleAdminController
         
         // initiate the db connection and start a transaction
         $db = DzDb::getInstance();
-        $db->beginTransaction();
 
-        // check if the employee exists within this transaction
-        $res = $this->check_if_the_employee_exists($db,$employee_id);
-        if ($res instanceof JsonResponse){
-            return $res ;
-        }
+        // get the permission ids of the employee
+        EmployeePermission::init($db,$employee_id);
+        $employee_permission_ids = EmployeePermission::get_permissions();
 
-        Notification::init($db,$employee_id,$permission_ids);
-        $res = $notification->mark_notification_as_read($notif_id);
-        $db->commit();
+        // mark the notificaiton as read
+        Notification::init($db,$employee_id,$employee_permission_ids);
+        $res = $notification::mark_notification_as_read($notif_id);
 
-        if($res == "REDIRECT_TO_LOGIN_PAGE"){
-            $db->commit();
+        // handle employee not found or not permitted error
+        if($res){
             return new JsonResponse([
                 "status" => "error",
-                "data" => ["message" => "this employee doesn't exist anymore"]
+                "msg" => $res
             ], 401);
         }
-
 
         return new JsonResponse(['status' => 'success']);
     }
@@ -266,18 +258,9 @@ class NotificationController extends FrameworkBundleAdminController
 
        // initiate the db connection and start a transaction
        $db = DzDb::getInstance();
-       $db->beginTransaction();
         
-        // check if the employee exists within this transaction
-        $res = $this->check_if_the_employee_exists($db,$employee_id);
-        if ($res instanceof JsonResponse){
-            return $res ;
-        }
-
         Notification::init($db,$employee_id,$permission_ids);
         Notification::mark_all_notifications_as_read();
-
-        $db->commit();
 
         return new JsonResponse(['status' => 'success']);
     }

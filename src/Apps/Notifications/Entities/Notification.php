@@ -10,13 +10,17 @@ use PDO ;
 
 class Notification {
 
-    private $db ;
 
-    private const TABLE_NAME = "notification" ;
+    private const TABLE_NAME = ModuleConfig::MODULE_PREFIX."notification" ;
     private const NOTIFICATION_TYPES = ["all","process", "config_error", "dormant_or_not_found_order"]  ;
+   
+    private static $db ;
+    private static $employee_id ;
+    private static $employee_permission_ids ;
+    private static $employee_permission_ids_placehoder ;
+    
 
-
-    public const CREATE_TABLE_SQL = 'CREATE TABLE IF NOT EXISTS `'.ModuleConfig::MODULE_PREFIX.self::TABLE_NAME.'` (
+    public const CREATE_TABLE_SQL = 'CREATE TABLE IF NOT EXISTS `'.self::TABLE_NAME.'` (
         `id` INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
         `type` ENUM("process","config_error","dormant_or_not_found_order") NOT NULL,
         `pathname` VARCHAR(255) NOT NULL,
@@ -31,18 +35,20 @@ class Notification {
          FOREIGN KEY (`deletable_once_viewed_by_the_employee_with_the_id`) REFERENCES `'._DB_PREFIX_.'employee`(`id_employee`) ON DELETE CASCADE
     ) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ;' ;
     
-    public const DROP_TABLE_SQL = 'DROP TABLE IF EXISTS `' . ModuleConfig::MODULE_PREFIX . self::TABLE_NAME . '`;';
+    public const DROP_TABLE_SQL = 'DROP TABLE IF EXISTS `'.self::TABLE_NAME . '`;';
     
 
-    public static function init($db, $employee_id, $permission_ids)
+    public static function init($db, $employee_id, $employee_permission_ids)
     {
         self::$db = $db;
         self::$employee_id = $employee_id;
-        self::$permission_ids = $permission_ids;
+        self::$employee_permission_ids = $employee_permission_ids;
+        self::$employee_permission_ids_placehoder = implode(',', array_fill(0, count(self::$employee_permission_ids), '?'));
+
     }
 
 
-    public function paginate($list,$list_count,$page_nb, $batch_size) {
+    public static function paginate($list,$list_count,$page_nb, $batch_size) {
 
         $list_paginated = array_slice($list, ($page_nb - 1) * $batch_size, $batch_size);
         // if the page of the request page id is empty, return the last page with at least one record
@@ -54,34 +60,47 @@ class Notification {
     }
 
     public function get_all_notifications_count(){
-
         $query = "
                 SELECT COUNT(*)
-                FROM `".ModuleConfig::MODULE_PREFIX."notification` n
+                FROM `".self::TABLE_NAME."` n
                 LEFT JOIN `".ModuleConfig::MODULE_PREFIX."notification_viewed_by` nv 
-                ON n.id = nv.notif_id AND nv.employee_id = :employee_id
-                WHERE  NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
+                ON n.id = nv.notif_id AND nv.employee_id = ?
+                WHERE n.permission_id IN (".self::$employee_permission_ids_placehoder.") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
         
         $stmt = self::$db->prepare($query);
-                
-        $stmt->execute(['employee_id' => self::$employee_id]);
+        $stmt->execute(array_merge([self::$employee_id], self::$employee_permission_ids));
+
         $notifications_count = (int) $stmt->fetchColumn();
+        
         return $notifications_count  ;
+    }
+
+    private function get_notification_perm_id($notif_id) {
+        $query = "SELECT permission_id FROM `".self::TABLE_NAME."` WHERE id = :notif_id";
+        $stmt = self::$db->prepare($query);
+        $stmt->execute(['notif_id' => $notif_id]);
+        return $stmt->fetchColumn();
     }
 
 
     public function get_the_unpopped_up_notifications_by_the_empolyee(int $page_nb, int $batch_size) {
         
         
-        $query = "SELECT id,type,pathname,logo,message,DATE_FORMAT(created_at, '%H:%i:%S %d-%m-%Y') as created_at,color FROM `".ModuleConfig::MODULE_PREFIX."notification` n
+        $query = "SELECT id,type,pathname,logo,message,DATE_FORMAT(created_at, '%H:%i:%S %d-%m-%Y') as created_at,color FROM `".self::TABLE_NAME."` n
         LEFT JOIN `".ModuleConfig::MODULE_PREFIX."notification_viewed_by` nv 
-        ON n.id = nv.notif_id AND nv.employee_id = :employee_id
+        ON n.id = nv.notif_id AND nv.employee_id = ?
         LEFT JOIN `".ModuleConfig::MODULE_PREFIX."notification_popped_up_by` np 
-        ON n.id = np.notif_id AND np.employee_id = :employee_id_x
-        WHERE nv.employee_id IS NULL AND np.employee_id IS NULL " ;
+        ON n.id = np.notif_id AND np.employee_id = ?
+        WHERE n.permission_id IN (".self::$employee_permission_ids_placehoder.") AND (nv.employee_id IS NULL AND np.employee_id IS NULL) " ;
         
         $stmt = self::$db->prepare($query);
-        $stmt->execute(['employee_id' => self::$employee_id,'employee_id_x' => self::$employee_id]);
+        $stmt->execute(
+                    array_merge(
+                        [self::$employee_id,self::$employee_id],
+                        self::$employee_permission_ids
+                        )
+                );
+
         $unpopped_up_notifications_by_the_empolyee = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $unpopped_up_notifications_by_the_empolyee_count = count($unpopped_up_notifications_by_the_empolyee);
@@ -89,7 +108,7 @@ class Notification {
             return [];
         }
 
-        return [$unpopped_up_notifications_by_the_empolyee_count, $this->paginate($unpopped_up_notifications_by_the_empolyee,$unpopped_up_notifications_by_the_empolyee_count,$page_nb, $batch_size)];
+        return [$unpopped_up_notifications_by_the_empolyee_count, self::paginate($unpopped_up_notifications_by_the_empolyee,$unpopped_up_notifications_by_the_empolyee_count,$page_nb, $batch_size)];
 
     }
 
@@ -109,10 +128,10 @@ class Notification {
 
                 $count_query = "
                 SELECT COUNT(*) as count
-                FROM `".ModuleConfig::MODULE_PREFIX."notification` n
+                FROM `".self::TABLE_NAME."` n
                 LEFT JOIN `".ModuleConfig::MODULE_PREFIX."notification_viewed_by` nv 
                 ON n.id = nv.notif_id AND nv.employee_id = :employee_id
-                WHERE NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
+                WHERE n.permission_id IN (".$employee_permission_ids_placehoder.") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
                 
                 if ($type != "all") {
                     $count_query .= " AND n.type = :notif_type";
@@ -134,10 +153,10 @@ class Notification {
         $query = "
             SELECT id, type, pathname, logo, message, DATE_FORMAT(created_at, '%H:%i:%S %d-%m-%Y') as created_at, color,
                    (CASE WHEN nv.employee_id IS NOT NULL THEN TRUE ELSE FALSE END) AS viewed
-            FROM `".ModuleConfig::MODULE_PREFIX."notification` n
+            FROM `".self::TABLE_NAME."` n
             LEFT JOIN `".ModuleConfig::MODULE_PREFIX."notification_viewed_by` nv 
             ON n.id = nv.notif_id AND nv.employee_id = :employee_id
-            WHERE NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
+            WHERE n.permission_id IN (".$employee_permission_ids_placehoder.") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
         
         if ($notif_type != "all") {
             $query .= " AND n.type = :notif_type";
@@ -163,29 +182,21 @@ class Notification {
         [$notifications["read_notifs_cnt"], $notifications["unread_notifs_cnt"]] = $this->get_unread_and_read_notifications_count($requested_notifications);
         
         // paginate the notifications
-        $requested_notifications_paginated = $this->paginate($requested_notifications, $notifications[$notif_type."_notifs_cnt"], $page_nb, $batch_size);
+        $requested_notifications_paginated = self::paginate($requested_notifications, $notifications[$notif_type."_notifs_cnt"], $page_nb, $batch_size);
         
         $notifications["notifications"] = $requested_notifications_paginated  ;
         return $notifications; 
 
     }
 
-    public function mark_notification_as_read($notif_id ) {
+    public static function mark_notification_as_read($notif_id ) {
 
-        // select the employee for update to lock the employee so that no other request can't delete the employee while the transaction of this request is running
-        $stmt = self::$db->prepare("SELECT * FROM `"._DB_PREFIX_."employee` WHERE id_employee = :employee_id FOR UPDATE");
-        $stmt->execute(['employee_id' => self::$employee_id]);
-        $employee = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // if the requesting employee doesn't exist anymore the route will redirect the user to the login page
-        if (!$employee) {
-            return "REDIRECT_TO_LOGIN_PAGE" ;
-        }
 
-        // select the notfication for update to notfication the employee so that no other request can't delete the notfication while the transaction of this request is running
-        $stmt = self::$db->prepare("SELECT * FROM `".ModuleConfig::MODULE_PREFIX."notification` WHERE id = :notif_id FOR UPDATE");
+        // get the notfication 
+        $stmt = self::$db->prepare("SELECT * FROM `".self::TABLE_NAME."` WHERE id = :notif_id ");
         $stmt->execute(['notif_id' => (int)$notif_id]);
-        $notification = $stmt->fetch(PDO::FETCH_ASSOC);
+        $notification = $stmt->fetch();
 
         // if the requesting notfication doesn't exist anymore, the function will not throw an error ,it will act like it marked the notfication as read
         // and it will leave the job of informing the user that the notfication doesn't exist anymore to the periodic refresh of the notifications list 
@@ -193,54 +204,74 @@ class Notification {
             return  ;
         }
 
+        // check if the employee has the permission to mark the notfication as read
+        if (in_array($notification["permission_id"], self::$employee_permission_ids)) {
+            return "EMPLOYEE_NOT_PERMITTED_TO_DO_THIS_ACTION" ;
+        }
+
         // if the attribute  deletable_once_viewed_by_the_employee_with_the_id of the notfication equal the $emplyee id, delete the notfication
         if ($notification["deletable_once_viewed_by_the_employee_with_the_id"] == self::$employee_id){
-            $stmt = self::$db->prepare("DELETE FROM `".ModuleConfig::MODULE_PREFIX."notification` WHERE id = :notif_id");
+            $stmt = self::$db->prepare("DELETE FROM `".self::TABLE_NAME."` WHERE id = :notif_id");
             $stmt->execute(['notif_id' => (int)$notif_id]);
         }else{ // otherwise mark the notfication as read by the employee
+        
             $stmt = self::$db->prepare("INSERT INTO `".ModuleConfig::MODULE_PREFIX."notification_viewed_by` (employee_id, notif_id) VALUES (:employee_id, :notif_id)");
-            $stmt->execute([
-                'employee_id' => self::$employee_id,
-                'notif_id' => self::$employee_id
-            ]);
+            try {
+                $stmt->execute([
+                    'employee_id' => self::$employee_id,
+                    'notif_id' => $notif_id
+                ]);
+            } catch (\PDOException $e) {
+                // 23000 : SQLSTATE code for Integrity constraint violation (SQLSTATE is a five-character code that conforms to the SQL standard's conventions for "SQLSTATE" codes)
+                // 1452 : mysql error code for adding a record with a foreign key that doesn't exist
+                // 1062 : mysql error code for adding a duplicate record for a unique key
+
+                // if we have a constraint violation error and the error is about a foreign key that doesn't exist or a unique key
+                if ($e->getCode() == 23000 && (strpos($e->getMessage(), '1452') || strpos($e->getMessage(), '1062'))) {
+                    // act like we marked the notfication as read
+                    return;
+                }
+                // Re-throw the exception if it's not a constraint violation
+                throw $e;
+            }
         }
     }
 
     public function mark_all_notifications_as_read() {
 
-        // select the employee for update to lock the employee so that no other request can't delete the employee while the transaction of this request is running
-        $stmt = self::$db->prepare("SELECT * FROM `"._DB_PREFIX_."employee` WHERE id_employee = :employee_id FOR UPDATE");
-        $stmt->execute(['employee_id' => self::$employee_id]);
-        $employee = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        // if the requesting employee doesn't exist anymore the route will redirect the user to the login page
-        if (!$employee) {
-            return "REDIRECT_TO_LOGIN_PAGE" ;
-        }
-
-
         // get all notifications for update to lock the notifications so that no other request can't delete the notifications while the transaction of this request is running
-        $query = "SELECT id,deletable_once_viewed_by_the_employee_with_the_id FROM `".ModuleConfig::MODULE_PREFIX."notification` FOR UPDATE";  
+        $query = "SELECT id,deletable_once_viewed_by_the_employee_with_the_id FROM `".self::TABLE_NAME."`";  
         $stmt = self::$db->prepare($query);
         $stmt->execute();
         $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-
-
-
         // loop through all notifications and mark them as read
         foreach ($notifications as $notification) {
 
+            // check if the employee has the permission to mark the notfication as read
+            if (!in_array($notification["permission_id"], self::$employee_permission_ids)) {
+                continue ;
+            }
             // if the attribute  deletable_once_viewed_by_the_employee_with_the_id of the notfication equal the $employee_ id, delete the notfication
             if ($notification["deletable_once_viewed_by_the_employee_with_the_id"] == self::$employee_id){
-                $stmt = self::$db->prepare("DELETE FROM `".ModuleConfig::MODULE_PREFIX."notification` WHERE id = :notif_id");
+                $stmt = self::$db->prepare("DELETE FROM `".self::TABLE_NAME."` WHERE id = :notif_id");
                 $stmt->execute(['notif_id' => $notification['id']]);
             }else{
+
                 $stmt = self::$db->prepare("INSERT INTO `".ModuleConfig::MODULE_PREFIX."notification_viewed_by` (employee_id, notif_id) VALUES (:employee_id, :notif_id)");
-                $stmt->execute([
-                    'employee_id' => self::$employee_id,
-                    'notif_id' => $notification['id']
-                ]);    
+                try {
+                    $stmt->execute([
+                        'employee_id' => self::$employee_id,
+                        'notif_id' => $notification['id']
+                    ]);    
+                } catch {
+                    if ($e->getCode() == 23000 && strpos($e->getMessage(), '1062'))) {
+                                            // act like we marked the notfication as read
+                        // act like we marked the notfication as read
+                        return  ;
+                    }
+                }
+
             }
 
         }
@@ -263,11 +294,11 @@ class Notification {
             return "REDIRECT_TO_LOGIN_PAGE" ;
         }
 
-        // Create placeholders for each ID
-        $placeholders = implode(',', array_fill(0, count($notif_ids), '?'));
+        // create a placeholder for the notification ids
+        $notif_ids_placehoder = implode(',', array_fill(0, count($notif_ids), '?'));
 
         // Prepare the query with placeholders
-        $query = "SELECT id FROM `".ModuleConfig::MODULE_PREFIX."notification` WHERE id IN ($placeholders) for update";
+        $query = "SELECT id FROM `".self::TABLE_NAME."` WHERE id IN ($notif_ids_placehoder) for update";
         $stmt = self::$db->prepare($query);
 
         // Execute the statement with the array of IDs
@@ -311,7 +342,7 @@ MAIN QUERY EXPLAINED :
         2. THE EMPLOYEE DIDN'T POPPED THEM BEFOR
         3. NOT (VIEWED BY THE EMPLOYEE AND DELETABLE ONCE VIEWED BY AN EMPLOYEE )
 
-            "SELECT * FROM `".ModuleConfig::MODULE_PREFIX."notification` n
+            "SELECT * FROM `".self::TABLE_NAME."` n
             
             // attach the viewed notifications by this employee
              LEFT JOIN `".ModuleConfig::MODULE_PREFIX."notification_viewed_by` nv 
@@ -330,7 +361,7 @@ MAIN QUERY EXPLAINED :
              /* we can remove this last condition because it will be tested only when nv.employee_id IS NULL 
                 and it's null this condition we always return true  $/
 
-            "SELECT * FROM `".ModuleConfig::MODULE_PREFIX."notification` n
+            "SELECT * FROM `".self::TABLE_NAME."` n
              LEFT JOIN `".ModuleConfig::MODULE_PREFIX."notification_viewed_by` nv 
              ON n.id = nv.notif_id AND nv.employee_id = " . (int)$employee_id . "
              LEFT JOIN `".ModuleConfig::MODULE_PREFIX."notification_popped_up_by` np 
