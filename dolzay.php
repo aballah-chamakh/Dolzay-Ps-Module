@@ -60,8 +60,8 @@ class Dolzay extends Module
     }
 
     public function create_app_tables() {
-        try {
-            $db = Db::getInstance();
+        try {    
+            $db = Db::getInstance(); 
 
             // FOR EACH APP CREATE TABLES OF HER ENTITIES 
             foreach (self::APPS_INIT_ORDER as $app) {

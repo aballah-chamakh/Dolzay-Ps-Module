@@ -13,6 +13,7 @@ use Dolzay\CustomClasses\Constraints\IsIntegerAndGreaterThanZero;
 use Dolzay\CustomClasses\Db\DzDb ;  
 use Dolzay\Apps\Settings\Entities\EmployeePermission;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use EmployeeCore ;
 
 class NotificationController extends FrameworkBundleAdminController
 {
@@ -78,6 +79,9 @@ class NotificationController extends FrameworkBundleAdminController
     public function getNotificationsOverview(Request $request)
     {   
 
+        return new JsonResponse([
+            "iiiiiiiii" => EmployeeCore::$definition['table']
+        ]); 
 
         // get the employee id of the requesting user or return an error response if the user doesn't exist
         $employee_id = $this->get_the_requesting_employee_id() ;
@@ -234,7 +238,7 @@ class NotificationController extends FrameworkBundleAdminController
         Notification::init($db,$employee_id,$employee_permission_ids);
         $res = $notification::mark_notification_as_read($notif_id);
 
-        // handle employee not found or not permitted error
+        // resturn a 401 error response if the employee doesn't exist anymore 
         if($res){
             return new JsonResponse([
                 "status" => "error",
@@ -256,36 +260,79 @@ class NotificationController extends FrameworkBundleAdminController
             return $employee_id ;
         }
 
-       // initiate the db connection and start a transaction
-       $db = DzDb::getInstance();
+        // initiate the db connection and start a transaction
+        $db = DzDb::getInstance();
+
+        // get the permission ids of the employee
+        EmployeePermission::init($db,$employee_id);
+        $employee_permission_ids = EmployeePermission::get_permissions();
         
+        // mark all the notifications as read
         Notification::init($db,$employee_id,$permission_ids);
-        Notification::mark_all_notifications_as_read();
+        $res = Notification::mark_all_notifications_as_read();
+        
+        // resturn a 401 error response if the employee doesn't exist anymore 
+        if ($res){
+            return new JsonResponse([
+                "status" => "error",
+                "msg" => $res
+            ], 401);
+        }
 
         return new JsonResponse(['status' => 'success']);
     }
 
 
-    public function markNotificationdAsPoppedUp(Request $request)
+    public function markNotificationsdAsPoppedUp(Request $request)
     {
+        // get notification ids list from the request body
+        $request_body = [
+            "notif_ids" => $request->request->get('notif_ids')
+        ] ;
+
+        // define the constraints of the request body   
+        $constraints =  new Assert\Collection([
+            'notif_ids' => [
+                new Assert\NotBlank(),
+                new Assert\Type('array'),
+                new Assert\All([
+                    new Assert\NotBlank(),
+                    new IsIntegerAndGreaterThanZero()
+                ])
+            ]
+        ]);
+
+        // validate the resquest body
+        $validationErrorRes = $this->validateData($query_parameter,$constraints) ;
+        if($validationErrorRes){
+            return $validationErrorRes ;
+        }
+
+
+
         // get the employee id of the requesting user or return an error response if the user doesn't exist
         $employee_id = $this->get_the_requesting_employee_id() ;
         if($employee_id instanceof JsonResponse){
             return $employee_id ;
         }
         
-        // initiate the db connection and start a transaction
-       $db = DzDb::getInstance();
-       $db->beginTransaction();
+        // initiate the db connection and start a transaction               
+        $db = DzDb::getInstance();
         
-        // check if the employee exists within this transaction
-        $res = $this->check_if_the_employee_exists($db,$employee_id);
-        if ($res instanceof JsonResponse){
-            return $res ;
-        }
-
+        // get the permission ids of the employee
+        EmployeePermission::init($db,$employee_id);
+        $permission_ids = EmployeePermission::get_permissions();
+        
+        // mark notifications as popped up
         Notification::init($db,$employee_id,$permission_ids);
-        $notification->mark_notification_as_popped_up($notif_id);
+        $res = $notification->mark_notification_as_popped_up($request_body['notif_ids']);
+
+        if ($res){
+            return new JsonResponse([
+                "status" => "error",
+                "msg" => $res
+            ], 401);
+        }
 
         return new JsonResponse(['status' => 'success']);
     }
