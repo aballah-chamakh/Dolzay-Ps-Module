@@ -12,15 +12,16 @@ class DzDb {
     public static function getInstance() {
             
                /* 
-                $host = _DB_SERVER_;
-                $dbname = _DB_NAME_;
-                $username = _DB_USER_;
-                $password = _DB_PASSWD_;
-                */
                 $host = "127.0.0.1:3306";
                 $dbname = "prestashop";
                 $username = "root";
                 $password = "";
+                */
+
+                $host = _DB_SERVER_;
+                $dbname = _DB_NAME_;
+                $username = _DB_USER_;
+                $password = _DB_PASSWD_;
 
                 $dsn = "mysql:host=$host;dbname=$dbname;charset=utf8mb4";
 
@@ -37,7 +38,7 @@ class DzDb {
 
     
 }
-
+/*
 $db = DzDb::getInstance() ;
 
 $db->beginTransaction();
@@ -64,3 +65,4 @@ try{
 }
 
 $db->commit();
+*/

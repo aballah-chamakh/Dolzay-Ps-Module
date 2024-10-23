@@ -105,7 +105,7 @@ class Dolzay extends Module
                     }
 
                     // EXECUTE THE CREATE_TABLE_SQL STATEMENT OF THE entity_obj
-                    if (!$db->execute($entity_class::CREATE_TABLE_SQL)) {
+                    if (!$db->execute($entity_class::get_create_table_sql())) {
                         PrestaShopLogger::addLog("the query CREATE_TABLE_SQL of the class $entity_class  was't executed very well", 3, null, 'Dolzay');
                         return false;
                     }

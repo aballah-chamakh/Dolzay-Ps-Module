@@ -5,13 +5,13 @@ namespace Dolzay\Apps\Notifications\Entities ;
 
 use Dolzay\ModuleConfig ;
 use Dolzay\CustomClasses\Db\DzDb ;  
-
+use Dolzay\Apps\Settings\Entities\Permission;
 use PDO ;
 
 class Notification {
 
 
-    private const TABLE_NAME = ModuleConfig::MODULE_PREFIX."notification" ;
+    public const TABLE_NAME = ModuleConfig::MODULE_PREFIX."notification" ;
     private const NOTIFICATION_TYPES = ["all","process", "config_error", "dormant_or_not_found_order"]  ;
    
     private static $db ;
@@ -19,22 +19,22 @@ class Notification {
     private static $employee_permission_ids ;
     private static $employee_permission_ids_placeholder ;
     
-
-    public const CREATE_TABLE_SQL = 'CREATE TABLE IF NOT EXISTS `'.self::TABLE_NAME.'` (
-        `id` INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
-        `type` ENUM("process","config_error","dormant_or_not_found_order") NOT NULL,
-        `pathname` VARCHAR(255) NOT NULL,
-        `logo` VARCHAR(255) NOT NULL,
-        `color` VARCHAR(50) NOT NULL,
-        `message` LONGTEXT NOT NULL,
-        `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-        `deletable_once_viewed_by_the_employee_with_the_id` INT(10) UNSIGNED NULL,
-        `permission_id` INT(10) UNSIGNED NULL,
-         PRIMARY KEY(`id`),
-         FOREIGN KEY (`permission_id`) REFERENCES `'.ModuleConfig::MODULE_PREFIX.'permission`(`id`) ON DELETE CASCADE,
-         FOREIGN KEY (`deletable_once_viewed_by_the_employee_with_the_id`) REFERENCES `'._DB_PREFIX_.'employee`(`id_employee`) ON DELETE CASCADE
-    ) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ;' ;
-    
+    public static function get_create_table_sql() {
+        return 'CREATE TABLE IF NOT EXISTS `'.self::TABLE_NAME.'` (
+            `id` INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+            `type` ENUM("process","config_error","dormant_or_not_found_order") NOT NULL,
+            `pathname` VARCHAR(255) NOT NULL,
+            `logo` VARCHAR(255) NOT NULL,
+            `color` VARCHAR(50) NOT NULL,
+            `message` LONGTEXT NOT NULL,
+            `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            `deletable_once_viewed_by_the_employee_with_the_id` INT(10) UNSIGNED NULL,
+            `permission_id` INT(10) UNSIGNED NULL,
+            PRIMARY KEY(`id`),
+            FOREIGN KEY (`permission_id`) REFERENCES `'.Permission::TABLE_NAME.'` (`id`) ON DELETE CASCADE,
+            FOREIGN KEY (`deletable_once_viewed_by_the_employee_with_the_id`) REFERENCES `'._DB_PREFIX_. \EmployeeCore::$definition['table'] . '`(`id_employee`) ON DELETE CASCADE
+        ) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ;' ;
+    }
     public const DROP_TABLE_SQL = 'DROP TABLE IF EXISTS `'.self::TABLE_NAME . '`;';
     
 
@@ -63,14 +63,13 @@ class Notification {
         $query = "
                 SELECT COUNT(*)
                 FROM `".self::TABLE_NAME."` n
-                LEFT JOIN `".ModuleConfig::MODULE_PREFIX."notification_viewed_by` nv 
+                LEFT JOIN `".NotificationViewedBy::TABLE_NAME."` nv 
                 ON n.id = nv.notif_id AND nv.employee_id = ?
                 WHERE n.permission_id IN (".self::$employee_permission_ids_placeholder.") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
-        
         $stmt = self::$db->prepare($query);
         $stmt->execute(array_merge([self::$employee_id], self::$employee_permission_ids));
 
-        $notifications_count = (int) $stmt->fetchColumn();
+        $notifications_count = $stmt->fetchColumn();
         
         return $notifications_count  ;
     }
@@ -85,11 +84,11 @@ class Notification {
 
     public function get_the_unpopped_up_notifications_by_the_empolyee(int $page_nb, int $batch_size) {
         
-        
+    
         $query = "SELECT id,type,pathname,logo,message,DATE_FORMAT(created_at, '%H:%i:%S %d-%m-%Y') as created_at,color FROM `".self::TABLE_NAME."` n
-        LEFT JOIN `".ModuleConfig::MODULE_PREFIX."notification_viewed_by` nv 
+        LEFT JOIN `" . NotificationViewedBy::TABLE_NAME . "` nv 
         ON n.id = nv.notif_id AND nv.employee_id = ?
-        LEFT JOIN `".ModuleConfig::MODULE_PREFIX."notification_popped_up_by` np 
+        LEFT JOIN `" . NotificationPoppedUpBy::TABLE_NAME . "` np 
         ON n.id = np.notif_id AND np.employee_id = ?
         WHERE n.permission_id IN (".self::$employee_permission_ids_placeholder.") AND (nv.employee_id IS NULL AND np.employee_id IS NULL) " ;
         
@@ -101,7 +100,7 @@ class Notification {
                         )
                 );
 
-        $unpopped_up_notifications_by_the_empolyee = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $unpopped_up_notifications_by_the_empolyee = $stmt->fetchAll();
 
         $unpopped_up_notifications_by_the_empolyee_count = count($unpopped_up_notifications_by_the_empolyee);
         if ($unpopped_up_notifications_by_the_empolyee_count == 0) {
@@ -129,7 +128,7 @@ class Notification {
                 $count_query = "
                 SELECT COUNT(*) as count
                 FROM `".self::TABLE_NAME."` n
-                LEFT JOIN `".ModuleConfig::MODULE_PREFIX."notification_viewed_by` nv 
+                LEFT JOIN `".NotificationViewedBy::TABLE_NAME."` nv 
                 ON n.id = nv.notif_id AND nv.employee_id = :employee_id
                 WHERE n.permission_id IN (".$employee_permission_ids_placeholder.") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
                 
@@ -154,7 +153,7 @@ class Notification {
             SELECT id, type, pathname, logo, message, DATE_FORMAT(created_at, '%H:%i:%S %d-%m-%Y') as created_at, color,
                    (CASE WHEN nv.employee_id IS NOT NULL THEN TRUE ELSE FALSE END) AS viewed
             FROM `".self::TABLE_NAME."` n
-            LEFT JOIN `".ModuleConfig::MODULE_PREFIX."notification_viewed_by` nv 
+            LEFT JOIN `".NotificationViewedBy::TABLE_NAME."` nv 
             ON n.id = nv.notif_id AND nv.employee_id = :employee_id
             WHERE n.permission_id IN (".$employee_permission_ids_placeholder.") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
         
@@ -195,7 +194,7 @@ class Notification {
 
         // get the notfication 
         $stmt = self::$db->prepare("SELECT * FROM `".self::TABLE_NAME."` WHERE id = ?  AND permission_id IN (".self::$employee_permission_ids_placeholder.")");
-        $stmt->execute(array_merger([(int)$notif_id],self::$employee_permission_ids));
+        $stmt->execute(array_merge([(int)$notif_id],self::$employee_permission_ids));
         $notification = $stmt->fetch();
 
         // if the notification doesn't exist anymore, or the employee isn't permitted to access it, act like we marked it as read and return
@@ -209,7 +208,7 @@ class Notification {
             $stmt->execute(['notif_id' => (int)$notif_id]);
         }else{ // otherwise mark the notfication as read by the employee
         
-            $stmt = self::$db->prepare("INSERT INTO `".ModuleConfig::MODULE_PREFIX."notification_viewed_by` (employee_id, notif_id) VALUES (:employee_id, :notif_id)");
+            $stmt = self::$db->prepare("INSERT INTO `".NotificationViewedBy::TABLE_NAME."` (employee_id, notif_id) VALUES (:employee_id, :notif_id)");
             try {
                 $stmt->execute([
                     'employee_id' => self::$employee_id,
@@ -238,7 +237,7 @@ class Notification {
                   WHERE permission_id IN (".self::$employee_permission_ids_placeholder.")" ;  
         $stmt = self::$db->prepare($query);
         $stmt->execute(self::$employee_permission_ids);
-        $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $notifications = $stmt->fetchAll();
 
         // loop through all notifications and mark them as read
         foreach ($notifications as $notification) {
@@ -249,7 +248,7 @@ class Notification {
                 $stmt->execute(['notif_id' => $notification['id']]);
             }else{
                 // otherwise mark the notfication as read by the employee  
-                $stmt = self::$db->prepare("INSERT INTO `".ModuleConfig::MODULE_PREFIX."notification_viewed_by` (employee_id, notif_id) VALUES (:employee_id, :notif_id)");
+                $stmt = self::$db->prepare("INSERT INTO `".NotificationViewedBy::TABLE_NAME."` (employee_id, notif_id) VALUES (:employee_id, :notif_id)");
                 try {
                     $stmt->execute([
                         'employee_id' => self::$employee_id,
@@ -298,7 +297,7 @@ class Notification {
 
         // mark the notifications as popped up
         foreach ($notifications as $notification) {
-            $stmt = self::$db->prepare("INSERT INTO `".ModuleConfig::MODULE_PREFIX."notification_popped_up_by` (employee_id, notif_id) VALUES (:employee_id, :notif_id)");
+            $stmt = self::$db->prepare("INSERT INTO `".NotificationPoppedBy::TABLE_NAME."` (employee_id, notif_id) VALUES (:employee_id, :notif_id)");
             try{
                 $stmt->execute([
                     'employee_id' => self::$employee_id,

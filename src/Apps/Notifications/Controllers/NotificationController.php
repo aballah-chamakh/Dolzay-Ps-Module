@@ -35,9 +35,9 @@ class NotificationController extends FrameworkBundleAdminController
 
     public function check_if_the_employee_exists($db,$employee_id){
         
-        
+        $employee_table_name = _DB_PREFIX_.\EmployeeCore::$definition['table'] ;
         // check if the employee with the id $employee_id exists
-        $checkEmployeeQuery = "SELECT COUNT(*) FROM ". _DB_PREFIX_ ."employee WHERE id_employee = :employee_id";
+        $checkEmployeeQuery = "SELECT COUNT(*) FROM ".$employee_table_name." WHERE id_employee = :employee_id";
         $stmt = $db->prepare($checkEmployeeQuery);
         $stmt->bindParam(':employee_id', $employee_id, \PDO::PARAM_INT);
         $stmt->execute();
@@ -79,15 +79,13 @@ class NotificationController extends FrameworkBundleAdminController
     public function getNotificationsOverview(Request $request)
     {   
 
-        return new JsonResponse([
-            "iiiiiiiii" => EmployeeCore::$definition['table']
-        ]); 
 
         // get the employee id of the requesting user or return an error response if the user doesn't exist
-        $employee_id = $this->get_the_requesting_employee_id() ;
-        if($employee_id instanceof JsonResponse){
-            return $employee_id ;
+        $res = $this->get_the_requesting_employee_id() ;
+        if($res instanceof JsonResponse){
+            return $res ;
         }
+        $employee_id = $res ;
         
         //   -- validate the query parameters -- 
 
@@ -96,6 +94,9 @@ class NotificationController extends FrameworkBundleAdminController
             "page_nb" =>  $request->query->get('page_nb'),
             "batch_size" => $request->query->get('batch_size')
         ] ;
+
+
+    
 
         // define the constraints of each query parameter
         $constraints =  new Assert\Collection([
@@ -115,6 +116,7 @@ class NotificationController extends FrameworkBundleAdminController
             return $validationErrorRes ;
         }
 
+
         //  -- return the notifications overview data --
     
         // initiate the db connection and start a transaction
@@ -131,6 +133,16 @@ class NotificationController extends FrameworkBundleAdminController
         EmployeePermission::init($db,$employee_id);
         $employee_permission_ids = EmployeePermission::get_permissions();
 
+        // return a 401 response if the employee doesn't have any permissions
+        if(empty($employee_permission_ids)){
+            // end the transaction
+            $db->commit();
+            return new JsonResponse([
+                "status" => "error",
+                "msg" => "this employee doesn't have any permissions"
+            ], 401);
+        }
+
 
         // get the notifications overview data whitin the transaction
         Notification::init($db,$employee_id,$employee_permission_ids);
@@ -138,7 +150,7 @@ class NotificationController extends FrameworkBundleAdminController
         [$unpopped_up_notifs_count,$unpopped_up_notifications] = Notification::get_the_unpopped_up_notifications_by_the_empolyee($query_parameter["page_nb"],$query_parameter["batch_size"]);  
         
         // end the transaction
-        $db->commit();
+        //$db->commit();
 
         return new JsonResponse([
             "status" => "success",
