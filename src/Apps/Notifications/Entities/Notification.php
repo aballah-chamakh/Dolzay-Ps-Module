@@ -111,7 +111,7 @@ class Notification {
 
     }
 
-    public function get_notifications($notif_type, $page_nb, $batch_size) {
+    public static function get_notifications($notif_type, $page_nb, $batch_size) {
 
         $notifications = [];
         
@@ -119,7 +119,7 @@ class Notification {
         //$notifications['all_notifs_cnt'] = $this->get_all_notifications_count($employee_id);
 
         // GET THE COUNT OF NOTIFICATIONS OF EACH TYPE
-        foreach ($this::NOTIFICATION_TYPES as $type) {
+        foreach (self::NOTIFICATION_TYPES as $type) {
             // skip the requested type 
             if ($type == $notif_type) {
                 continue;
@@ -130,8 +130,8 @@ class Notification {
                 FROM `".self::TABLE_NAME."` n
                 LEFT JOIN `".NotificationViewedBy::TABLE_NAME."` nv 
                 ON n.id = nv.notif_id AND nv.employee_id = :employee_id
-                WHERE n.permission_id IN (".$employee_permission_ids_placeholder.") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
-                
+                WHERE n.permission_id IN (".self::$employee_permission_ids_placeholder.") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
+
                 if ($type != "all") {
                     $count_query .= " AND n.type = :notif_type";
                     $stmt = self::$db->prepare($count_query);
@@ -155,7 +155,7 @@ class Notification {
             FROM `".self::TABLE_NAME."` n
             LEFT JOIN `".NotificationViewedBy::TABLE_NAME."` nv 
             ON n.id = nv.notif_id AND nv.employee_id = :employee_id
-            WHERE n.permission_id IN (".$employee_permission_ids_placeholder.") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
+            WHERE n.permission_id IN (".self::$employee_permission_ids_placeholder.") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
         
         if ($notif_type != "all") {
             $query .= " AND n.type = :notif_type";
@@ -178,7 +178,7 @@ class Notification {
         }
 
         // get the unread and read notifications count
-        [$notifications["read_notifs_cnt"], $notifications["unread_notifs_cnt"]] = $this->get_unread_and_read_notifications_count($requested_notifications);
+        [$notifications["read_notifs_cnt"], $notifications["unread_notifs_cnt"]] = self::get_unread_and_read_notifications_count($requested_notifications);
         
         // paginate the notifications
         $requested_notifications_paginated = self::paginate($requested_notifications, $notifications[$notif_type."_notifs_cnt"], $page_nb, $batch_size);
@@ -326,7 +326,7 @@ class Notification {
         }
     }
     
-    private function get_unread_and_read_notifications_count($notifications) {
+    private static function get_unread_and_read_notifications_count($notifications) {
         $read_count = 0;
         $unread_count = 0;
 
