@@ -17,7 +17,6 @@ class Notification {
     private static $db ;
     private static $employee_id ;
     private static $employee_permission_ids ;
-    private static $employee_permission_ids_placeholder ;
     
     public static function get_create_table_sql() {
         return 'CREATE TABLE IF NOT EXISTS `'.self::TABLE_NAME.'` (
@@ -42,8 +41,7 @@ class Notification {
     {
         self::$db = $db;
         self::$employee_id = $employee_id;
-        self::$employee_permission_ids = $employee_permission_ids;
-        self::$employee_permission_ids_placeholder = implode(',', array_fill(0, count(self::$employee_permission_ids), '?'));
+        self::$employee_permission_ids = implode(',', $employee_permission_ids);
 
     }
 
@@ -65,9 +63,9 @@ class Notification {
                 FROM `".self::TABLE_NAME."` n
                 LEFT JOIN `".NotificationViewedBy::TABLE_NAME."` nv 
                 ON n.id = nv.notif_id AND nv.employee_id = ?
-                WHERE n.permission_id IN (".self::$employee_permission_ids_placeholder.") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
+                WHERE n.permission_id IN (".self::$employee_permission_ids.") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
         $stmt = self::$db->prepare($query);
-        $stmt->execute(array_merge([self::$employee_id], self::$employee_permission_ids));
+        $stmt->execute([self::$employee_id]);
 
         $notifications_count = $stmt->fetchColumn();
         
@@ -90,15 +88,10 @@ class Notification {
         ON n.id = nv.notif_id AND nv.employee_id = ?
         LEFT JOIN `" . NotificationPoppedUpBy::TABLE_NAME . "` np 
         ON n.id = np.notif_id AND np.employee_id = ?
-        WHERE n.permission_id IN (".self::$employee_permission_ids_placeholder.") AND (nv.employee_id IS NULL AND np.employee_id IS NULL) " ;
+        WHERE n.permission_id IN (".self::$employee_permission_ids.") AND (nv.employee_id IS NULL AND np.employee_id IS NULL) " ;
         
         $stmt = self::$db->prepare($query);
-        $stmt->execute(
-                    array_merge(
-                        [self::$employee_id,self::$employee_id],
-                        self::$employee_permission_ids
-                        )
-                );
+        $stmt->execute([self::$employee_id,self::$employee_id]);
 
         $unpopped_up_notifications_by_the_empolyee = $stmt->fetchAll();
 
@@ -129,17 +122,17 @@ class Notification {
                 SELECT COUNT(*) as count
                 FROM `".self::TABLE_NAME."` n
                 LEFT JOIN `".NotificationViewedBy::TABLE_NAME."` nv 
-                ON n.id = nv.notif_id AND nv.employee_id = :employee_id
-                WHERE n.permission_id IN (".self::$employee_permission_ids_placeholder.") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
+                ON n.id = nv.notif_id AND nv.employee_id = ?
+                WHERE n.permission_id IN (".self::$employee_permission_ids.") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
 
                 if ($type != "all") {
-                    $count_query .= " AND n.type = :notif_type";
+                    $count_query .= " AND n.type = ?";
                     $stmt = self::$db->prepare($count_query);
-                    $stmt->execute(["employee_id"=>self::$employee_id,"notif_type"=>$type]);
+                    $stmt->execute([self::$employee_id,$type]);
                     
                 }else{
                     $stmt = self::$db->prepare($count_query);
-                    $stmt->execute(["employee_id"=>self::$employee_id]);
+                    $stmt->execute([self::$employee_id]);
                 }
                 //echo $type."_notifs_cnt : " . $stmt->fetchColumn() . "|| <br/>";
                 $notifications_count = (int) $stmt->fetchColumn();
@@ -155,7 +148,7 @@ class Notification {
             FROM `".self::TABLE_NAME."` n
             LEFT JOIN `".NotificationViewedBy::TABLE_NAME."` nv 
             ON n.id = nv.notif_id AND nv.employee_id = :employee_id
-            WHERE n.permission_id IN (".self::$employee_permission_ids_placeholder.") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
+            WHERE n.permission_id IN (".self::$employee_permission_ids.") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
         
         if ($notif_type != "all") {
             $query .= " AND n.type = :notif_type";
@@ -193,7 +186,7 @@ class Notification {
 
 
         // get the notfication 
-        $stmt = self::$db->prepare("SELECT * FROM `".self::TABLE_NAME."` WHERE id = ?  AND permission_id IN (".self::$employee_permission_ids_placeholder.")");
+        $stmt = self::$db->prepare("SELECT * FROM `".self::TABLE_NAME."` WHERE id = ?  AND permission_id IN (".self::$employee_permission_ids.")");
         $stmt->execute(array_merge([(int)$notif_id],self::$employee_permission_ids));
         $notification = $stmt->fetch();
 
@@ -234,7 +227,7 @@ class Notification {
 
         // get all notifications for update to lock the notifications so that no other request can't delete the notifications while the transaction of this request is running
         $query = "SELECT id,deletable_once_viewed_by_the_employee_with_the_id FROM `".self::TABLE_NAME."` 
-                  WHERE permission_id IN (".self::$employee_permission_ids_placeholder.")" ;  
+                  WHERE permission_id IN (".self::$employee_permission_ids.")" ;  
         $stmt = self::$db->prepare($query);
         $stmt->execute(self::$employee_permission_ids);
         $notifications = $stmt->fetchAll();
@@ -291,7 +284,7 @@ class Notification {
 
         // get the notfications to pop up
         $stmt = self::$db->prepare("SELECT id FROM `".self::TABLE_NAME."` WHERE id IN ($notif_ids_placehoder)
-                                    WHERE permission id IN ".self::$employee_permission_ids_placeholder." ;");
+                                    WHERE permission id IN ".self::$employee_permission_ids." ;");
         $stmt->execute(array_merge($notif_ids,self::$employee_permission_ids));
         $notifications = $stmt->fetchAll();
 

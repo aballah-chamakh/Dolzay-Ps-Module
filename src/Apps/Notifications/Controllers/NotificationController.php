@@ -14,7 +14,6 @@ use Dolzay\CustomClasses\Db\DzDb ;
 use Dolzay\Apps\Settings\Entities\EmployeePermission;
 use Dolzay\Apps\Settings\Entities\Employee ;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use EmployeeCore ;
 
 class NotificationController extends FrameworkBundleAdminController
 {
@@ -47,7 +46,7 @@ class NotificationController extends FrameworkBundleAdminController
         if (!$employeeExists) {
             $db->commit();
             return new JsonResponse([
-                "status" => "error",
+                "status" => "unauthorized",
                 "msg" => "this employee doesn't exist anymore"
             ], 401);
         }
@@ -88,6 +87,8 @@ class NotificationController extends FrameworkBundleAdminController
         // remove the employee right before getting his id if the test parameter is set to true
         if ($test_parameteter["remove_employee_right_before_getting_his_id"]){
             $employee_id = $this->get_the_requesting_employee_id() ;
+            $db =  DzDb::getInstance();
+            Employee::init($db);
             Employee::delete($employee_id) ;
         }
 
@@ -105,8 +106,6 @@ class NotificationController extends FrameworkBundleAdminController
             "page_nb" =>  $request->query->get('page_nb'),
             "batch_size" => $request->query->get('batch_size')
         ] ;
-
-
     
 
         // define the constraints of each query parameter
@@ -130,6 +129,8 @@ class NotificationController extends FrameworkBundleAdminController
 
         // remove the employee right before starting the transaction if the test parameter is set to true
         if ($test_parameteter["remove_employee_right_before_starting_the_transaction"]){
+            $db =  DzDb::getInstance();
+            Employee::init($db);
             Employee::delete($employee_id) ;
         }
         
@@ -155,7 +156,7 @@ class NotificationController extends FrameworkBundleAdminController
             $db->commit();
 
             return new JsonResponse([
-                "status" => "error",
+                "status" => "unauthorized",
                 "msg" => "this employee doesn't have any permissions"
             ], 401);
         }
@@ -185,15 +186,18 @@ class NotificationController extends FrameworkBundleAdminController
     {
         // get the test query paramerters
         $test_parameteter = [
-            "remove_employee_right_before_getting_his_id" =>  $request->query->get('remove_employee_right_before_getting_his_id'),
-            "remove_employee_right_before_starting_the_transaction" => $request->query->get('remove_employee_right_before_starting_the_transaction')
+            "remove_employee_right_before_getting_his_id" =>  (int)$request->query->get('remove_employee_right_before_getting_his_id'),
+            "remove_employee_right_before_starting_the_transaction" => (int)$request->query->get('remove_employee_right_before_starting_the_transaction')
         ] ;
 
         // remove the employee right before getting his id if the test parameter is set to true
         if ($test_parameteter["remove_employee_right_before_getting_his_id"]){
             $employee_id = $this->get_the_requesting_employee_id() ;
+            $db =  DzDb::getInstance();
+            Employee::init($db);
             Employee::delete($employee_id) ;
         }
+
         // get the employee id of the requesting user or return an error response if the user doesn't exist
         $res = $this->get_the_requesting_employee_id() ;
         if($res instanceof JsonResponse){
@@ -233,6 +237,8 @@ class NotificationController extends FrameworkBundleAdminController
 
         // remove the employee right before starting the transaction if the test parameter is set to true
         if ($test_parameteter["remove_employee_right_before_starting_the_transaction"]){
+            $db = DzDb::getInstance();
+            Employee::init($db);
             Employee::delete($employee_id) ;
         }
 
@@ -255,7 +261,7 @@ class NotificationController extends FrameworkBundleAdminController
             // end the transaction
             $db->commit();
             return new JsonResponse([
-                "status" => "error",
+                "status" => "unauthorized",
                 "msg" => "this employee doesn't have any permissions"
             ], 401);
         }
@@ -297,7 +303,7 @@ class NotificationController extends FrameworkBundleAdminController
         // resturn a 401 error response if the employee doesn't exist anymore 
         if($res){
             return new JsonResponse([
-                "status" => "error",
+                "status" => "unauthorized",
                 "msg" => $res
             ], 401);
         }
@@ -330,7 +336,7 @@ class NotificationController extends FrameworkBundleAdminController
         // resturn a 401 error response if the employee doesn't exist anymore 
         if ($res){
             return new JsonResponse([
-                "status" => "error",
+                "status" => "unauthorized",
                 "msg" => $res
             ], 401);
         }
@@ -385,7 +391,7 @@ class NotificationController extends FrameworkBundleAdminController
 
         if ($res){
             return new JsonResponse([
-                "status" => "error",
+                "status" => "unauthorized",
                 "msg" => $res
             ], 401);
         }
