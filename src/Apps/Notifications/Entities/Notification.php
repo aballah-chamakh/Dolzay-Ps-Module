@@ -235,11 +235,15 @@ class Notification {
         // loop through all notifications and mark them as read
         foreach ($notifications as $notification) {
 
-            // if the attribute  deletable_once_viewed_by_the_employee_with_the_id of the notfication equal the $employee_ id, delete the notfication
+            // if the attribute  deletable_once_viewed_by_the_employee_with_the_id of the notfication equal the $employee_id, delete the notfication even if the employee doesn't have the permission to delete it
             if ($notification["deletable_once_viewed_by_the_employee_with_the_id"] == self::$employee_id){
                 $stmt = self::$db->prepare("DELETE FROM `".self::TABLE_NAME."` WHERE id = :notif_id");
                 $stmt->execute(['notif_id' => $notification['id']]);
             }else{
+                // check if the employee has the permission to mark the notification as read
+                if (!in_array($this->get_notification_perm_id($notification['id']), self::$employee_permission_ids)) {
+                    continue;
+                }
                 // otherwise mark the notfication as read by the employee  
                 $stmt = self::$db->prepare("INSERT INTO `".NotificationViewedBy::TABLE_NAME."` (employee_id, notif_id) VALUES (:employee_id, :notif_id)");
                 try {

@@ -300,7 +300,7 @@ class NotificationController extends FrameworkBundleAdminController
         Notification::init($db,$employee_id,$employee_permission_ids);
         $res = $notification::mark_notification_as_read($notif_id);
 
-        // resturn a 401 error response if the employee doesn't exist anymore 
+        // return a 401 error response if the employee doesn't exist anymore 
         if($res){
             return new JsonResponse([
                 "status" => "unauthorized",
