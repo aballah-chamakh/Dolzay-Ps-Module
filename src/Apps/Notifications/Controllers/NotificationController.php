@@ -296,6 +296,9 @@ class NotificationController extends FrameworkBundleAdminController
         EmployeePermission::init($db,$employee_id);
         $employee_permission_ids = EmployeePermission::get_permissions();
 
+        // note : even if the employee doesn't have any permissions i wan't to proceed to check if this 
+        //        notification is deletable by him
+
         // mark the notificaiton as read
         Notification::init($db,$employee_id,$employee_permission_ids);
         $res = $notification::mark_notification_as_read($notif_id);
@@ -309,6 +312,15 @@ class NotificationController extends FrameworkBundleAdminController
         }
 
         return new JsonResponse(['status' => 'success']);
+
+        /*
+          notes : 
+           - if an employee no longer has the permission to access a notification, i will not mark it as read but i will
+             return success and i will let the periodic refresh inform the employee that this notification is no longer accessible 
+             for him by not showing it to him again 
+           - if an employee no longer has the permission to access a notification but this notification is deletable once viewed
+             by him we will delete this notification and return success so that this notification does't stay in the db     
+        */
     }
 
 

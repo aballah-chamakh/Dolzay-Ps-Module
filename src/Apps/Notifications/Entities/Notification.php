@@ -181,26 +181,42 @@ class Notification {
 
     }
 
-    public static function mark_notification_as_read($notif_id ) {
+    public static function mark_notification_as_read($notif_id) {
 
 
 
         // get the notfication 
-        $stmt = self::$db->prepare("SELECT * FROM `".self::TABLE_NAME."` WHERE id = ?  AND permission_id IN (".self::$employee_permission_ids.")");
+        $stmt = self::$db->prepare("SELECT * FROM `".self::TABLE_NAME."` WHERE id = ? ");
         $stmt->execute(array_merge([(int)$notif_id],self::$employee_permission_ids));
         $notification = $stmt->fetch();
 
-        // if the notification doesn't exist anymore, or the employee isn't permitted to access it, act like we marked it as read and return
+        // if the notification doesn't exist anymore , return (Let the periodic refresh inform the employee that the notification was deleted)
         if (!$notification) {
-            return  ;
+            return [[
+                "status" => "success",
+                "message" => "NOTIFICATION_NOT_FOUND"
+            ],200] ;
         }
 
-        // if the attribute  deletable_once_viewed_by_the_employee_with_the_id of the notfication equal the $emplyee id, delete the notfication
+        // if the attribute  deletable_once_viewed_by_the_employee_with_the_id of the notfication equal to the id of the employee, delete the notfication, 
+        // even if the employee doesn't have the permission to delete it. then return (let the periodic refresh inform the employee that the notification was deleted)
         if ($notification["deletable_once_viewed_by_the_employee_with_the_id"] == self::$employee_id){
             $stmt = self::$db->prepare("DELETE FROM `".self::TABLE_NAME."` WHERE id = :notif_id");
             $stmt->execute(['notif_id' => (int)$notif_id]);
-        }else{ // otherwise mark the notfication as read by the employee
-        
+            return [[
+                "status" => "success",
+                "message" => "DELETABLE_ONCE_VOEWE_BY_THE_EMPLOYEE"
+            ],200] ;
+
+        }else{ 
+            // if the employee doesn't have the permission to mark the notification as read, return (let the periodic refresh inform the employee that the notification is no longer part of his permissions)
+            if (!in_array($notification["permission_id"],self::$employee_permission_id)){
+                return [[
+                    "status" => "success",
+                    "message" => "EMPLOYEE_NOT_PERMITTED_TO_MARK_NOTIFICATION_AS_READ"
+                ],200] ;
+            }
+            // otherwise mark the notfication as read by the employee
             $stmt = self::$db->prepare("INSERT INTO `".NotificationViewedBy::TABLE_NAME."` (employee_id, notif_id) VALUES (:employee_id, :notif_id)");
             try {
                 $stmt->execute([
@@ -212,12 +228,32 @@ class Notification {
                 // 1452 : mysql error code for adding foreign key of a record that doesn't exist
                 // 1062 : mysql error code for adding a duplicate record for a unique key
 
-                // if we have a constraint violation error and the error is about a foreign key that doesn't exist or a unique key
-                if ($e->getCode() == 23000 && (strpos($e->getMessage(), '1452') || strpos($e->getMessage(), '1062'))) {
-                    // act like we marked the notfication as read
-                    return;
+                // if we have a constraint violation error 
+                if ($e->getCode() == 23000) {
+                    $error_msg = $e->getMessage();
+                    // if one of the foreign keys doesn't exist
+                    if (strpos($error_msg, '1452')){
+                        // if the employee doesn't exist anymore, return "REDIRECT_TO_LOGIN_PAGE"
+                        if (strpos($error_msg, _DB_PREFIX_.\EmployeeCore::$definition['table'])){
+                            return [[
+                                "status" => "success",
+                                "message" => "REDIRECT_TO_LOGIN_PAGE"
+                            ],200] ;
+                        }
+                        // if the notification doesn't exist anymore, return (let the periodic refresh inform the employee that the notification was deleted)
+                        return [[
+                            "status" => "success",
+                            "message" => "NOTIFICATION_WAS_NOT_FOUND_RIGHT_BEFORE_MARKING_IT_AS_VIEWED"
+                        ],200] ;
+                    }elseif (strpos($error_msg, '1062')) {
+                        // if the notification is already marked as viewed, return (let the periodic refresh inform the employee that the notification it was already marked as viewed)
+                        return [[
+                            "status" => "success",
+                            "message" => "NOTIFICATION_ALREADY_MARKED_AS_VIEWED"
+                        ],200] ;
+                    }
                 }
-                // Re-throw the exception if it's not a constraint violation
+                // otherwise re-throw the exception if it's not a constraint violation error
                 throw $e;
             }
         }
@@ -244,6 +280,7 @@ class Notification {
                 if (!in_array($this->get_notification_perm_id($notification['id']), self::$employee_permission_ids)) {
                     continue;
                 }
+
                 // otherwise mark the notfication as read by the employee  
                 $stmt = self::$db->prepare("INSERT INTO `".NotificationViewedBy::TABLE_NAME."` (employee_id, notif_id) VALUES (:employee_id, :notif_id)");
                 try {
@@ -257,14 +294,14 @@ class Notification {
                     if ($e->getCode() == 23000) {
                         // if one of the foreign keys doesn't exist
                         if (strpos($error_msg, '1452')){
-                            // if the employee doesn't exist anymore, return
-                            if (strpos($error_msg, 'ps_employee')){
+                            // if the employee doesn't exist anymore, return "REDIRECT_TO_LOGIN_PAGE"
+                            if (strpos($error_msg, _DB_PREFIX_.\EmployeeCore::$definition['table'])){
                                 return "REDIRECT_TO_LOGIN_PAGE" ;
                             }
-                            // if the notification doesn't exist anymore,act like we marked it as read
+                            // if the notification doesn't exist anymore, by pass it (let the periodic refresh let the employee knows the it was deleted)
                             continue ;
                         }elseif (strpos($error_msg, '1062')) {
-                            // if the notification is already marked as read, by pass it 
+                            // if the notification is already marked as viewed, by pass it 
                             continue;
                         }
                     }
@@ -306,11 +343,11 @@ class Notification {
                 if ($e->getCode() == 23000) {
                     // if one of the foreign keys doesn't exist
                     if (strpos($error_msg, '1452')){
-                        // if the employee doesn't exist anymore, return
-                        if (strpos($error_msg, 'ps_employee')){
+                        // if the employee doesn't exist anymore, return "REDIRECT_TO_LOGIN_PAGE"
+                        if (strpos($error_msg, _DB_PREFIX_.\EmployeeCore::$definition['table'])){
                             return "REDIRECT_TO_LOGIN_PAGE" ;
                         }
-                        // if the notification doesn't exist anymore,act like we marked it as popped up
+                        // if the notification doesn't exist anymore,by pass it (let the periodic refresh let the employee knows that it was deleted)
                         continue ;
                     }elseif (strpos($error_msg, '1062')) {
                         // if the notification is already marked as popped up, by pass it 
