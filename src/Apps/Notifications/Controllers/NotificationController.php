@@ -301,17 +301,12 @@ class NotificationController extends FrameworkBundleAdminController
 
         // mark the notificaiton as read
         Notification::init($db,$employee_id,$employee_permission_ids);
-        $res = $notification::mark_notification_as_read($notif_id);
+        $response_and_status_code = Notification::mark_notification_as_read($notif_id);
 
-        // return a 401 error response if the employee doesn't exist anymore 
-        if($res){
-            return new JsonResponse([
-                "status" => "unauthorized",
-                "msg" => $res
-            ], 401);
-        }
+        // return the response
+        [$response,$status_code] = $response_and_status_code ;
+        return new JsonResponse($response, $status_code) ;
 
-        return new JsonResponse(['status' => 'success']);
 
         /*
           notes : 

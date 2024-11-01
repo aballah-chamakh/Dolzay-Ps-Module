@@ -16,7 +16,8 @@ class Notification {
    
     private static $db ;
     private static $employee_id ;
-    private static $employee_permission_ids ;
+    private static $employee_permission_ids_str ;
+    private static $employee_permission_ids_arr ;
     
     public static function get_create_table_sql() {
         return 'CREATE TABLE IF NOT EXISTS `'.self::TABLE_NAME.'` (
@@ -28,7 +29,7 @@ class Notification {
             `message` LONGTEXT NOT NULL,
             `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
             `deletable_once_viewed_by_the_employee_with_the_id` INT(10) UNSIGNED NULL,
-            `permission_id` INT(10) UNSIGNED NULL,
+            `permission_id` INT(10) UNSIGNED,
             PRIMARY KEY(`id`),
             FOREIGN KEY (`permission_id`) REFERENCES `'.Permission::TABLE_NAME.'` (`id`) ON DELETE CASCADE,
             FOREIGN KEY (`deletable_once_viewed_by_the_employee_with_the_id`) REFERENCES `'._DB_PREFIX_. \EmployeeCore::$definition['table'] . '`(`id_employee`) ON DELETE CASCADE
@@ -41,8 +42,8 @@ class Notification {
     {
         self::$db = $db;
         self::$employee_id = $employee_id;
-        self::$employee_permission_ids = implode(',', $employee_permission_ids);
-
+        self::$employee_permission_ids_str = implode(',', $employee_permission_ids) ;
+        self::$employee_permission_ids_arr = $employee_permission_ids ;
     }
 
 
@@ -63,7 +64,7 @@ class Notification {
                 FROM `".self::TABLE_NAME."` n
                 LEFT JOIN `".NotificationViewedBy::TABLE_NAME."` nv 
                 ON n.id = nv.notif_id AND nv.employee_id = ?
-                WHERE n.permission_id IN (".self::$employee_permission_ids.") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
+                WHERE n.permission_id IN (". self::$employee_permission_ids_str . ") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
         $stmt = self::$db->prepare($query);
         $stmt->execute([self::$employee_id]);
 
@@ -88,7 +89,7 @@ class Notification {
         ON n.id = nv.notif_id AND nv.employee_id = ?
         LEFT JOIN `" . NotificationPoppedUpBy::TABLE_NAME . "` np 
         ON n.id = np.notif_id AND np.employee_id = ?
-        WHERE n.permission_id IN (".self::$employee_permission_ids.") AND (nv.employee_id IS NULL AND np.employee_id IS NULL) " ;
+        WHERE n.permission_id IN (" . self::$employee_permission_ids_str . ") AND (nv.employee_id IS NULL AND np.employee_id IS NULL) " ;
         
         $stmt = self::$db->prepare($query);
         $stmt->execute([self::$employee_id,self::$employee_id]);
@@ -123,7 +124,7 @@ class Notification {
                 FROM `".self::TABLE_NAME."` n
                 LEFT JOIN `".NotificationViewedBy::TABLE_NAME."` nv 
                 ON n.id = nv.notif_id AND nv.employee_id = ?
-                WHERE n.permission_id IN (".self::$employee_permission_ids.") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
+                WHERE n.permission_id IN (" . self::$employee_permission_ids_str . ") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
 
                 if ($type != "all") {
                     $count_query .= " AND n.type = ?";
@@ -148,7 +149,7 @@ class Notification {
             FROM `".self::TABLE_NAME."` n
             LEFT JOIN `".NotificationViewedBy::TABLE_NAME."` nv 
             ON n.id = nv.notif_id AND nv.employee_id = :employee_id
-            WHERE n.permission_id IN (".self::$employee_permission_ids.") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
+            WHERE n.permission_id IN (" . self::$employee_permission_ids_str . ") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
         
         if ($notif_type != "all") {
             $query .= " AND n.type = :notif_type";
@@ -183,11 +184,9 @@ class Notification {
 
     public static function mark_notification_as_read($notif_id) {
 
-
-
         // get the notfication 
-        $stmt = self::$db->prepare("SELECT * FROM `".self::TABLE_NAME."` WHERE id = ? ");
-        $stmt->execute(array_merge([(int)$notif_id],self::$employee_permission_ids));
+        $stmt = self::$db->prepare("SELECT * FROM `".self::TABLE_NAME."` WHERE id = :notif_id");
+        $stmt->execute(['notif_id' => (int)$notif_id]);
         $notification = $stmt->fetch();
 
         // if the notification doesn't exist anymore , return (Let the periodic refresh inform the employee that the notification was deleted)
@@ -205,15 +204,15 @@ class Notification {
             $stmt->execute(['notif_id' => (int)$notif_id]);
             return [[
                 "status" => "success",
-                "message" => "DELETABLE_ONCE_VOEWE_BY_THE_EMPLOYEE"
+                "message" => "DELETABLE_ONCE_VIEWED_BY_THE_EMPLOYEE"
             ],200] ;
 
         }else{ 
             // if the employee doesn't have the permission to mark the notification as read, return (let the periodic refresh inform the employee that the notification is no longer part of his permissions)
-            if (!in_array($notification["permission_id"],self::$employee_permission_id)){
+            if (!in_array($notification["permission_id"],self::$employee_permission_ids_arr)){
                 return [[
                     "status" => "success",
-                    "message" => "EMPLOYEE_NOT_PERMITTED_TO_MARK_NOTIFICATION_AS_READ"
+                    "message" => "EMPLOYEE_NOT_PERMITTED_TO_MARK_THE_NOTIFICATION_AS_READ"
                 ],200] ;
             }
             // otherwise mark the notfication as read by the employee
@@ -228,7 +227,7 @@ class Notification {
                 // 1452 : mysql error code for adding foreign key of a record that doesn't exist
                 // 1062 : mysql error code for adding a duplicate record for a unique key
 
-                // if we have a constraint violation error 
+                // if we have a Integrity constraint violation error 
                 if ($e->getCode() == 23000) {
                     $error_msg = $e->getMessage();
                     // if one of the foreign keys doesn't exist
@@ -256,6 +255,10 @@ class Notification {
                 // otherwise re-throw the exception if it's not a constraint violation error
                 throw $e;
             }
+            return [[
+                "status" => "success",
+                "message" => "NOTIFICATION_MARKED_AS_VIEWED"
+            ],200] ;
         }
     }
 
@@ -263,9 +266,9 @@ class Notification {
 
         // get all notifications for update to lock the notifications so that no other request can't delete the notifications while the transaction of this request is running
         $query = "SELECT id,deletable_once_viewed_by_the_employee_with_the_id FROM `".self::TABLE_NAME."` 
-                  WHERE permission_id IN (".self::$employee_permission_ids.")" ;  
+                  WHERE permission_id IN (" . self::$employee_permission_ids_str . ")" ;  
         $stmt = self::$db->prepare($query);
-        $stmt->execute(self::$employee_permission_ids);
+        $stmt->execute();
         $notifications = $stmt->fetchAll();
 
         // loop through all notifications and mark them as read
@@ -277,7 +280,7 @@ class Notification {
                 $stmt->execute(['notif_id' => $notification['id']]);
             }else{
                 // check if the employee has the permission to mark the notification as read
-                if (!in_array($this->get_notification_perm_id($notification['id']), self::$employee_permission_ids)) {
+                if (!in_array($this->get_notification_perm_id($notification['id']), self::$employee_permission_ids_arr)) {
                     continue;
                 }
 
@@ -325,8 +328,8 @@ class Notification {
 
         // get the notfications to pop up
         $stmt = self::$db->prepare("SELECT id FROM `".self::TABLE_NAME."` WHERE id IN ($notif_ids_placehoder)
-                                    WHERE permission id IN ".self::$employee_permission_ids." ;");
-        $stmt->execute(array_merge($notif_ids,self::$employee_permission_ids));
+                                    WHERE permission id IN " . self::$employee_permission_ids_str . " ;");
+        $stmt->execute($notif_ids);
         $notifications = $stmt->fetchAll();
 
         // mark the notifications as popped up
