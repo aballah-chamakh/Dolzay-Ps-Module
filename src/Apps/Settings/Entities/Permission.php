@@ -7,7 +7,7 @@ use Dolzay\ModuleConfig ;
 
 class Permission {
 
-    private const TABLE_NAME = ModuleConfig::MODULE_PREFIX."permission" ;
+    public const TABLE_NAME = ModuleConfig::MODULE_PREFIX."permission" ;
 
 
     public static function get_create_table_sql() {

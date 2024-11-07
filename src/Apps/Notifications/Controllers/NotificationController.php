@@ -18,41 +18,12 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 class NotificationController extends FrameworkBundleAdminController
 {
 
-    public function get_the_requesting_employee_id(){
+    private const EMPLOYEE_DOES_NOT_EXIST_ANYMORE_RESPONSE = [
+        "status" => "unauthorized",
+        "msg" => "THE_EMPLOYEE_DOES_NOT_EXIST_ANYMORE"
+    ] ;
 
-        // get the employee id of the requesting user
-        $user = $this->getUser();
-        if (!$user) {
-            return new JsonResponse([
-                "status" => "error",
-                "msg" => "this employee doesn't exist anymore"
-            ], 401);
-        }
 
-        return $user->getId() ;
-                
-    }
-
-    public function check_if_the_employee_exists($db,$employee_id){
-        
-        $employee_table_name = _DB_PREFIX_.\EmployeeCore::$definition['table'] ;
-        // check if the employee with the id $employee_id exists
-        $checkEmployeeQuery = "SELECT COUNT(*) FROM ".$employee_table_name." WHERE id_employee = :employee_id";
-        $stmt = $db->prepare($checkEmployeeQuery);
-        $stmt->bindParam(':employee_id', $employee_id, \PDO::PARAM_INT);
-        $stmt->execute();
-        $employeeExists = $stmt->fetchColumn();
-
-        if (!$employeeExists) {
-            $db->commit();
-            return new JsonResponse([
-                "status" => "unauthorized",
-                "msg" => "this employee doesn't exist anymore"
-            ], 401);
-        }
-
-        return true ;
-    }
 
     public function validateData($data, $constraints)
     {
@@ -78,28 +49,14 @@ class NotificationController extends FrameworkBundleAdminController
 
     public function getNotificationsOverview(Request $request)
     {   
-        // get the test query paramerters
-        $test_parameteter = [
-            "remove_employee_right_before_getting_his_id" =>  $request->query->get('remove_employee_right_before_getting_his_id'),
-            "remove_employee_right_before_starting_the_transaction" => $request->query->get('remove_employee_right_before_starting_the_transaction')
-        ] ;
 
-        // remove the employee right before getting his id if the test parameter is set to true
-        if ($test_parameteter["remove_employee_right_before_getting_his_id"]){
-            $employee_id = $this->get_the_requesting_employee_id() ;
-            $db =  DzDb::getInstance();
-            Employee::init($db);
-            Employee::delete($employee_id) ;
-        }
 
-        // get the employee id of the requesting user or return an error response if the user doesn't exist
-        $res = $this->get_the_requesting_employee_id() ;
-        if($res instanceof JsonResponse){
-            return $res ;
-        }
-        $employee_id = $res ;
-        
         //   -- validate the query parameters -- 
+
+        // get the test query paramerters
+        $test_parameters = [
+            "remove_employee_right_before_starting_the_transaction" => (int)$request->query->get('remove_employee_right_before_starting_the_transaction')
+        ] ;
 
         // get the query parameters
         $query_parameter  = [
@@ -125,44 +82,49 @@ class NotificationController extends FrameworkBundleAdminController
         if($validationErrorRes){
             return $validationErrorRes ;
         }
-
-
-        // remove the employee right before starting the transaction if the test parameter is set to true
-        if ($test_parameteter["remove_employee_right_before_starting_the_transaction"]){
-            $db =  DzDb::getInstance();
-            Employee::init($db);
-            Employee::delete($employee_id) ;
-        }
         
-        //  -- return the notifications overview data --
+        // initiate the db connection and get the employee id
+        $db = DzDb::getInstance();
+        $employee_id = $this->getUser()->getId();
+
+        Employee::init($db,$employee_id) ;
+
+        // delete the requesting employee if the tester want 
+        if($test_parameters["remove_employee_right_before_starting_the_transaction"]){
+            Employee::delete();
+        }
 
         // initiate the db connection and start a transaction
-        $db =  DzDb::getInstance();
         $db->beginTransaction();
 
-        // check if the employee with the id $employee_id still exists within this transaction
-        $res = $this->check_if_the_employee_exists($db,$employee_id);
-        if ($res instanceof JsonResponse){
-            return $res ;
+        // check if the employee still exist within this transaction 
+        if (!Employee::does_it_exist()){
+            // end the transaction
+            $db->commit();
+
+            return new JsonResponse([
+                "status" => "unauthorized",
+                "msg" => "THIS_EMPLOYEE_DOES_NOT_EXIST_ANY_MORE"
+            ],401
+            ) ;
         }
 
         // get the permission ids of the employee
-        EmployeePermission::init($db,$employee_id);
-        $employee_permission_ids = EmployeePermission::get_permissions();
-
-        // return a 401 response if the employee doesn't have any permissions
+        $employee_permission_ids = Employee::get_permissions() ;
+        
+        // check if the employee has any permissions
         if(empty($employee_permission_ids)){
             // end the transaction
             $db->commit();
 
             return new JsonResponse([
                 "status" => "unauthorized",
-                "msg" => "this employee doesn't have any permissions"
+                "msg" => "THIS_EMPLOYEE_DOES_NOT_HAVE_ANY_PERMISSIONS"
             ], 401);
         }
 
 
-        // get the notifications overview data whitin the transaction
+        // get the notifications overview data whithin the transaction
         Notification::init($db,$employee_id,$employee_permission_ids);
         $all_notifs_count = Notification::get_all_notifications_count();
         [$unpopped_up_notifs_count,$unpopped_up_notifications] = Notification::get_the_unpopped_up_notifications_by_the_empolyee($query_parameter["page_nb"],$query_parameter["batch_size"]);  
@@ -185,25 +147,9 @@ class NotificationController extends FrameworkBundleAdminController
     public function getNotificationsList(Request $request)
     {
         // get the test query paramerters
-        $test_parameteter = [
-            "remove_employee_right_before_getting_his_id" =>  (int)$request->query->get('remove_employee_right_before_getting_his_id'),
+        $test_parameters = [
             "remove_employee_right_before_starting_the_transaction" => (int)$request->query->get('remove_employee_right_before_starting_the_transaction')
         ] ;
-
-        // remove the employee right before getting his id if the test parameter is set to true
-        if ($test_parameteter["remove_employee_right_before_getting_his_id"]){
-            $employee_id = $this->get_the_requesting_employee_id() ;
-            $db =  DzDb::getInstance();
-            Employee::init($db);
-            Employee::delete($employee_id) ;
-        }
-
-        // get the employee id of the requesting user or return an error response if the user doesn't exist
-        $res = $this->get_the_requesting_employee_id() ;
-        if($res instanceof JsonResponse){
-            return $res ;
-        }
-        $employee_id = $res ;
 
         // get the query parameters
         $query_parameter = [
@@ -211,6 +157,7 @@ class NotificationController extends FrameworkBundleAdminController
             'page_nb' => $request->query->get('page_nb'),
             'batch_size' => $request->query->get('batch_size')
         ];
+
 
         // define the constraints of each query parameter
         $constraints =  new Assert\Collection([
@@ -235,34 +182,41 @@ class NotificationController extends FrameworkBundleAdminController
             return $validationErrorRes ;
         }
 
-        // remove the employee right before starting the transaction if the test parameter is set to true
-        if ($test_parameteter["remove_employee_right_before_starting_the_transaction"]){
-            $db = DzDb::getInstance();
-            Employee::init($db);
-            Employee::delete($employee_id) ;
+        // initiate the db connection and get the employee id
+        $db = DzDb::getInstance();
+        $employee_id = $this->getUser()->getId();
+
+        Employee::init($db,$employee_id) ;
+
+        // delete the requesting employee if the tester want 
+        if($test_parameters["remove_employee_right_before_starting_the_transaction"]){
+            Employee::delete($employee_id);
         }
 
-        // initiate the db connection and start a transaction
-        $db = DzDb::getInstance();
         $db->beginTransaction();
 
-        // check if the employee with the id $employee_id still exists within this transaction
-        $res = $this->check_if_the_employee_exists($db,$employee_id);
-        if ($res instanceof JsonResponse){
-            return $res ;
+        // check if the employee still exist within this transaction 
+        if (!Employee::does_it_exist()){
+            // end the transaction
+            $db->commit();
+
+            return new JsonResponse([
+                "status" => "unauthorized",
+                "msg" => "THIS_EMPLOYEE_DOES_NOT_EXIST_ANY_MORE"
+            ],401) ;
         }
 
         // get the permission ids of the employee
-        EmployeePermission::init($db,$employee_id);
-        $employee_permission_ids = EmployeePermission::get_permissions();
-
-        // return a 401 response if the employee doesn't have any permissions
+        $employee_permission_ids = Employee::get_permissions() ;
+        
+        // check if the employee has any permissions
         if(empty($employee_permission_ids)){
             // end the transaction
             $db->commit();
+
             return new JsonResponse([
                 "status" => "unauthorized",
-                "msg" => "this employee doesn't have any permissions"
+                "msg" => "THIS_EMPLOYEE_DOES_NOT_HAVE_ANY_PERMISSIONS"
             ], 401);
         }
 
@@ -274,60 +228,56 @@ class NotificationController extends FrameworkBundleAdminController
 
         return new JsonResponse([
             "status" => "success",
-            "data" => ["notifications" =>$notifications]
+            "data" => ["notifications" => $notifications]
         ]);
 
     }
 
-
-    public function markNotificationAsRead($notif_id, Request $request)
+    public function markNotificationAsRead($notif_id,Request $request)
     {
 
-        // get the employee id of the requesting user or return an error response if the user doesn't exist
-        $employee_id = $this->get_the_requesting_employee_id() ;
-        if($employee_id instanceof JsonResponse){
-            return $employee_id ;
-        }
-        
-        // initiate the db connection and start a transaction
-        $db = DzDb::getInstance();
+
+        // initialize the db connection and get the employee id
+        $db =  DzDb::getInstance();
+        $employee_id = $this->getUser()->getId();
+
+        // get the test query paramerters
+        $test_parameters = [
+            "delete_employee_before_marking_as_read" => (int)$request->query->get('delete_employee_before_marking_as_read') ,
+            "delete_notification_before_marking_as_read" => (int)$request->query->get('delete_notification_before_marking_as_read')
+        ] ;
 
         // get the permission ids of the employee
-        EmployeePermission::init($db,$employee_id);
-        $employee_permission_ids = EmployeePermission::get_permissions();
+        Employee::init($db,$employee_id);
+        $employee_permission_ids = Employee::get_permissions();
 
-        // note : even if the employee doesn't have any permissions i wan't to proceed to check if this 
-        //        notification is deletable by him
+        // check if the employee has any permissions
+        if (count($employee_permission_ids) == 0){
+            return new JsonResponse([
+                "status" => "unauthorized",
+                "message" => "THIS_EMPLOYEE_DOES_NOT_HAVE_ANY_PERMISSIONS"
+            ], 401);
+        }
 
         // mark the notificaiton as read
         Notification::init($db,$employee_id,$employee_permission_ids);
-        $response_and_status_code = Notification::mark_notification_as_read($notif_id);
+        $response_and_status_code = Notification::mark_notification_as_read($notif_id,$test_parameters);
 
         // return the response
         [$response,$status_code] = $response_and_status_code ;
         return new JsonResponse($response, $status_code) ;
 
 
-        /*
-          notes : 
-           - if an employee no longer has the permission to access a notification, i will not mark it as read but i will
-             return success and i will let the periodic refresh inform the employee that this notification is no longer accessible 
-             for him by not showing it to him again 
-           - if an employee no longer has the permission to access a notification but this notification is deletable once viewed
-             by him we will delete this notification and return success so that this notification does't stay in the db     
-        */
+ 
     }
-
 
     public function markAllNotificationsAsRead(Request $request)
     {
         // get the notification ids list from the request body 
 
         // get the employee id of the requesting user or return an error response if the user doesn't exist
-        $employee_id = $this->get_the_requesting_employee_id() ;
-        if($employee_id instanceof JsonResponse){
-            return $employee_id ;
-        }
+        $employee_id = $this->getUser->getId() ;
+
 
         // initiate the db connection and start a transaction
         $db = DzDb::getInstance();

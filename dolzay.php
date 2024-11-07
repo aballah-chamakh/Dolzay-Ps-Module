@@ -98,10 +98,9 @@ class Dolzay extends Module
                     }
 
                 
-                    // CHECK IF $entity_obj HAS THE CREATE_TABLE_SQL ATTRIBUTE OTHERWISE QUIT THE INSTALLATION
-                    if (!defined($entity_class."::CREATE_TABLE_SQL")) {
-                        PrestaShopLogger::addLog("the CREATE_TABLE_SQL attribute isn't defined in the entity class :  $entity_class", 3, null, 'Dolzay');
-                        return false;
+                    // IF $entity_class DOESN'T HAVE THE STATIC METHOD get_create_table_sql SKIP IT
+                    if (!method_exists($entity_class, 'get_create_table_sql')) {
+                        continue ;
                     }
 
                     // EXECUTE THE CREATE_TABLE_SQL STATEMENT OF THE entity_obj
@@ -161,10 +160,9 @@ class Dolzay extends Module
                         return false ; 
                     }
 
-                    // CHECK IF $entity_obj HAS THE DROP_TABLE_SQL ATTRIBUTE OTHERWISE QUIT THE INSTALLATION
+                    // IF $entity_obj DOESN'T HAVE THE ATTRIBUTE DROP_TABLE_SQL ATTRIBUTE SKIP IT 
                     if (!defined($entity_class."::DROP_TABLE_SQL")) {
-                        PrestaShopLogger::addLog("the DROP_TABLE_SQL attribute isn't defined in the entity class :  $entity_class", 3, null, 'Dolzay');
-                        return false;
+                        continue ;
                     }
 
                     // EXECUTE THE DROP_TABLE_SQL STATEMENT OF THE entity_obj SUCCESSFULLY OTHERWISE QUIT THE INSTALLATION

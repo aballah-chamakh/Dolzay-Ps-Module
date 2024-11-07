@@ -1,5 +1,5 @@
 dz_notifications_overview:
-  path: /dz/notifications_overview
+  path: /dz/notifications/overview
   methods: [GET]
   defaults:
     _controller: 'Dolzay\Apps\Notifications\Controllers\NotificationController::getNotificationsOverview'

@@ -6,6 +6,7 @@ namespace Dolzay\Apps\Notifications\Entities ;
 use Dolzay\ModuleConfig ;
 use Dolzay\CustomClasses\Db\DzDb ;  
 use Dolzay\Apps\Settings\Entities\Permission;
+use Dolzay\Apps\Settings\Entities\Employee;
 use PDO ;
 
 class Notification {
@@ -32,7 +33,7 @@ class Notification {
             `permission_id` INT(10) UNSIGNED,
             PRIMARY KEY(`id`),
             FOREIGN KEY (`permission_id`) REFERENCES `'.Permission::TABLE_NAME.'` (`id`) ON DELETE CASCADE,
-            FOREIGN KEY (`deletable_once_viewed_by_the_employee_with_the_id`) REFERENCES `'._DB_PREFIX_. \EmployeeCore::$definition['table'] . '`(`id_employee`) ON DELETE CASCADE
+            FOREIGN KEY (`deletable_once_viewed_by_the_employee_with_the_id`) REFERENCES `'._DB_PREFIX_. \EmployeeCore::$definition['table'] . '` (`id_employee`) ON DELETE CASCADE
         ) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ;' ;
     }
     public const DROP_TABLE_SQL = 'DROP TABLE IF EXISTS `'.self::TABLE_NAME . '`;';
@@ -71,6 +72,13 @@ class Notification {
         $notifications_count = $stmt->fetchColumn();
         
         return $notifications_count  ;
+    }
+
+    public static function delete($notif_id) {
+        // Prepare the delete statement
+        $stmt = self::$db->prepare("DELETE FROM `".self::TABLE_NAME."` WHERE id = :notif_id");
+        // Execute the statement with the notification ID
+        $stmt->execute(['notif_id' => (int)$notif_id]);
     }
 
     private function get_notification_perm_id($notif_id) {
@@ -182,40 +190,40 @@ class Notification {
 
     }
 
-    public static function mark_notification_as_read($notif_id) {
+    public static function mark_notification_as_read($notif_id,$test_parameters) {
 
         // get the notfication 
-        $stmt = self::$db->prepare("SELECT * FROM `".self::TABLE_NAME."` WHERE id = :notif_id");
-        $stmt->execute(['notif_id' => (int)$notif_id]);
+        $stmt = self::$db->prepare("SELECT * FROM `".self::TABLE_NAME."` WHERE id = :notif_id AND permission_id IN (" . self::$employee_permission_ids_str . ")") ;
+        $stmt->execute(['notif_id' => $notif_id]);
         $notification = $stmt->fetch();
 
-        // if the notification doesn't exist anymore , return (Let the periodic refresh inform the employee that the notification was deleted)
+        // check if the notification does exist anymore 
         if (!$notification) {
             return [[
-                "status" => "success",
+                "status" => "not_found",
                 "message" => "NOTIFICATION_NOT_FOUND"
-            ],200] ;
+            ],404] ;
         }
 
         // if the attribute  deletable_once_viewed_by_the_employee_with_the_id of the notfication equal to the id of the employee, delete the notfication, 
-        // even if the employee doesn't have the permission to delete it. then return (let the periodic refresh inform the employee that the notification was deleted)
         if ($notification["deletable_once_viewed_by_the_employee_with_the_id"] == self::$employee_id){
             $stmt = self::$db->prepare("DELETE FROM `".self::TABLE_NAME."` WHERE id = :notif_id");
-            $stmt->execute(['notif_id' => (int)$notif_id]);
+            $stmt->execute(['notif_id' => $notif_id]);
             return [[
                 "status" => "success",
                 "message" => "DELETABLE_ONCE_VIEWED_BY_THE_EMPLOYEE"
             ],200] ;
 
         }else{ 
-            // if the employee doesn't have the permission to mark the notification as read, return (let the periodic refresh inform the employee that the notification is no longer part of his permissions)
-            if (!in_array($notification["permission_id"],self::$employee_permission_ids_arr)){
-                return [[
-                    "status" => "success",
-                    "message" => "EMPLOYEE_NOT_PERMITTED_TO_MARK_THE_NOTIFICATION_AS_READ"
-                ],200] ;
+
+            // delete the employee or the notification before marking the notification as read if the tester wants
+            if ($test_parameters['delete_employee_before_marking_as_read']){
+                Employee::delete(self::$employee_id); ;
+            }else if ($test_parameters['delete_notification_before_marking_as_read']){
+                self::delete($notif_id);
             }
-            // otherwise mark the notfication as read by the employee
+
+            //  mark the notfication as read by the employee
             $stmt = self::$db->prepare("INSERT INTO `".NotificationViewedBy::TABLE_NAME."` (employee_id, notif_id) VALUES (:employee_id, :notif_id)");
             try {
                 $stmt->execute([
@@ -232,20 +240,20 @@ class Notification {
                     $error_msg = $e->getMessage();
                     // if one of the foreign keys doesn't exist
                     if (strpos($error_msg, '1452')){
-                        // if the employee doesn't exist anymore, return "REDIRECT_TO_LOGIN_PAGE"
+                        // check if the employee stills exists 
                         if (strpos($error_msg, _DB_PREFIX_.\EmployeeCore::$definition['table'])){
                             return [[
-                                "status" => "success",
-                                "message" => "REDIRECT_TO_LOGIN_PAGE"
-                            ],200] ;
+                                "status" => "unauthorized",
+                                "message" => "THIS_EMPLOYEE_WAS_NOT_FOUND_RIGHT_BEFORE_MARKING_IT_AS_VIEWED"
+                            ],401] ;
                         }
-                        // if the notification doesn't exist anymore, return (let the periodic refresh inform the employee that the notification was deleted)
+                        // otherwise the notification doesn't exist anymore
                         return [[
-                            "status" => "success",
-                            "message" => "NOTIFICATION_WAS_NOT_FOUND_RIGHT_BEFORE_MARKING_IT_AS_VIEWED"
-                        ],200] ;
+                            "status" => "not_found",
+                            "message" => "THIS_NOTIFICATION_WAS_NOT_FOUND_RIGHT_BEFORE_MARKING_IT_AS_VIEWED"
+                        ],404] ;
+                    // check if the notification is already marked as viewed
                     }elseif (strpos($error_msg, '1062')) {
-                        // if the notification is already marked as viewed, return (let the periodic refresh inform the employee that the notification it was already marked as viewed)
                         return [[
                             "status" => "success",
                             "message" => "NOTIFICATION_ALREADY_MARKED_AS_VIEWED"
@@ -257,34 +265,48 @@ class Notification {
             }
             return [[
                 "status" => "success",
-                "message" => "NOTIFICATION_MARKED_AS_VIEWED"
+                "message" => "NOTIFICATION_WAS_MARKED_AS_VIEWED_SUCCESSFULLY"
             ],200] ;
         }
     }
 
-    public function mark_all_notifications_as_read() {
+    public function mark_all_notifications_as_read($testing) {
 
-        // get all notifications for update to lock the notifications so that no other request can't delete the notifications while the transaction of this request is running
-        $query = "SELECT id,deletable_once_viewed_by_the_employee_with_the_id FROM `".self::TABLE_NAME."` 
-                  WHERE permission_id IN (" . self::$employee_permission_ids_str . ")" ;  
+        // get all the valid permitted notifications
+        $query = "SELECT id,deletable_once_viewed_by_the_employee_with_the_id FROM `".self::TABLE_NAME."`n
+                  LEFT JOIN `".NotificationViewedBy::TABLE_NAME."` nv ON n.id = nv.notif_id AND nv.employee_id = :employee_id
+                  WHERE n.permission_id IN (".self::$employee_permission_ids_str.") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;  
+        
         $stmt = self::$db->prepare($query);
-        $stmt->execute();
+        $stmt->execute(["employee_id"=>self::$employee_id]);
         $notifications = $stmt->fetchAll();
+
+        if ($testing){
+            $testing_data = [];
+            foreach ($notifications as $notification) {
+                $testing_data[$notification["message"]] = 0 ;
+            }
+        }
 
         // loop through all notifications and mark them as read
         foreach ($notifications as $notification) {
 
-            // if the attribute  deletable_once_viewed_by_the_employee_with_the_id of the notfication equal the $employee_id, delete the notfication even if the employee doesn't have the permission to delete it
+            // if the attribute  deletable_once_viewed_by_the_employee_with_the_id of the notfication equal to the $employee_id, delete the notfication 
             if ($notification["deletable_once_viewed_by_the_employee_with_the_id"] == self::$employee_id){
-                $stmt = self::$db->prepare("DELETE FROM `".self::TABLE_NAME."` WHERE id = :notif_id");
-                $stmt->execute(['notif_id' => $notification['id']]);
+                $stmt = self::delete($notification['id']);
+                $testing_data[$notification["message"]] += 1 ;
             }else{
-                // check if the employee has the permission to mark the notification as read
-                if (!in_array($this->get_notification_perm_id($notification['id']), self::$employee_permission_ids_arr)) {
-                    continue;
+                //  mark the notfication as read by the employee  
+
+                if ($testing){
+
+                    if($notification["message"] == "delete_empolyee"){
+                        Employee::delete(self::$employee_id); ;
+                    }else if($notification["message"] == "delete_notification"){
+                        self::delete($notification['id']);
+                    }
                 }
 
-                // otherwise mark the notfication as read by the employee  
                 $stmt = self::$db->prepare("INSERT INTO `".NotificationViewedBy::TABLE_NAME."` (employee_id, notif_id) VALUES (:employee_id, :notif_id)");
                 try {
                     $stmt->execute([
@@ -299,12 +321,26 @@ class Notification {
                         if (strpos($error_msg, '1452')){
                             // if the employee doesn't exist anymore, return "REDIRECT_TO_LOGIN_PAGE"
                             if (strpos($error_msg, _DB_PREFIX_.\EmployeeCore::$definition['table'])){
-                                return "REDIRECT_TO_LOGIN_PAGE" ;
+                            
+                                $response = [[
+                                    "status" => "unauthorized",
+                                    "message" => "THIS_EMPLOYEE_WAS_NOT_FOUND_RIGHT_BEFORE_MARKING_IT_AS_VIEWED"
+                                ],401] ;
+
+                                if ($testing){
+                                    $testing_data[$notification["message"]] += 1 ;
+                                    $response[0]["testing_data"] = $testing_data ;
+                                }
+                                
+                                return $response ;
+
                             }
-                            // if the notification doesn't exist anymore, by pass it (let the periodic refresh let the employee knows the it was deleted)
+                            // if the notification doesn't exist anymore, by pass it 
+                            $testing_data[$notification["message"]] += 1 ;
                             continue ;
                         }elseif (strpos($error_msg, '1062')) {
                             // if the notification is already marked as viewed, by pass it 
+                            $testing_data[$notification["message"]] += 1 ;
                             continue;
                         }
                     }
@@ -313,6 +349,11 @@ class Notification {
                 }
             }
         }
+
+        return [[
+            "status" => "success",
+            "message" => "ALL_NOTIFICATIONS_WERE_MARKED_AS_VIEWED_SUCCESSFULLY"
+        ],200] ;
     }
 
 

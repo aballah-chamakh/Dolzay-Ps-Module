@@ -17,8 +17,8 @@ class EmployeePermission {
                 `employee_id` INT(10) UNSIGNED NOT NULL,
                 `permission_id` INT(10) UNSIGNED NOT NULL,
                 PRIMARY KEY(`employee_id`, `permission_id`),
-                FOREIGN KEY (`employee_id`) REFERENCES `'. _DB_PREFIX_.\EmployeeCore::$definition['table'].'`(`id_employee`) ON DELETE CASCADE,
-                FOREIGN KEY (`permission_id`) REFERENCES `' . Permission::TABLE_NAME .'`(`id`) ON DELETE CASCADE
+                FOREIGN KEY (`employee_id`) REFERENCES `'. _DB_PREFIX_.\EmployeeCore::$definition['table'].'` (`id_employee`) ON DELETE CASCADE,
+                FOREIGN KEY (`permission_id`) REFERENCES `' . Permission::TABLE_NAME .'` (`id`) ON DELETE CASCADE
             ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;';
     }
 
