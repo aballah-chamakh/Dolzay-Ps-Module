@@ -277,12 +277,9 @@ class NotificationController extends FrameworkBundleAdminController
             "testing" => (bool)$request->query->get('testing')
         ] ;
 
-        // get the employee id of the requesting user or return an error response if the user doesn't exist
-        $employee_id = $this->getUser()->getId() ;
-
-
-        // initiate the db connection and start a transaction
-        $db = DzDb::getInstance();
+        // initialize the db connection and get the employee id
+        $db =  DzDb::getInstance();
+        $employee_id = $this->getUser()->getId();
 
         // get the permission ids of the employee
         EmployeePermission::init($db,$employee_id);
@@ -330,32 +327,28 @@ class NotificationController extends FrameworkBundleAdminController
         }
 
 
-
-        // get the employee id of the requesting user or return an error response if the user doesn't exist
-        $employee_id = $this->get_the_requesting_employee_id() ;
-        if($employee_id instanceof JsonResponse){
-            return $employee_id ;
-        }
-        
-        // initiate the db connection and start a transaction               
-        $db = DzDb::getInstance();
+        // initialize the db connection and get the employee id
+        $db =  DzDb::getInstance();
+        $employee_id = $this->getUser()->getId();
         
         // get the permission ids of the employee
         EmployeePermission::init($db,$employee_id);
-        $permission_ids = EmployeePermission::get_permissions();
+        $employee_permission_ids = EmployeePermission::get_permissions();
+
+        // check if the employee has any permissions
+        if (count($employee_permission_ids) == 0){
+            return new JsonResponse([
+                "status" => "unauthorized",
+                "message" => "THIS_EMPLOYEE_DOES_NOT_HAVE_ANY_PERMISSIONS"
+            ], 401);
+        }
+        
         
         // mark notifications as popped up
         Notification::init($db,$employee_id,$permission_ids);
-        $res = $notification->mark_notification_as_popped_up($request_body['notif_ids']);
+        [$response,$status_code] = $notification->mark_notification_as_popped_up($request_body['notif_ids']);
+        return new JsonResponse($response, $status_code);
 
-        if ($res){
-            return new JsonResponse([
-                "status" => "unauthorized",
-                "msg" => $res
-            ], 401);
-        }
-
-        return new JsonResponse(['status' => 'success']);
     }
 }
 

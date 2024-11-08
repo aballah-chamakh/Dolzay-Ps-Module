@@ -33,7 +33,7 @@ dz_mark_all_notifications_as_read:
 
 
 dz_mark_notification_as_popped_up:
-  path: /dz/notifications/mark_them_as_popped_up
+  path: /dz/notifications/mark_as_popped_up
   methods: [PUT]
   defaults:
     _controller: 'Dolzay\Apps\Notifications\Controllers\NotificationController::markNotificationAsPoppedUp'

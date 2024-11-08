@@ -275,7 +275,7 @@ class Notification {
         // get all the valid permitted notifications
         $query = "SELECT id,deletable_once_viewed_by_the_employee_with_the_id,message FROM `".self::TABLE_NAME."`n
                   LEFT JOIN `".NotificationViewedBy::TABLE_NAME."` nv ON n.id = nv.notif_id AND nv.employee_id = :employee_id
-                  WHERE n.permission_id IN (".self::$employee_permission_ids_str.") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;  
+                  WHERE n.permission_id IN (".self::$employee_permission_ids_str.") AND NOT nv.employee_id " ;  
         
         $stmt = self::$db->prepare($query);
         $stmt->execute(["employee_id"=>self::$employee_id]);
@@ -377,17 +377,28 @@ class Notification {
     // 1. understand how range locking works exaclty
     // 2. how the function behave with duplicate  viewed by or popped composite 
 
-    public function mark_notifications_as_popped_up($notif_ids) {
+    public function mark_notifications_as_popped_up($notif_ids,$testing) {
 
 
-        // create a placeholder for the notification ids
-        $notif_ids_placehoder = implode(',', array_fill(0, count($notif_ids), '?'));
+        // concat the notification ids in a string 
+        $notif_ids_str = implode(',', $notif_ids) ;
 
         // get the notfications to pop up
-        $stmt = self::$db->prepare("SELECT id FROM `".self::TABLE_NAME."` WHERE id IN ($notif_ids_placehoder)
+        $stmt = self::$db->prepare("SELECT id,message FROM `".self::TABLE_NAME."` WHERE id IN ($notif_ids_str)
                                     WHERE permission id IN " . self::$employee_permission_ids_str . " ;");
+        // note : i didn't filter out by popped and viewed because the chances of having a notification to popup that is popped and viewed 
+        // are lower , and i don't to loose performance on joins for these cases
+
         $stmt->execute($notif_ids);
         $notifications = $stmt->fetchAll();
+
+        // if the testing flag is true, create a placeholder for the testing data
+        if ($testing){
+            $testing_data = [];
+            foreach ($notifications as $notification) {
+                $testing_data[$notification["message"]] = [] ;
+            }
+        }
 
         // mark the notifications as popped up
         foreach ($notifications as $notification) {
@@ -397,6 +408,10 @@ class Notification {
                     'employee_id' => self::$employee_id,
                     'notif_id' => $notification['id']
                 ]);
+                if ($testing){
+                    $testing_data[$notification["message"]][] = $notification['id'] ;
+                }
+
             } catch (\PDOException $e) {
                 $error_msg = $e->getMessage();
                 // if we have a constraint violation error 
@@ -405,12 +420,29 @@ class Notification {
                     if (strpos($error_msg, '1452')){
                         // if the employee doesn't exist anymore, return "REDIRECT_TO_LOGIN_PAGE"
                         if (strpos($error_msg, _DB_PREFIX_.\EmployeeCore::$definition['table'])){
-                            return "REDIRECT_TO_LOGIN_PAGE" ;
+                            $response = [[
+                                "status" => "unauthorized",
+                                "message" => "THIS_EMPLOYEE_WAS_NOT_FOUND_RIGHT_BEFORE_MARKING_IT_AS_POPPED_UP",
+                            ],401] ;
+
+                            if ($testing){
+                                $testing_data[$notification["message"]][] = $notification['id'] ;
+                                $response[0]["testing_data"] = $testing_data ;
+                            }
+
+                            return $response ;
                         }
+
                         // if the notification doesn't exist anymore,by pass it (let the periodic refresh let the employee knows that it was deleted)
+                        if ($testing){
+                            $testing_data[$notification["message"]][] = $notification['id'] ;
+                        }
                         continue ;
                     }elseif (strpos($error_msg, '1062')) {
                         // if the notification is already marked as popped up, by pass it 
+                        if ($testing){
+                            $testing_data[$notification["message"]][] = $notification['id'] ;
+                        }
                         continue;
                     }
                 }
@@ -418,6 +450,17 @@ class Notification {
                 throw $e;
             }
         }
+
+        $response =  [[
+            "status" => "success",
+            "message" => "ALL_NOTIFICATIONS_WERE_MARKED_AS_POPPED_UP_SUCCESSFULLY"
+        ],200] ;
+
+        if ($testing){
+            $response[0]["testing_data"] = $testing_data ;
+        }
+
+        return $response ;
     }
     
     private static function get_unread_and_read_notifications_count($notifications) {
