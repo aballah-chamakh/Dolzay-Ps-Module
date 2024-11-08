@@ -261,10 +261,9 @@ class NotificationController extends FrameworkBundleAdminController
 
         // mark the notificaiton as read
         Notification::init($db,$employee_id,$employee_permission_ids);
-        $response_and_status_code = Notification::mark_notification_as_read($notif_id,$test_parameters);
+        [$response,$status_code]  = Notification::mark_notification_as_read($notif_id,$test_parameters);
 
         // return the response
-        [$response,$status_code] = $response_and_status_code ;
         return new JsonResponse($response, $status_code) ;
 
 
@@ -273,10 +272,13 @@ class NotificationController extends FrameworkBundleAdminController
 
     public function markAllNotificationsAsRead(Request $request)
     {
-        // get the notification ids list from the request body 
+        // get the test query paramerters
+        $test_parameters = [
+            "testing" => (bool)$request->query->get('testing')
+        ] ;
 
         // get the employee id of the requesting user or return an error response if the user doesn't exist
-        $employee_id = $this->getUser->getId() ;
+        $employee_id = $this->getUser()->getId() ;
 
 
         // initiate the db connection and start a transaction
@@ -285,20 +287,20 @@ class NotificationController extends FrameworkBundleAdminController
         // get the permission ids of the employee
         EmployeePermission::init($db,$employee_id);
         $employee_permission_ids = EmployeePermission::get_permissions();
-        
-        // mark all the notifications as read
-        Notification::init($db,$employee_id,$permission_ids);
-        $res = Notification::mark_all_notifications_as_read();
-        
-        // resturn a 401 error response if the employee doesn't exist anymore 
-        if ($res){
+
+        // check if the employee has any permissions
+        if (count($employee_permission_ids) == 0){
             return new JsonResponse([
                 "status" => "unauthorized",
-                "msg" => $res
+                "message" => "THIS_EMPLOYEE_DOES_NOT_HAVE_ANY_PERMISSIONS"
             ], 401);
         }
-
-        return new JsonResponse(['status' => 'success']);
+        
+        // mark all the notifications as read
+        Notification::init($db,$employee_id,$employee_permission_ids);
+        [$response,$status_code] = Notification::mark_all_notifications_as_read($test_parameters['testing']);
+        return new JsonResponse($response, $status_code) ;
+        
     }
 
 

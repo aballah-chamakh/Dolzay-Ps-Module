@@ -273,18 +273,19 @@ class Notification {
     public function mark_all_notifications_as_read($testing) {
 
         // get all the valid permitted notifications
-        $query = "SELECT id,deletable_once_viewed_by_the_employee_with_the_id FROM `".self::TABLE_NAME."`n
+        $query = "SELECT id,deletable_once_viewed_by_the_employee_with_the_id,message FROM `".self::TABLE_NAME."`n
                   LEFT JOIN `".NotificationViewedBy::TABLE_NAME."` nv ON n.id = nv.notif_id AND nv.employee_id = :employee_id
                   WHERE n.permission_id IN (".self::$employee_permission_ids_str.") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;  
         
         $stmt = self::$db->prepare($query);
         $stmt->execute(["employee_id"=>self::$employee_id]);
         $notifications = $stmt->fetchAll();
-
+        
+        // if the testing flag is true, create a placeholder for the testing data
         if ($testing){
             $testing_data = [];
             foreach ($notifications as $notification) {
-                $testing_data[$notification["message"]] = 0 ;
+                $testing_data[$notification["message"]] = [] ;
             }
         }
 
@@ -294,14 +295,16 @@ class Notification {
             // if the attribute  deletable_once_viewed_by_the_employee_with_the_id of the notfication equal to the $employee_id, delete the notfication 
             if ($notification["deletable_once_viewed_by_the_employee_with_the_id"] == self::$employee_id){
                 $stmt = self::delete($notification['id']);
-                $testing_data[$notification["message"]] += 1 ;
+                if ($testing){
+                    $testing_data[$notification["message"]][] = $notification['id'] ;
+                }
             }else{
                 //  mark the notfication as read by the employee  
 
                 if ($testing){
-
-                    if($notification["message"] == "delete_empolyee"){
-                        Employee::delete(self::$employee_id); ;
+                    if($notification["message"] == "delete_employee"){
+                        Employee::init(self::$db,self::$employee_id);
+                        Employee::delete(self::$employee_id); 
                     }else if($notification["message"] == "delete_notification"){
                         self::delete($notification['id']);
                     }
@@ -312,7 +315,11 @@ class Notification {
                     $stmt->execute([
                         'employee_id' => self::$employee_id,
                         'notif_id' => $notification['id']
-                    ]);    
+                    ]);  
+                    if ($testing){
+                        $testing_data[$notification["message"]][] = $notification['id'] ;
+                    }  
+
                 } catch (\PDOException $e) {
                     $error_msg = $e->getMessage();
                     // if we have a constraint violation error 
@@ -324,11 +331,11 @@ class Notification {
                             
                                 $response = [[
                                     "status" => "unauthorized",
-                                    "message" => "THIS_EMPLOYEE_WAS_NOT_FOUND_RIGHT_BEFORE_MARKING_IT_AS_VIEWED"
+                                    "message" => "THIS_EMPLOYEE_WAS_NOT_FOUND_RIGHT_BEFORE_MARKING_IT_AS_VIEWED",
                                 ],401] ;
 
                                 if ($testing){
-                                    $testing_data[$notification["message"]] += 1 ;
+                                    $testing_data[$notification["message"]][] = $notification['id'] ;
                                     $response[0]["testing_data"] = $testing_data ;
                                 }
                                 
@@ -336,11 +343,15 @@ class Notification {
 
                             }
                             // if the notification doesn't exist anymore, by pass it 
-                            $testing_data[$notification["message"]] += 1 ;
+                            if ($testing){
+                                $testing_data[$notification["message"]][] = $notification['id'] ;
+                            }  
                             continue ;
                         }elseif (strpos($error_msg, '1062')) {
                             // if the notification is already marked as viewed, by pass it 
-                            $testing_data[$notification["message"]] += 1 ;
+                            if ($testing){
+                                $testing_data[$notification["message"]][] = $notification['id'] ;
+                            }  
                             continue;
                         }
                     }
@@ -350,10 +361,15 @@ class Notification {
             }
         }
 
-        return [[
+        $response =  [[
             "status" => "success",
             "message" => "ALL_NOTIFICATIONS_WERE_MARKED_AS_VIEWED_SUCCESSFULLY"
         ],200] ;
+
+        if ($testing){
+            $response[0]["testing_data"] = $testing_data ;
+        }
+        return $response ;
     }
 
 
