@@ -193,9 +193,11 @@ class Notification {
     public static function mark_notification_as_read($notif_id,$test_parameters) {
 
         // get the notfication 
-        $stmt = self::$db->prepare("SELECT * FROM `".self::TABLE_NAME."` WHERE id = :notif_id AND permission_id IN (" . self::$employee_permission_ids_str . ")") ;
+        $stmt = self::$db->prepare("SELECT * FROM `".self::TABLE_NAME."` n  WHERE id = :notif_id AND permission_id IN (" . self::$employee_permission_ids_str . ")") ;
         $stmt->execute(['notif_id' => $notif_id]);
         $notification = $stmt->fetch();
+        # note : i didn't filter out by already viewed for the performance since the case of requesting to mark a notification already viewed isn't common
+        #, and if it occurs we will handle it later
 
         // check if the notification does exist anymore 
         if (!$notification) {
@@ -226,6 +228,12 @@ class Notification {
             //  mark the notfication as read by the employee
             $stmt = self::$db->prepare("INSERT INTO `".NotificationViewedBy::TABLE_NAME."` (employee_id, notif_id) VALUES (:employee_id, :notif_id)");
             try {
+
+                // thow an random exception if the tester wants
+                if($test_parameters['throw_exception']){
+                    throw new \Exception("THROW_A_RANDOM_EXCEPTION");
+                }
+
                 $stmt->execute([
                     'employee_id' => self::$employee_id,
                     'notif_id' => $notif_id
@@ -270,16 +278,18 @@ class Notification {
         }
     }
 
-    public function mark_all_notifications_as_read($testing) {
+    public function mark_all_notifications_as_read($testing,$throw_exception = false) {
 
         // get all the valid permitted notifications
         $query = "SELECT id,deletable_once_viewed_by_the_employee_with_the_id,message FROM `".self::TABLE_NAME."`n
                   LEFT JOIN `".NotificationViewedBy::TABLE_NAME."` nv ON n.id = nv.notif_id AND nv.employee_id = :employee_id
-                  WHERE n.permission_id IN (".self::$employee_permission_ids_str.") AND NOT nv.employee_id " ;  
+                  WHERE n.permission_id IN (".self::$employee_permission_ids_str.") AND nv.employee_id IS NULL" ;  
         
         $stmt = self::$db->prepare($query);
         $stmt->execute(["employee_id"=>self::$employee_id]);
         $notifications = $stmt->fetchAll();
+
+        # note : i did filter out by already viewed because there is high chances that the list of notifications will contains already viewed notifications
         
         // if the testing flag is true, create a placeholder for the testing data
         if ($testing){
@@ -299,19 +309,34 @@ class Notification {
                     $testing_data[$notification["message"]][] = $notification['id'] ;
                 }
             }else{
-                //  mark the notfication as read by the employee  
-
+                 
+                // delete the employee or the notification before marking the notification as read if the tester wants
                 if ($testing){
                     if($notification["message"] == "delete_employee"){
                         Employee::init(self::$db,self::$employee_id);
                         Employee::delete(self::$employee_id); 
                     }else if($notification["message"] == "delete_notification"){
                         self::delete($notification['id']);
+                    }else if($notification['message'] == "view_the_notification"){
+                        $stmt = self::$db->prepare("INSERT INTO `".NotificationViewedBy::TABLE_NAME."` (employee_id, notif_id) VALUES (:employee_id, :notif_id)");
+                        $stmt->execute([
+                            'employee_id' => self::$employee_id,
+                            'notif_id' => $notification['id']
+                        ]);
                     }
+
                 }
+
+                //  mark the notfication as read by the employee 
 
                 $stmt = self::$db->prepare("INSERT INTO `".NotificationViewedBy::TABLE_NAME."` (employee_id, notif_id) VALUES (:employee_id, :notif_id)");
                 try {
+
+                    // thow an random exception if the tester wants
+                    if($throw_exception){
+                        throw new \Exception("THROW_A_RANDOM_EXCEPTION");
+                    }
+
                     $stmt->execute([
                         'employee_id' => self::$employee_id,
                         'notif_id' => $notification['id']
@@ -377,19 +402,21 @@ class Notification {
     // 1. understand how range locking works exaclty
     // 2. how the function behave with duplicate  viewed by or popped composite 
 
-    public function mark_notifications_as_popped_up($notif_ids,$testing) {
+    public function mark_notifications_as_popped_up($notif_ids,$testing,$throw_exception = false) {
 
 
         // concat the notification ids in a string 
         $notif_ids_str = implode(',', $notif_ids) ;
 
         // get the notfications to pop up
-        $stmt = self::$db->prepare("SELECT id,message FROM `".self::TABLE_NAME."` WHERE id IN ($notif_ids_str)
-                                    WHERE permission id IN " . self::$employee_permission_ids_str . " ;");
+        $query = "SELECT id,message FROM `".self::TABLE_NAME."` WHERE id IN (".$notif_ids_str.")
+                                    AND permission_id IN (" . self::$employee_permission_ids_str . ") ;" ;
+        $stmt = self::$db->prepare("SELECT id,message FROM `".self::TABLE_NAME."` WHERE id IN (".$notif_ids_str.")
+                                    AND permission_id IN (" . self::$employee_permission_ids_str . ") ;");
         // note : i didn't filter out by popped and viewed because the chances of having a notification to popup that is popped and viewed 
         // are lower , and i don't to loose performance on joins for these cases
 
-        $stmt->execute($notif_ids);
+        $stmt->execute();
         $notifications = $stmt->fetchAll();
 
         // if the testing flag is true, create a placeholder for the testing data
@@ -402,12 +429,31 @@ class Notification {
 
         // mark the notifications as popped up
         foreach ($notifications as $notification) {
-            $stmt = self::$db->prepare("INSERT INTO `".NotificationPoppedBy::TABLE_NAME."` (employee_id, notif_id) VALUES (:employee_id, :notif_id)");
+            
+            // delete the employee or the notification before marking the notification as read if the tester wants
+            if ($testing){
+                if($notification["message"] == "delete_employee"){
+                    Employee::init(self::$db,self::$employee_id);
+                    Employee::delete(self::$employee_id); 
+                }else if($notification["message"] == "delete_notification"){
+                    self::delete($notification['id']);
+                }
+            }
+
+            //  mark the notfication as popped up by the employee
+            $stmt = self::$db->prepare("INSERT INTO `".NotificationPoppedUpBy::TABLE_NAME."` (employee_id, notif_id) VALUES (:employee_id, :notif_id)");
             try{
+
+                // thow an random exception if the tester wants
+                if($throw_exception){
+                    throw new \Exception("THROW_A_RANDOM_EXCEPTION");
+                }
+
                 $stmt->execute([
                     'employee_id' => self::$employee_id,
                     'notif_id' => $notification['id']
                 ]);
+
                 if ($testing){
                     $testing_data[$notification["message"]][] = $notification['id'] ;
                 }
@@ -453,7 +499,7 @@ class Notification {
 
         $response =  [[
             "status" => "success",
-            "message" => "ALL_NOTIFICATIONS_WERE_MARKED_AS_POPPED_UP_SUCCESSFULLY"
+            "message" => "ALL_THE_SPECIFIED_NOTIFICATIONS_WERE_MARKED_AS_POPPED_UP_SUCCESSFULLY",
         ],200] ;
 
         if ($testing){

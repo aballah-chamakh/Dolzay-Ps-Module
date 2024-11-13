@@ -2,8 +2,11 @@
 
 
 
-$any = null ;
-$any->getUser() ;
+if (empty("")){
+    echo "empty";
+} else {
+    echo "not empty";
+}
 
 
 

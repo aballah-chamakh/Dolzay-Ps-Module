@@ -10,6 +10,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Validation;
 use Dolzay\CustomClasses\Constraints\IsIntegerAndGreaterThanZero;
+use Dolzay\CustomClasses\Constraints\All;
 use Dolzay\CustomClasses\Db\DzDb ;  
 use Dolzay\Apps\Settings\Entities\EmployeePermission;
 use Dolzay\Apps\Settings\Entities\Employee ;
@@ -158,7 +159,6 @@ class NotificationController extends FrameworkBundleAdminController
             'batch_size' => $request->query->get('batch_size')
         ];
 
-
         // define the constraints of each query parameter
         $constraints =  new Assert\Collection([
             'notif_type' => [
@@ -244,7 +244,8 @@ class NotificationController extends FrameworkBundleAdminController
         // get the test query paramerters
         $test_parameters = [
             "delete_employee_before_marking_as_read" => (int)$request->query->get('delete_employee_before_marking_as_read') ,
-            "delete_notification_before_marking_as_read" => (int)$request->query->get('delete_notification_before_marking_as_read')
+            "delete_notification_before_marking_as_read" => (int)$request->query->get('delete_notification_before_marking_as_read'),
+            "throw_exception" => (bool)$request->query->get('throw_exception')
         ] ;
 
         // get the permission ids of the employee
@@ -274,7 +275,8 @@ class NotificationController extends FrameworkBundleAdminController
     {
         // get the test query paramerters
         $test_parameters = [
-            "testing" => (bool)$request->query->get('testing')
+            "testing" => (bool)$request->query->get('testing'),
+            "throw_exception" => (bool)$request->query->get('throw_exception')
         ] ;
 
         // initialize the db connection and get the employee id
@@ -295,37 +297,43 @@ class NotificationController extends FrameworkBundleAdminController
         
         // mark all the notifications as read
         Notification::init($db,$employee_id,$employee_permission_ids);
-        [$response,$status_code] = Notification::mark_all_notifications_as_read($test_parameters['testing']);
+        [$response,$status_code] = Notification::mark_all_notifications_as_read($test_parameters['testing'],$test_parameters['throw_exception']);
         return new JsonResponse($response, $status_code) ;
         
     }
 
 
-    public function markNotificationsdAsPoppedUp(Request $request)
+    public function markNotificationsAsPoppedUp(Request $request)
     {
-        // get notification ids list from the request body
-        $request_body = [
-            "notif_ids" => $request->request->get('notif_ids')
+
+        // get the test query paramerters
+        $test_parameters = [
+            "testing" => (bool)$request->query->get('testing'),
+            "throw_exception" => (bool)$request->query->get('throw_exception')
         ] ;
 
-        // define the constraints of the request body   
-        $constraints =  new Assert\Collection([
+        // get the request body
+        $request_body = json_decode($request->getContent(), true) ;
+        $request_body = is_array($request_body) ? $request_body : [] ;
+        // define the constraints for the request body
+        $constraints = new Assert\Collection([
             'notif_ids' => [
+            new Assert\NotBlank(),
+            new Assert\Type('array'),
+            new All([
                 new Assert\NotBlank(),
-                new Assert\Type('array'),
-                new Assert\All([
-                    new Assert\NotBlank(),
-                    new IsIntegerAndGreaterThanZero()
-                ])
+                new IsIntegerAndGreaterThanZero()
+            ]),
+            
+            
             ]
         ]);
 
-        // validate the resquest body
-        $validationErrorRes = $this->validateData($query_parameter,$constraints) ;
-        if($validationErrorRes){
-            return $validationErrorRes ;
+        // validate the request body
+        $validationErrorRes = $this->validateData($request_body, $constraints);
+        if ($validationErrorRes) {
+            return $validationErrorRes;
         }
-
 
         // initialize the db connection and get the employee id
         $db =  DzDb::getInstance();
@@ -342,11 +350,11 @@ class NotificationController extends FrameworkBundleAdminController
                 "message" => "THIS_EMPLOYEE_DOES_NOT_HAVE_ANY_PERMISSIONS"
             ], 401);
         }
-        
-        
+    
         // mark notifications as popped up
-        Notification::init($db,$employee_id,$permission_ids);
-        [$response,$status_code] = $notification->mark_notification_as_popped_up($request_body['notif_ids']);
+        Notification::init($db,$employee_id,$employee_permission_ids);
+        $request_body['notif_ids'] ;
+        [$response,$status_code] = Notification::mark_notifications_as_popped_up($request_body['notif_ids'],$test_parameters['testing'],$test_parameters['throw_exception']);
         return new JsonResponse($response, $status_code);
 
     }
