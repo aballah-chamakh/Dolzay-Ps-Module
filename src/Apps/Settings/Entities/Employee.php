@@ -42,6 +42,19 @@ class Employee {
         return $permission_ids;
     }
 
+    public static function has_permission(string $permission_name): bool {
+        $query = "SELECT COUNT(*) FROM `" . EmployeePermission::TABLE_NAME . "` ep
+                  INNER JOIN permissions p ON ep.permission_id = p.id 
+                  WHERE ep.employee_id = :employee_id 
+                  AND p.name = :permission_name";
+                  
+        $stmt = self::$db->prepare($query);
+        $stmt->bindParam(':employee_id', self::$id);
+        $stmt->bindParam(':permission_name', $permission_name);
+        $stmt->execute();
+        return $stmt->fetchColumn() > 0;
+    }
+
 
 
 

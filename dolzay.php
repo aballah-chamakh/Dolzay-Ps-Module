@@ -18,11 +18,13 @@ class Dolzay extends Module
 {
     const APPS_INIT_ORDER = [
         "Settings",
-        "Notifications"
+        "Notifications",
+        "Processes",
     ]  ;
     const APPS_UNINIT_ORDER = [
         "Notifications",
-        "Settings"
+        "Settings",
+        "Processes"
     ]  ;
 
     const APPS_BASE_NAMESPACES = "Dolzay\\Apps\\" ;

@@ -21,9 +21,12 @@ class Notification {
     private static $employee_permission_ids_arr ;
     
     public static function get_create_table_sql() {
+        
+        $notification_types_str = '"'.implode('","', array_slice(self::NOTIFICATION_TYPES, 1)).'"' ;
+        
         return 'CREATE TABLE IF NOT EXISTS `'.self::TABLE_NAME.'` (
             `id` INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
-            `type` ENUM("process","config_error","dormant_or_not_found_order") NOT NULL,
+            `type` ENUM('.$notification_types_str.') NOT NULL,
             `pathname` VARCHAR(255) NOT NULL,
             `logo` VARCHAR(255) NOT NULL,
             `color` VARCHAR(50) NOT NULL,
@@ -37,7 +40,8 @@ class Notification {
         ) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ;' ;
     }
     public const DROP_TABLE_SQL = 'DROP TABLE IF EXISTS `'.self::TABLE_NAME . '`;';
-    
+
+
 
     public static function init($db, $employee_id, $employee_permission_ids)
     {
@@ -138,11 +142,11 @@ class Notification {
                     $count_query .= " AND n.type = ?";
                     $stmt = self::$db->prepare($count_query);
                     $stmt->execute([self::$employee_id,$type]);
-                    
                 }else{
                     $stmt = self::$db->prepare($count_query);
                     $stmt->execute([self::$employee_id]);
                 }
+
                 //echo $type."_notifs_cnt : " . $stmt->fetchColumn() . "|| <br/>";
                 $notifications_count = (int) $stmt->fetchColumn();
                 $notifications[$type."_notifs_cnt"] = $notifications_count;

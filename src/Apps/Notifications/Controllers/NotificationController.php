@@ -353,7 +353,6 @@ class NotificationController extends FrameworkBundleAdminController
     
         // mark notifications as popped up
         Notification::init($db,$employee_id,$employee_permission_ids);
-        $request_body['notif_ids'] ;
         [$response,$status_code] = Notification::mark_notifications_as_popped_up($request_body['notif_ids'],$test_parameters['testing'],$test_parameters['throw_exception']);
         return new JsonResponse($response, $status_code);
 

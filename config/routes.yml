@@ -3,6 +3,9 @@
 notifications_routes:
     resource: '../src/Apps/Notifications/routes.yaml'
 
+order_submit_process_routes:
+    resource: '../src/Apps/Processes/routes.yaml'
+
 
 
 
