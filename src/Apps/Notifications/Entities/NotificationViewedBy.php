@@ -15,7 +15,7 @@ class NotificationViewedBy {
             PRIMARY KEY(`employee_id`, `notif_id`),
             FOREIGN KEY (`notif_id`) REFERENCES `' . Notification::TABLE_NAME .'` (`id`) ON DELETE CASCADE,
             FOREIGN KEY (`employee_id`) REFERENCES `' . _DB_PREFIX_ . \EmployeeCore::$definition['table'] . '` (`id_employee`) ON DELETE CASCADE
-        ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;';
+        );';
     }
 
     public const DROP_TABLE_SQL = 'DROP TABLE IF EXISTS `' . self::TABLE_NAME . '`;';

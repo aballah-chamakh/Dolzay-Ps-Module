@@ -37,7 +37,7 @@ class Notification {
             PRIMARY KEY(`id`),
             FOREIGN KEY (`permission_id`) REFERENCES `'.Permission::TABLE_NAME.'` (`id`) ON DELETE CASCADE,
             FOREIGN KEY (`deletable_once_viewed_by_the_employee_with_the_id`) REFERENCES `'._DB_PREFIX_. \EmployeeCore::$definition['table'] . '` (`id_employee`) ON DELETE CASCADE
-        ) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ;' ;
+        );' ;
     }
     public const DROP_TABLE_SQL = 'DROP TABLE IF EXISTS `'.self::TABLE_NAME . '`;';
 
@@ -49,6 +49,11 @@ class Notification {
         self::$employee_id = $employee_id;
         self::$employee_permission_ids_str = implode(',', $employee_permission_ids) ;
         self::$employee_permission_ids_arr = $employee_permission_ids ;
+    }
+
+    public static function init_db($db)
+    {
+        self::$db = $db;
     }
 
 
@@ -95,26 +100,50 @@ class Notification {
 
     public function get_the_unpopped_up_notifications_by_the_empolyee(int $page_nb, int $batch_size) {
         
-    
+        # note : if the user request a page out of bound 
+        $query = "SELECT COUNT(*) FROM `".self::TABLE_NAME."` n
+        LEFT JOIN `" . NotificationViewedBy::TABLE_NAME . "` nv 
+        ON n.id = nv.notif_id AND nv.employee_id = ?
+        LEFT JOIN `" . NotificationPoppedUpBy::TABLE_NAME . "` np 
+        ON n.id = np.notif_id AND np.employee_id = ?
+        WHERE n.permission_id IN (" . self::$employee_permission_ids_str . ") AND (nv.employee_id IS NULL AND np.employee_id IS NULL)" ;
+
+        $stmt = self::$db->prepare($query);
+        $stmt->execute([self::$employee_id,self::$employee_id]);
+        $unpopped_up_notifications_by_the_empolyee_count = $stmt->fetchColumn();
+
+        // IF THE REQUESTED PAGE NUMBER IF IT'S OUT OF BOUND RETURN THE LAST POSSIBLE PAGE 
+        if ($page_nb != 1){
+            if ($unpopped_up_notifications_by_the_empolyee_count == 0 || $unpopped_up_notifications_by_the_empolyee_count <= $batch_size){
+                $page_nb = 1 ;
+            }else if ($page_nb > $last_page = ceil($unpopped_up_notifications_by_the_empolyee_count / $batch_size)){
+                $page_nb = $last_page ;
+            }
+        }
+
         $query = "SELECT id,type,pathname,logo,message,DATE_FORMAT(created_at, '%H:%i:%S %d-%m-%Y') as created_at,color FROM `".self::TABLE_NAME."` n
         LEFT JOIN `" . NotificationViewedBy::TABLE_NAME . "` nv 
         ON n.id = nv.notif_id AND nv.employee_id = ?
         LEFT JOIN `" . NotificationPoppedUpBy::TABLE_NAME . "` np 
         ON n.id = np.notif_id AND np.employee_id = ?
-        WHERE n.permission_id IN (" . self::$employee_permission_ids_str . ") AND (nv.employee_id IS NULL AND np.employee_id IS NULL) " ;
+        WHERE n.permission_id IN (" . self::$employee_permission_ids_str . ") AND (nv.employee_id IS NULL AND np.employee_id IS NULL) 
+        ORDER BY id ASC
+        LIMIT ? OFFSET ?" ;
+        
         
         $stmt = self::$db->prepare($query);
-        $stmt->execute([self::$employee_id,self::$employee_id]);
-
+        $stmt->execute([self::$employee_id,self::$employee_id,$batch_size,($page_nb - 1) * $batch_size]);
         $unpopped_up_notifications_by_the_empolyee = $stmt->fetchAll();
 
-        $unpopped_up_notifications_by_the_empolyee_count = count($unpopped_up_notifications_by_the_empolyee);
-        if ($unpopped_up_notifications_by_the_empolyee_count == 0) {
-            return [];
-        }
+        return  [$unpopped_up_notifications_by_the_empolyee_count,$unpopped_up_notifications_by_the_empolyee] ;
 
-        return [$unpopped_up_notifications_by_the_empolyee_count, self::paginate($unpopped_up_notifications_by_the_empolyee,$unpopped_up_notifications_by_the_empolyee_count,$page_nb, $batch_size)];
+    }
 
+    public static function filter_by_pathnames($pathnames){
+        $query = "SELECT * FROM `".self::TABLE_NAME.'` WHERE pathname IN ("'. implode('","', $pathnames) .'")' ;
+        $stmt = self::$db->prepare($query);
+        $stmt->execute($pathnames);
+        return $stmt->fetchAll();
     }
 
     public static function get_notifications($notif_type, $page_nb, $batch_size) {
@@ -126,70 +155,80 @@ class Notification {
 
         // GET THE COUNT OF NOTIFICATIONS OF EACH TYPE
         foreach (self::NOTIFICATION_TYPES as $type) {
-            // skip the requested type 
-            if ($type == $notif_type) {
-                continue;
+            $count_query = "
+            SELECT COUNT(*) as count
+            FROM `".self::TABLE_NAME."` n
+            LEFT JOIN `".NotificationViewedBy::TABLE_NAME."` nv 
+            ON n.id = nv.notif_id AND nv.employee_id = ?
+            WHERE n.permission_id IN (" . self::$employee_permission_ids_str . ") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
+
+            if ($type != "all") {
+                $count_query .= " AND n.type = ?";
+                $stmt = self::$db->prepare($count_query);
+                $stmt->execute([self::$employee_id,$type]);
             }else{
+                $stmt = self::$db->prepare($count_query);
+                $stmt->execute([self::$employee_id]);
+            }
 
-                $count_query = "
-                SELECT COUNT(*) as count
-                FROM `".self::TABLE_NAME."` n
-                LEFT JOIN `".NotificationViewedBy::TABLE_NAME."` nv 
-                ON n.id = nv.notif_id AND nv.employee_id = ?
-                WHERE n.permission_id IN (" . self::$employee_permission_ids_str . ") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
+            //echo $type."_notifs_cnt : " . $stmt->fetchColumn() . "|| <br/>";
+            $notifications_count = (int) $stmt->fetchColumn();
+            $notifications[$type."_notifs_cnt"] = $notifications_count;
+            
+        }
 
-                if ($type != "all") {
-                    $count_query .= " AND n.type = ?";
-                    $stmt = self::$db->prepare($count_query);
-                    $stmt->execute([self::$employee_id,$type]);
-                }else{
-                    $stmt = self::$db->prepare($count_query);
-                    $stmt->execute([self::$employee_id]);
-                }
-
-                //echo $type."_notifs_cnt : " . $stmt->fetchColumn() . "|| <br/>";
-                $notifications_count = (int) $stmt->fetchColumn();
-                $notifications[$type."_notifs_cnt"] = $notifications_count;
+        // UPDATE THE PAGE NUMBER IF IT'S OUT OF BOUND
+        if ($page_nb != 1){
+            if ($notifications[$notif_type."_notifs_cnt"] == 0 || $notifications[$notif_type."_notifs_cnt"] <= $batch_size){
+                $page_nb = 1 ;
+            }else if ($page_nb > $last_page = ceil($notifications[$notif_type."_notifs_cnt"] / $batch_size)){
+                $page_nb = $last_page ;
             }
         }
-        
+
         // GET THE NOTIFICATIONS OF THE REQUESTED TYPE WITH UNREAD AND READ NOTIFICATIONS NUMBERS 
-        
         $query = "
             SELECT id, type, pathname, logo, message, DATE_FORMAT(created_at, '%H:%i:%S %d-%m-%Y') as created_at, color,
-                   (CASE WHEN nv.employee_id IS NOT NULL THEN TRUE ELSE FALSE END) AS viewed
+                   (CASE WHEN nv.employee_id IS NOT NULL THEN 1 ELSE 0 END) AS viewed , COUNT(*) OVER() AS all_count,
+                    SUM(CASE WHEN nv.employee_id IS NOT NULL THEN 1 ELSE 0 END) OVER() AS viewed_count
             FROM `".self::TABLE_NAME."` n
             LEFT JOIN `".NotificationViewedBy::TABLE_NAME."` nv 
             ON n.id = nv.notif_id AND nv.employee_id = :employee_id
-            WHERE n.permission_id IN (" . self::$employee_permission_ids_str . ") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)" ;
+            WHERE n.permission_id IN (" . self::$employee_permission_ids_str . ") AND NOT (nv.employee_id IS NOT NULL AND n.deletable_once_viewed_by_the_employee_with_the_id IS NOT NULL)
+            
+            " ;
         
         if ($notif_type != "all") {
-            $query .= " AND n.type = :notif_type";
+            $query .= " AND n.type = :notif_type ORDER BY n.id ASC LIMIT :limit OFFSET :offset ";
             $stmt = self::$db->prepare($query);
-            $stmt->execute(["employee_id"=>self::$employee_id,"notif_type"=>$notif_type]);
+            $stmt->execute(["employee_id"=>self::$employee_id,"notif_type"=>$notif_type,"limit"=>$batch_size,"offset"=>($page_nb - 1) * $batch_size]);
         }else{
+            $query .= " ORDER BY n.id ASC LIMIT :limit OFFSET :offset";
             $stmt = self::$db->prepare($query);
-            $stmt->execute(["employee_id"=>self::$employee_id]);
+            $stmt->execute(["employee_id"=>self::$employee_id,"limit"=>$batch_size,"offset"=>($page_nb - 1) * $batch_size]);
         }
+
 
         $requested_notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        // set the notifications of the requested type
+        $notifications["notifications"] = $requested_notifications  ;
 
-        $notifications[$notif_type."_notifs_cnt"] = count($requested_notifications);
-        
-        if ($notifications[$notif_type."_notifs_cnt"] == 0) {
-            $notifications["notifications"] = [];
-            $notifications["read_notifs_cnt"] = $notifications["unread_notifs_cnt"] = 0 ;
-            return $notifications;
-        }
 
         // get the unread and read notifications count
-        [$notifications["read_notifs_cnt"], $notifications["unread_notifs_cnt"]] = self::get_unread_and_read_notifications_count($requested_notifications);
-        
-        // paginate the notifications
-        $requested_notifications_paginated = self::paginate($requested_notifications, $notifications[$notif_type."_notifs_cnt"], $page_nb, $batch_size);
-        
-        $notifications["notifications"] = $requested_notifications_paginated  ;
+        if ($notifications[$notif_type."_notifs_cnt"] == 0) {
+            $notifications["read_notifs_cnt"] = $notifications["unread_notifs_cnt"] = 0 ;
+        }else{
+            [$notifications["read_notifs_cnt"], $notifications["unread_notifs_cnt"]] = [(int)$notifications["notifications"][0]['viewed_count'], $notifications[$notif_type."_notifs_cnt"] - (int)$notifications["notifications"][0]['viewed_count']];
+        }
+
+
+        // Remove viewed_count and all_count fields from each notification
+        foreach ($notifications["notifications"] as &$notification) {
+            unset($notification['viewed_count']);
+            unset($notification['all_count']); 
+        }
+
         return $notifications; 
 
     }

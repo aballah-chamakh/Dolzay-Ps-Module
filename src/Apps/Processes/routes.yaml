@@ -1,6 +1,6 @@
 dz_submit_orders:
   path: /dz/notifications/submit_orders
-  methods: [POST]
+  methods: [GET]
   defaults:
     _controller: 'Dolzay\Apps\Processes\Controllers\OrderSubmitProcessController::submitOrders'
     _disable_module_prefix: true

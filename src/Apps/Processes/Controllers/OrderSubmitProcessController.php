@@ -2,6 +2,8 @@
 
 namespace Dolzay\Apps\Processes\Controllers;
 
+use Symfony\Component\HttpFoundation\JsonResponse;
+
 use Dolzay\Apps\Processes\Entities\Process;
 use Dolzay\Apps\Processes\Entities\OrderToMonitor;
 use Dolzay\CustomClasses\Db\DzDb;
@@ -11,6 +13,11 @@ class OrderSubmitProcessController
 {
 
     private const REQUIRED_PERMISSION = "Soumission des commandes";
+    private const RESTRICTING_CONFIG_ERROR = [
+        "/zones_and_coverages/#zones",
+        "/zones/id/",
+        "/settings/#automation"
+    ] ;
 
     /**
      * Submit orders for processing
@@ -19,6 +26,8 @@ class OrderSubmitProcessController
      * @throws \Exception if permissions invalid or process already running
      */
     public function submitOrders(): array {
+
+
 
         $employee_id = $this->getUser()->getId();
         
@@ -30,20 +39,37 @@ class OrderSubmitProcessController
             return new JsonResponse(['status' => "unauthorized",
                                      'message' => "THIS_EMPLOYEE_DOES_NOT_HAVE_ANY_PERMISSIONS"], 401);
         }
+        
+        // Check if there are any configuration errors that restrict order submission
+        Notification::init_db($db);
+        $notifications = Notification::filter_by_pathnames(self::RESTRICTING_CONFIG_ERROR); ;
 
-        try {
-            $db->beginTransaction();
-            $db->query("LOCK TABLES Process WRITE");
-            sleep(20);
-            $db->query("UNLOCK TABLES");
+        if (count($notifications) > 0) {
+            $config_errors = array_map(function($notification) {
+                return $notification->message;
+            }, $notifications);
 
-        } catch(\PDOException $e) {
-            if ($e->getCode() == '40001' || stripos($e->getMessage(), 'lock') !== false) {
-            $db->rollBack();
-            throw new \Exception("Unable to acquire lock: " . $e->getMessage());
-            }
-            throw $e;
+            return new JsonResponse(['status' => "restricted",
+                                    'data' => ['config_errors' => $config_errors],
+                                     'message' => "CONFIGURATION_ERRORS"], 401);
         }
+
+     
+        $db->query("LOCK TABLES Process READ");
+
+        Process::init($db);
+        $process_id = Process::insert("Soumission", 
+                                      count($order_ids),
+                                      "Actif",
+                                       json_encode([
+                                            'order_ids' => $order_ids
+                                      ]));
+
+        $db->query("UNLOCK TABLES");
+
+        
+
+        
 
 
 

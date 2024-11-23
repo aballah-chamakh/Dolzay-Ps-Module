@@ -57,13 +57,13 @@ class NotificationController extends FrameworkBundleAdminController
         // get the test query paramerters
         $test_parameters = [
             "remove_employee_right_before_starting_the_transaction" => (int)$request->query->get('remove_employee_right_before_starting_the_transaction')
-        ] ;
+        ];
 
         // get the query parameters
         $query_parameter  = [
             "page_nb" =>  $request->query->get('page_nb'),
             "batch_size" => $request->query->get('batch_size')
-        ] ;
+        ];
     
 
         // define the constraints of each query parameter
@@ -128,7 +128,7 @@ class NotificationController extends FrameworkBundleAdminController
         // get the notifications overview data whithin the transaction
         Notification::init($db,$employee_id,$employee_permission_ids);
         $all_notifs_count = Notification::get_all_notifications_count();
-        [$unpopped_up_notifs_count,$unpopped_up_notifications] = Notification::get_the_unpopped_up_notifications_by_the_empolyee($query_parameter["page_nb"],$query_parameter["batch_size"]);  
+        [$unpopped_up_notifications_count,$unpopped_up_notifications] = Notification::get_the_unpopped_up_notifications_by_the_empolyee($query_parameter["page_nb"],$query_parameter["batch_size"]);  
         
         // end the transaction
         $db->commit();
@@ -137,7 +137,7 @@ class NotificationController extends FrameworkBundleAdminController
             "status" => "success",
             "data" => [
                 "all_notifs_count" => $all_notifs_count,
-                "unpopped_up_notifs_count" => $unpopped_up_notifs_count,
+                "unpopped_up_notifications_count" => $unpopped_up_notifications_count,
                 "unpopped_up_notifications" => $unpopped_up_notifications
             ]
   

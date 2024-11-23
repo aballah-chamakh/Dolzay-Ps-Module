@@ -5,6 +5,7 @@ namespace Dolzay\Apps\Processes\Entities;
 use Dolzay\ModuleConfig;
 use Dolzay\CustomClasses\Db\DzDb;
 
+// TODO :  recheck it later 
 
 class OrderToMonitor {
     public const TABLE_NAME = ModuleConfig::MODULE_PREFIX."order_to_monitor";
@@ -20,13 +21,14 @@ class OrderToMonitor {
             `order_id` INT(10) UNSIGNED NOT NULL,
             `process_id` INT(10) UNSIGNED NOT NULL,
             `carrier_name` VARCHAR(255) NOT NULL,
-            `old_status` VARCHAR(50) NULL,
+            `old_status` VARCHAR(50) ,
             `new_status` VARCHAR(50) NULL,
             `state` ENUM('. $states_str. ') NOT NULL,
             `updated` BOOLEAN DEFAULT FALSE,
             PRIMARY KEY(`order_id`, `process_id`),
             FOREIGN KEY (`process_id`) REFERENCES `'.Process::TABLE_NAME.'` (`id`) ON DELETE CASCADE
-        ) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;';
+            ,FOREIGN KEY (`order_id`) REFERENCES `' . _DB_PREFIX_.\OrderCore::$definition['table'] . '` (`id_order`) ON DELETE CASCADE
+        );';
     }
     
     
