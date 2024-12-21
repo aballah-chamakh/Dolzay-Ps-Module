@@ -1,6 +1,6 @@
 <?php
 
-namespace Dolzay\Apps\Processes\Entities;
+namespace Dolzay\Apps\OrderSubmitProcess\Entities;
 
 use Dolzay\ModuleConfig;
 use Dolzay\CustomClasses\Db\DzDb;
@@ -23,7 +23,7 @@ class OrderToSubmit {
             `submitted` BOOLEAN DEFAULT FALSE,
             PRIMARY KEY(`order_id`, `process_id`),
             FOREIGN KEY (`order_id`) REFERENCES `' . _DB_PREFIX_.\OrderCore::$definition['table'] . '` (`id_order`),
-            FOREIGN KEY (`process_id`) REFERENCES `'.ModuleConfig::MODULE_PREFIX.'process` (`id`)
+            FOREIGN KEY (`process_id`) REFERENCES `'.OrderSubmitProcess::TABLE_NAME.'` (`id`)
         );';
     }
     

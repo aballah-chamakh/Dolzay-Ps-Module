@@ -26,8 +26,8 @@ document.addEventListener('DOMContentLoaded', function() {
         "Zaghouan": ["Zaghouan", "Zriba", "Fahs", "Nadhour", "Bir Mcherga", "Saouaf"]
     }
 
-    const citySelect = document.querySelector("select[name='city']");
-    const delegationSelect = document.querySelector("select[name='delegation']");
+    const citySelect = document.querySelector("select[name='customer_address[city]']");
+    const delegationSelect = document.querySelector("select[name='customer_address[delegation]']");
     
     function updateDelegations() {
 

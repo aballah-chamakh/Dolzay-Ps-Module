@@ -1,0 +1,291 @@
+<?php
+
+namespace Dolzay\Apps\OrderSubmitProcess\Entities;
+
+use Dolzay\ModuleConfig;
+use Dolzay\CustomClasses\Db\DzDb;
+use Dolzay\Apps\Settings\Entities\Carrier ;
+
+class OrderSubmitProcess {
+
+    public const TABLE_NAME = ModuleConfig::MODULE_PREFIX."order_submit_process";
+    private const PROCESS_TYPES = ["Soumission", "Changement du zone", "Mise à jour"];
+    private const STATUS_TYPES = ["Initié","Actif", "Terminé","Terminé par utilisateur", "Interrompu","Annulé"];
+    private const CITIES = [
+        "Ariana",
+        "Beja",
+        "Ben Arous",
+        "Bizerte",
+        "Gabes",
+        "Gafsa",
+        "Jendouba",
+        "Kairouan",
+        "Kasserine",
+        "Kebili",
+        "La Manouba",
+        "Le Kef",
+        "Mahdia",
+        "Medenine",
+        "Monastir",
+        "Nabeul",
+        "Sfax",
+        "Sidi Bouzid",
+        "Siliana",
+        "Sousse",
+        "Tataouine",
+        "Tozeur",
+        "Tunis",
+        "Zaghouan"
+    ];
+
+    private static $db;
+
+
+    public static function init($db) {
+        self::$db = $db;
+    }
+    
+    public static function get_create_table_sql() {
+
+        $process_types_str = '"'.implode('","', self::PROCESS_TYPES).'"';
+        $status_types_str = '"'.implode('","', self::STATUS_TYPES).'"';
+
+        return 'CREATE TABLE IF NOT EXISTS `'.self::TABLE_NAME.'` (
+            `id` INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+            `carrier` VARCHAR(255) NOT NULL,
+            `started_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            `ended_at` DATETIME NULL,
+            `processed_items_cnt` SMALLINT UNSIGNED DEFAULT 0,
+            `items_to_process_cnt` SMALLINT UNSIGNED  NULL,
+            `status` ENUM('.$status_types_str.') DEFAULT "Initié",
+            `error` JSON NULL,
+            `meta_data` JSON NULL,
+             PRIMARY KEY(`id`),
+             FOREIGN KEY (`carrier`) REFERENCES `'.Carrier::TABLE_NAME.'` (`name`) ON DELETE CASCADE
+        );';
+    }
+
+    // INSERT INTO `ps_order_submit_process` (`items_to_process_cnt`, `status`) VALUES (100, 'Initié');
+    
+    public const DROP_TABLE_SQL = 'DROP TABLE IF EXISTS `'.self::TABLE_NAME.'`;';
+
+    
+    public static function get_process(int $process_id, bool $lock_it=false){
+        $query = "SELECT id,carrier,status,meta_data FROM ".self::TABLE_NAME." WHERE id=".$process_id ;
+        if($lock_it){
+            $query .= " FOR UPDATE" ;
+        }
+        $stmt = self::$db->query($query) ;
+        $process = $stmt->fetch();
+        return $process ;
+    }
+
+    public static function get_process_status(int $process_id){
+        $query = "SELECT processed_items_cnt,items_to_process_cnt,status,error,carrier FROM ".self::TABLE_NAME." WHERE id=".$process_id ;
+        $stmt = self::$db->query($query) ;
+        $process = $stmt->fetch();
+        if ($process['error']){
+            $process['error'] = json_decode($process['error'],true);
+        }
+        return $process ;
+    }
+
+    public static function check_running_process(){
+        $query = "SELECT id,processed_items_cnt,items_to_process_cnt,status,error_msg FROM ".self::TABLE_NAME." WHERE status IN ('Initié','Actif')" ;
+        $stmt = self::$db->query($query) ;
+        $process = $stmt->fetch();
+        return $process ;
+    }
+
+    public static function insert(string $carrier): int {
+        $query = "INSERT INTO ".self::TABLE_NAME." (carrier) VALUES ('".$carrier."');";
+        self::$db->query($query);
+        return (int)self::$db->lastInsertId();
+    }
+
+    public static function is_there_a_running_process(){
+        $query = "SELECT id FROM ".self::TABLE_NAME." WHERE status IN ('Initié','Actif');" ;
+        $stmt = self::$db->query($query);
+        $order_submit_process = $stmt->fetch();
+        return ($order_submit_process) ? $order_submit_process['id'] : false ;
+    }
+    
+    public static function set_and_get_the_metadata_of_the_order_submit_process($order_submit_process_id,$order_ids){
+        
+        // get the selected orders
+        $query = "SELECT id_order,submitted,city,delegation,phone,firstname,lastname FROM ". _DB_PREFIX_.\OrderCore::$definition['table']." AS Ord INNER JOIN 
+                 ". _DB_PREFIX_.\AddressCore::$definition['table']. " AS addr ON Ord.id_address_delivery=Addr.id_address WHERE id_order IN  (".implode(',',$order_ids).")" ;
+        $stmt = self::$db->query($query);
+        $orders = $stmt->fetchAll() ;
+
+        // collect already submitted orders and orders with invalid fields if they exists
+        $already_submitted_orders = [] ;
+        $orders_with_invalid_fields = [] ;
+        $valid_order_ids = [] ;
+
+        foreach ($orders as $order) {
+            
+            if ($order['submitted']){
+                $already_submitted_orders[] = ['order_id'=>$order['id_order'],'fullname'=>$order['firstname']." ".$order['lastname']] ;
+            }else{
+                $invalid_fields = [] ;
+                
+                if(!in_array($order['city'], self::CITIES)){
+                    $invalid_fields[] = "city" ;
+                }
+                if(!$order['delegation']){
+                    $invalid_fields[] = "delegation" ;
+                }
+                if (!preg_match('/^\d{8}$/', $order['phone'])) {
+                    $invalid_fields[] = "phone" ;
+                }
+
+                if ($invalid_fields){
+                    $orders_with_invalid_fields[] = ['order_id'=>$order['id_order'],'invalid_fields'=>$invalid_fields] ;
+                }else{
+                    $valid_order_ids[] = $order['id_order'] ;
+                }
+            }
+
+        }
+
+        // construct the meta_data
+        $order_submit_process_metadata = [] ;
+        
+        if($valid_order_ids){
+            $order_submit_process_metadata['valid_order_ids'] = $valid_order_ids ;
+        }
+
+        if ($orders_with_invalid_fields){
+            $order_submit_process_metadata['orders_with_invalid_fields'] = $orders_with_invalid_fields ;
+        }
+
+        if($already_submitted_orders){
+            $order_submit_process_metadata['already_submitted_orders'] = $already_submitted_orders ;
+        }
+
+        // set the meta data of the order submit process 
+        $query = "UPDATE ".OrderSubmitProcess::TABLE_NAME." SET meta_data='".json_encode($order_submit_process_metadata)."'" ;
+        if($valid_order_ids){
+            $query .=  ",items_to_process_cnt=".count($order_submit_process_metadata['valid_order_ids']) ;
+        }
+        $query .= " WHERE id=".$order_submit_process_id ;
+        self::$db->query($query) ;
+
+        // return the meta_data without the order ids
+        unset($order_submit_process_metadata["valid_order_ids"]) ;
+        return $order_submit_process_metadata ;
+    }
+
+    public static function add_orders_to_resubmit_and_activate_the_process($process,$order_to_resubmit_ids){
+        
+        $meta_data = json_decode($process['meta_data'],true) ;
+
+        // add the orders to resubmit
+        if($order_to_resubmit_ids){
+            if(isset($meta_data['valid_order_ids'])){
+                $meta_data['valid_order_ids'] = array_merge($meta_data['valid_order_ids'],$order_to_resubmit_ids) ;
+            }else{
+                $meta_data['valid_order_ids'] = $order_to_resubmit_ids ;
+            }
+        }
+
+        // check if there is an old invalid order that got fixed then add them to the valid_order_ids
+        if (isset($meta_data['orders_with_invalid_fields'])){
+            $orders_with_invalid_fields_ids = array_map(fn($order) => $order['order_id'],$meta_data['orders_with_invalid_fields']); 
+            
+            $query = "SELECT id_order,submitted,city,delegation,phone FROM ". _DB_PREFIX_.\OrderCore::$definition['table']." AS Ord INNER JOIN 
+                    ". _DB_PREFIX_.\AddressCore::$definition['table']. " AS addr ON Ord.id_address_delivery=Addr.id_address WHERE id_order IN  (".implode(',',$orders_with_invalid_fields_ids).")" ;
+
+            $orders_with_invalid_fields = self::$db->query($query)->fetchAll();
+
+            foreach ($orders_with_invalid_fields as $order) {
+                $invalid_fields = [] ;
+                
+                if(!in_array($order['city'], self::CITIES)){
+                    $invalid_fields[] = "city" ;
+                }
+                if(!$order['delegation']){
+                    $invalid_fields[] = "delegation" ;
+                }
+                if (!preg_match('/^\d{8}$/', $order['phone'])) {
+                    $invalid_fields[] = "phone" ;
+                }
+
+                if (!$invalid_fields){
+                    $meta_data['valid_order_ids'][] = $order['id_order'] ;
+                }
+            }
+        }
+
+        // unset other meta data other than valid_order_ids
+        $meta_data_fields = array_keys($meta_data) ;
+        foreach($meta_data_fields as $field){
+            if ($field != "valid_order_ids"){
+                unset($meta_data[$field]) ;
+            }
+        }
+        $items_to_process_cnt = count($meta_data['valid_order_ids']);
+        // persist the new meta data and activate the process the process 
+        self::$db->query("UPDATE ".self::TABLE_NAME." SET status='Actif',meta_data='".json_encode($meta_data)."',items_to_process_cnt=$items_to_process_cnt WHERE id=".$process['id']) ;
+        return $items_to_process_cnt ;
+    }
+
+    public static function cancel($process_id){
+        self::$db->query("UPDATE ".self::TABLE_NAME." SET status='Annulé' WHERE id=".$process_id) ;
+    }
+
+    public static function terminate($process_id){
+        self::$db->query("UPDATE ".self::TABLE_NAME." SET status='Terminé par utilisateur' WHERE id=".$process_id) ;
+    }
+
+    public static function get_order_submit_process_list($query_parameter){
+        
+        $values = ['limit'=>$query_parameter['batch_size'],'offset'=>($query_parameter['page_nb'] - 1) * $query_parameter['batch_size']] ;
+        
+        // note : i did add 1=1 for the case of there is no query parameters to filter by 
+        $query = "SELECT carrier,started_at,processed_items_cnt,items_to_process_cnt,status FROM ".self::TABLE_NAME." WHERE 1=1" ;
+        
+        if ($carrier){
+            $values['carrier'] = $carrier ;
+            $query .= "AND carrier= :carrier " ; 
+        }
+
+        if ($status){
+            $values['status'] = $query_parameter['status'] ;
+            $query .= "AND status= :status " ;
+        }
+
+        if ($start_date && $end_date){
+            $values['start_date'] = $query_parameter['start_date'] ;
+            $values['end_date'] = $query_parameter['end_date'] ;
+            $query .= "AND started_at BETWEEN :start_date AND :end_date " ;
+        }
+
+        $query .= "LIMIT :limit OFFSET :offset ;" ;
+
+        self::$db->prepare($query);
+        $stmt->execute($values);
+        return $stmt->fetchAll();
+    }
+
+    public static function get_order_submit_process_detail($process_id){
+        $query = "SELECT carrier,status,started_at,ended_at,processed_items_cnt,items_to_process_cnt,error,meta_data" ;
+        $query .= " FROM ".self::TABLE_NAME." WHERE id=".$proces_id ;
+
+        $order_submit_process_detail = self::$db->query($query)->fetch() ;
+        if(!$order_submit_process_detail){
+            return false ;
+        }
+        // add the orders_to_submit to order_submit_process_detail
+        $order_ids = $order_submit_process_detail['valid_order_ids'] ;
+        $query = "SELECT id_order,firstname,lastname,submitted, FROM ". _DB_PREFIX_.\OrderCore::$definition['table']." AS Ord INNER JOIN " ;
+        $query .= _DB_PREFIX_.\AddressCore::$definition['table']. " AS addr ON Ord.id_address_delivery=Addr.id_address WHERE id_order IN  (".implode(',',$order_ids).")" ;
+        $orders_to_submit = self::$db->query($query)->fetchAll();
+        $order_submit_process_detail['orders_to_submit'] = $orders_to_submit ;
+
+        return $order_submit_process_detail ;
+    }
+    
+
+}

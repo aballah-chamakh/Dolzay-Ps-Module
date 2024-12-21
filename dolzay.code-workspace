@@ -1,0 +1,29 @@
+{
+	"folders": [
+		{
+			"name": "dolzay",
+			"path": "."
+		},
+		{
+			"name": "DolzayPluginTests",
+			"path": "../DolzayPluginTests"
+		},
+		{
+			"name": "dz_api_doc",
+			"path": "../dz_api_doc"
+		}
+	],
+    "settings": {
+        "emeraldwalk.runonsave": {
+        
+            
+            "commands": [
+                {
+                    "match": ".*",
+                    "cmd": "python C:\\Users\\chama\\Bureau\\dolzay\\copy_to_ps.py",
+                    "messageAfter": "Running copy_to_ps.py ..."
+                }
+            ] 
+        }
+    }
+}

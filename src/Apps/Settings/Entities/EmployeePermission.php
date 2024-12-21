@@ -4,7 +4,6 @@ namespace Dolzay\Apps\Settings\Entities ;
 
 
 use Dolzay\ModuleConfig ;
-use Dolzay\Apps\Settings\Entities\Permission ;
 
 class EmployeePermission {
 

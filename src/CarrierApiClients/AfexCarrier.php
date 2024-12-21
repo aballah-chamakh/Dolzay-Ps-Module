@@ -1,0 +1,179 @@
+<?php
+
+require_once __DIR__."/BaseCarrier.php" ;
+
+class AfexCarrier extends BaseCarrier {
+    
+    const name = "Afex" ;
+    const url = "https://apis.afex.tn/v1/shipments" ;
+    
+    public static function get_api_key(){
+        $carrier = self::$db->query("SELECT token FROM "._MODULE_PREFIX_."carrier AS car INNER JOIN "._MODULE_PREFIX_."api_credentials AS crd ON car.api_credentials_id=crd.id WHERE car.name = '".self::name."'")->fetch();
+        return $carrier['token'];
+    }
+
+
+    public static function submit_orders(){
+        $post_submit_status_id = AfexCarrier::get_post_submit_status_id() ;
+        $orders = AfexCarrier::get_the_orders_to_submit();
+
+        $token = self::get_api_key();
+
+        // Initialize cURL session
+        $ch = curl_init();
+
+        // Set cURL options
+        curl_setopt($ch, CURLOPT_URL, self::url);
+        curl_setopt($ch, CURLOPT_POST, true); // Use POST method
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // Return response instead of outputting it
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            "X-API-Key: $token",
+            "Content-Type: application/text",
+        ]);
+
+        $orders_cnt = count($orders);
+
+        foreach($orders as $index => $order){
+            $index = $index + 1  ;
+            // prepare the goods 
+            $goods = self::get_cart_products_str($order['cart_products']);
+
+            // prepare the payload
+            $payload = json_encode([
+                "nom"            => $order['firstname']." ".$order['lastname'],
+                "telephone1"     => $order['phone'],
+                "gouvernorat"    => $order['city'],
+                "delegation"     => $order['delegation'],
+                "adresse"        => $order['address1'],
+                "marchandise"    => $goods,
+                "paquets"        => 1,
+                "type_envoi"     => "Livraison à domicile",
+                "cod"            => $order['total_paid'],
+                "mode_reglement" => "Seulement en espèces",
+                "manifest"       => "0",
+            ],JSON_UNESCAPED_UNICODE);
+
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $payload); // Attach JSON payload
+
+            // Execute the request and get the response
+            $response = curl_exec($ch);
+
+            // Handle cURL errors
+            if ($response === false) {
+                throw new Exception("cURL Error: " . curl_error($ch));
+                // set for the order submit process the status and the error data 
+                self::updateOrderSubmitProcess(
+                    [
+                        "status='Interrompu'",
+                        "error='".json_encode([
+                            'message' => "Erreur inattendue. Veuillez contacter le support de Dolzay au xxxxxx afin qu'ils résolvent le problème.",
+                            'curl_error' => curl_error($ch)
+                        ],JSON_UNESCAPED_UNICODE)."'"
+                    ]
+                );
+            }
+
+            $status_code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE); // Get status code
+            $order_id = $order['id_order'] ;
+            $response = str_replace("'", '"', $response);
+            $response = json_decode($response, true);
+            if ($status_code == 200){
+                echo "\n =============== ORDER WITH THE ID : $order_id IS DONE =============== \n" ;
+                
+                
+                self::$db->beginTransaction();
+
+                // update the order
+                self::updateOrder($order['id_order'],
+                                ["submitted=true",
+                                "tracking_code=".$response['barcode'],
+                                "current_state=".$post_submit_status_id]);
+                
+                // add the order history for this status
+                self::addOrderStatusHistory($order['id_order'],$post_submit_status_id);
+                    
+                // update the progress of the order submit process
+                $orderSubmitProcessUpdates = ["processed_items_cnt=".($index),] ;
+                if ($index == $orders_cnt){
+                    $orderSubmitProcessUpdate[] = "status='Terminé'" ;
+                }
+                self::updateOrderSubmitProcess($orderSubmitProcessUpdates);
+                self::$db->commit();
+
+                // check if the obs was terinated by the user 
+                if ($index != $orders_cnt){
+                $obsStatus = self::getObsStatus($process_id);
+                    if($obsStatus == "Terminé par utilisateur"){
+                        break ;
+                    }
+                }
+
+            }else if ($status_code == 422){
+                // 422 means invalid data were sent
+                echo "\n =============== ORDER WITH THE ID : $order_id GOT 422 STATUS CODE =============== \n" ;
+// "{'message': 'The request data contains invalid fields or fails validation.', 'errors': [{'field': 'delegation', 'message': 'Delegation is not valid'}]}"
+                $error = json_encode([
+                                'message' => "Après la soumission de $index/$order_cnt, une erreur s'est produite lors de la soumission de la commande portant l'ID : $order_id. Veuillez appeler le support de Dolzay au " . SUPPORT_PHONE . " afin qu'ils résolvent votre problème.",
+                                'status_code' => $status_code,
+                                'response' => $response
+                            ],JSON_UNESCAPED_UNICODE);
+                // escape the single quotes
+                $error = str_replace("'", "\'", $error);
+                
+                // "{"message":"Le système d'Afex a été mis à jour. 
+                //              Veuillez appeler le support de Dolzay 
+                //              au 58671414 afin qu'ils vous fournissent la dernière
+                //               mise à jour.",
+                //   "status_code":422,
+                //   "response":
+                //           {"message":"The request data contains invalid fields or fails validation.","errors":[{"field":"delegation","message":"Delegation is not valid"}]}}"
+                // set for the order submit process the status and the error data 
+                self::updateOrderSubmitProcess(
+                                                [
+                                                    "status='Interrompu'",
+                                                    "error='$error'"
+                                                ]
+                                              );
+                break;
+            }else if ($status_code == 401){
+                echo "\n =============== ORDER WITH THE ID : $order_id GOT 401 STATUS CODE =============== \n" ;
+
+                // set for the order submit process the status and the error data 
+                $error = json_encode([
+                    'message' => "Le token d'Afex est invalide. Veuillez le mettre à jour avec un token valide.",
+                ],JSON_UNESCAPED_UNICODE);
+
+                // escape the single quotes
+                $error = str_replace("'", "\'", $error);
+                self::updateOrderSubmitProcess(["status='Interrompu'",
+                                                "error='$error'"
+                                              ]
+                                            );
+                break ;
+                
+            }else{
+                echo "\n =============== ORDER WITH THE ID : $order_id GOT AN UNEXPECTED ERROR =============== \n" ;
+                // set for the order submit process the status and the error data 
+                $error = json_encode([
+                            'message' => "Erreur inattendue. Veuillez contacter le support de Dolzay au xxxxxx afin qu'ils résolvent le problème.",
+                            'status_code' => $status_code,
+                            'response' => $response 
+                        ],JSON_UNESCAPED_UNICODE);
+                // escape the single quotes
+                $error = str_replace("'", "\'", $error);
+                self::updateOrderSubmitProcess(
+                    [
+                        "status='Interrompu'",
+                        "error='$error'"
+                    ]
+                );
+                break ;
+            }
+        }
+
+        // Close cURL session
+        curl_close($ch);   
+    }
+
+
+}

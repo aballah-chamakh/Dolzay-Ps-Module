@@ -12,22 +12,28 @@ try {
     PrestaShopLogger::addLog('Error during loading the autoload : ' . $e->getMessage(), 3, null, 'Dolzay');
 }
 */
-use Dolzay\Apps\Notifications\Entities\Notification ;
+//use Dolzay\Apps\Notifications\Entities\Notification ;
+use Dolzay\Apps\Settings\Entities\ApiCredentials ;
+use Dolzay\Apps\Settings\Entities\Carrier ;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\TextType ;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\Choice;
+use Symfony\Component\Validator\Constraints\Regex;
+use Dolzay\CustomClasses\Db\DzDb ;
+
+
 
 class Dolzay extends Module
 {
     const APPS_INIT_ORDER = [
         "Settings",
-        "Notifications",
-        "Processes",
-        "Zones"
+        "OrderSubmitProcess"
     ];
 
     const APPS_UNINIT_ORDER = [
-        "Notifications",
-        "Settings",
-        "Processes",
-        "Zones"
+        "OrderSubmitProcess",
+        "Settings"
     ];
 
     const APPS_BASE_NAMESPACES = "Dolzay\\Apps\\" ;
@@ -99,7 +105,7 @@ class Dolzay extends Module
         ];
 
         $this->bootstrap = false ;
-        $this->db = Db::getInstance();
+        $this->db = DzDb::getInstance();
 
 
         parent::__construct();
@@ -116,10 +122,22 @@ class Dolzay extends Module
             return parent::install() && 
                     $this->create_app_tables() &&
                     $this->registerHook('additionalCustomerAddressFields') &&
-                    $this->registerHook('displayFooter') &&
-                    $this->add_delegation_to_address();
+                    $this->registerHook('displayHeader') && 
+                    $this->registerHook('actionValidateCustomerAddressForm') &&
+                    $this->registerHook('afterFillingEditAddressForm') &&
+                    $this->registerHook('actionCustomerAddressFormBuilderModifier') &&
+                    $this->registerHook('actionAdminControllerSetMedia') &&
+                    $this->registerHook('actionObjectAddressUpdateBefore') && 
+                    $this->registerHook('actionObjectAddressAddBefore') &&
+                    $this->registerHook('actionAfterUpdateCustomerAddressFormHandler') &&
+                    $this->registerHook('actionAdminOrdersListingFieldsModifier') &&
+                    $this->add_submitted_and_tracking_code_to_order() &&
+                    $this->add_carriers() &&
+                    $this->add_delegation_to_address() &&
+                    $this->add_delegation_to_the_address_format();
         } catch (Error $e) {
-            PrestaShopLogger::addLog("Error during installation: " . $e->getMessage(), 3, null, 'Dolzay');
+            PrestaShopLogger::addLog("Error during installation: " . $e->getMessage()."\n".
+                                     "Traceback : \n".$e->getTraceAsString(), 3, null, 'Dolzay');
             return false;
         }
     }
@@ -127,9 +145,23 @@ class Dolzay extends Module
     public function uninstall()
     {
         try {
-            return parent::uninstall() && $this->drop_app_tables() && $this->remove_delegation_from_address();
+            return parent::uninstall() && 
+                   $this->drop_app_tables() && 
+                   $this->unregisterHook('additionalCustomerAddressFields') &&
+                   $this->unregisterHook('displayHeader') && 
+                   $this->unregisterHook('actionValidateCustomerAddressForm') &&
+                   $this->unregisterHook('afterFillingEditAddressForm') &&
+                   $this->unregisterHook('actionCustomerAddressFormBuilderModifier') &&
+                   $this->unregisterHook('actionAdminControllerSetMedia') &&
+                   $this->unregisterHook('actionObjectAddressUpdateBefore') && 
+                   $this->unregisterHook('actionObjectAddressAddBefore') &&
+                   $this->unregisterHook('actionAfterUpdateCustomerAddressFormHandler') &&
+                   $this->unregisterHook('actionAdminOrdersListingFieldsModifier') &&
+                   $this->remove_delegation_from_address() &&
+                   $this->remove_delegation_from_the_address_format();
         } catch (Error $e) {
-            PrestaShopLogger::addLog("Error during uninstallation: " . $e->getMessage(), 3, null, 'Dolzay'); 
+            PrestaShopLogger::addLog("Error during uninstallation: " . $e->getMessage()."\n".
+                                     "Traceback : \n".$e->getTraceAsString(), 3, null, 'Dolzay'); 
             return false;
         }
     }
@@ -179,7 +211,7 @@ class Dolzay extends Module
                     }
 
                     // EXECUTE THE CREATE_TABLE_SQL STATEMENT OF THE entity_obj
-                    if (!$this->db->execute($entity_class::get_create_table_sql())) {
+                    if (!$this->db->query($entity_class::get_create_table_sql())) {
                         PrestaShopLogger::addLog("the query CREATE_TABLE_SQL of the class $entity_class  was't executed very well", 3, null, 'Dolzay');
                         return false;
                     }
@@ -239,7 +271,7 @@ class Dolzay extends Module
                     }
 
                     // EXECUTE THE DROP_TABLE_SQL STATEMENT OF THE entity_obj SUCCESSFULLY OTHERWISE QUIT THE INSTALLATION
-                    if (!$this->db->execute($entity_class::DROP_TABLE_SQL)) {
+                    if (!$this->db->query($entity_class::DROP_TABLE_SQL)) {
                         PrestaShopLogger::addLog("the query DROP_TABLE_SQL of the class $entity_class  was't executed very successfully", 3, null, 'Dolzay');
                         return false;
                     }
@@ -258,11 +290,64 @@ class Dolzay extends Module
         }
     }
 
+    public function add_delegation_to_the_address_format()
+    {
+        $id_country = (int)Configuration::get('PS_COUNTRY_DEFAULT');
+        $address_format = $this->db->query("SELECT format FROM "._DB_PREFIX_."address_format WHERE id_country=".$id_country)->fetchColumn() ;
+        $address_format = str_replace('city', 'city delegation', $address_format);
+        $this->db->query("UPDATE "._DB_PREFIX_."address_format SET format='".$address_format."' WHERE id_country=".$id_country);
+        return true ;
+    
+    }
+
+    public function add_submitted_and_tracking_code_to_order(){
+        try {
+            // add the 'submitted' column
+            $query = "IF NOT EXISTS (
+                        SELECT * 
+                        FROM INFORMATION_SCHEMA.COLUMNS
+                        WHERE TABLE_NAME = '"._DB_PREFIX_ . \OrderCore::$definition['table']."' 
+                            AND COLUMN_NAME = 'submitted'
+                            AND TABLE_SCHEMA = DATABASE()
+                    ) THEN
+                        ALTER TABLE "._DB_PREFIX_ . \OrderCore::$definition['table']." ADD COLUMN submitted BOOLEAN DEFAULT FALSE;
+                    END IF;" ;
+            $this->db->query($query);
+
+            // add the 'tracking_code' column
+            $query = "IF NOT EXISTS (
+                      SELECT * 
+                        FROM INFORMATION_SCHEMA.COLUMNS
+                        WHERE TABLE_NAME = '"._DB_PREFIX_ . \OrderCore::$definition['table']."' 
+                        AND COLUMN_NAME = 'tracking_code'
+                        AND TABLE_SCHEMA = DATABASE()
+                    ) THEN
+                        ALTER TABLE "._DB_PREFIX_ . \OrderCore::$definition['table']." ADD COLUMN tracking_code VARCHAR(255);
+                    END IF;" ;
+            $this->db->query($query);
+
+            return true ;
+        }
+        catch (Error $e) {
+            PrestaShopLogger::addLog("Error during adding delegation column: " . $e->getMessage(), 3, null, 'Dolzay');
+            return false;
+        }
+    }
+
+    public function remove_delegation_from_the_address_format()
+    {
+        $id_country = (int)Configuration::get('PS_COUNTRY_DEFAULT');
+        $address_format = $this->db->query("SELECT format FROM "._DB_PREFIX_."address_format WHERE id_country=".$id_country)->fetchColumn() ;
+        $address_format = str_replace('delegation', '', $address_format);
+        $this->db->query("UPDATE "._DB_PREFIX_."address_format SET format='".$address_format."' WHERE id_country=".$id_country);
+        return true ;
+    }
+
     private function add_delegation_to_address()
     {
         try {
             $query = "ALTER TABLE " . _DB_PREFIX_ . \AddressCore::$definition['table'] . " ADD COLUMN `delegation` varchar(255) DEFAULT NULL";
-            $this->db->execute($query);
+            $this->db->query($query);
             return true ;
         }
         catch (Error $e) {
@@ -275,7 +360,7 @@ class Dolzay extends Module
     {
         try {
             $query = "ALTER TABLE " . _DB_PREFIX_ . \AddressCore::$definition['table'] ." DROP COLUMN IF EXISTS `delegation`"; 
-            $this->db->execute($query);
+            $this->db->query($query);
             return true ;
         } catch (Error $e) {
             PrestaShopLogger::addLog("Error during removing delegation column: " . $e->getMessage(), 3, null, 'Dolzay');
@@ -283,82 +368,338 @@ class Dolzay extends Module
         }
     }
 
+    private function add_carriers(){
+        $query = "INSERT INTO ". ApiCredentials::TABLE_NAME." () VALUES ();";
+        $this->db->query($query);
+        $api_crendentials_id = (int)$this->db->lastInsertId();
+        
+        $afex_logo = "/modules/" . $this->name. "/uploads/afex.png" ;
+        $query = "INSERT INTO ". Carrier::TABLE_NAME." (`logo`,`name`,`api_credentials_id`) VALUES ('$afex_logo','Afex',".$api_crendentials_id.");";
+        $this->db->query($query);
+        return true ;
+    }
+
+    /*
+    private function remove_carriers(){
+        // the delete of the api credentials will lead to the delete of the carrier (but no vice versa)
+        $query = "DELETE FROM ". ApiCredentials::TABLE_NAME.";";
+        $this->db->query($query);
+        return true ;
+    }*/
+
     public function hookAdditionalCustomerAddressFields($params)
     {
-        //$f$params['fields'];
-        PrestaShopLogger::addLog("hookActionAdditionalCustomerAddressFields", 3, null, 'Dolzay');
-        $additionnalFormFields = [] ;
+        // hook location : prestashop\classes\form\CustomerAddressFormatter.php line 150
+        // goal : convert the city field to a select field and add the delegation field to the address form in the front office
+        // notes : instead of returning new fields, we will modify the existing fields and return an empty array
 
         // convert the city field to a select field 
         $cityFormField = new FormField();
+        $cityFormField->setType('select');
         $cityFormField->setName('city');
         $cityFormField->setLabel("City");
-        $cityFormField->setType('select');
         $cityFormField->setRequired(true);
         $cityFormField->setAvailableValues(self::CITIES);
-        $cityFormField->setValue("Ariana") ;
         $params['fields']['city'] = $cityFormField ;
 
-        // add the delegation field 
+        // convert the delegation field to a select field 
         $delgFormField = new FormField();
         $delgFormField->setName('delegation');
         $delgFormField->setType('select');
         $delgFormField->setRequired(true);
         $delgFormField->setLabel("Delegation");
-        $delegation_options = self::CITIES_DELEGATIONS["Ariana"];  
-        $delgFormField->setAvailableValues($delegation_options);
-        $delgFormField->setValue("Ariana Ville") ;
-        $city_key_pos = array_search('city', array_keys($params['fields']))  ;
-        $params['fields'] = array_merge(
-            array_slice($params['fields'], 0, $city_key_pos +1),
-            ['delegation' => $delgFormField],
-            array_slice($params['fields'], $city_key_pos + 1)
-        );
 
-        //$additionnalFormFields[$this->name] = [$cityFormField,$delgFormField] ;
+        $params['fields']['delegation'] = $delgFormField ;
 
+        // set the the phone number field to be required
+        $params['fields']['phone']->setRequired(true);
+
+        // return an empty array because we edited the existing fields instead of adding new ones
         return []  ;
 
     }
 
-  
-/*
     public function hookActionValidateCustomerAddressForm($params)
     {
-        try {
-            $form = $params['form'];
-            
-            if (empty($form['city']) || !array_key_exists($form['city'], self::cities_delegations)) {
-                $form->getErrors()->add(
-                    'city', 
-                    $this->l('Please select a valid city.')
-                );
-            }
+        // hook location : prestashop\classes\form\CustomerAddressForm.php line 109
+        // goal : validate the city,delegation and phone fields of the address form in the front office
+        
+        $is_valid = true ;
+        $form = $params['form'] ;
+        
 
-            if (empty($form['delegation']) || !in_array($form['delegation'], self::cities_delegations[$form['city']])) {
-                $form->getErrors()->add(
-                    'delegation',
-                    $this->l('Please select a valid delegation for the selected city.')
-                );
-            }
-        } catch (Error $e) {
-            PrestaShopLogger::addLog("Error in hookActionValidateCustomerAddressForm: " . $e->getMessage(), 3, null, 'Dolzay');
+        // validate the city field and the delegation field 
+        $city_field = $form->getField('city') ;
+        $city_value = $city_field->getValue() ;
+
+        $delegation_field = $form->getField('delegation') ;
+        $delegation_value = $delegation_field->getValue() ;
+
+        if (empty($city_value)) {
+            $city_field->addError('Le champ "ville" est requis.');
+            $is_valid = false ;
+        } else if (!array_key_exists($city_value, self::CITIES)) {
+            $city_field->addError("La ville choisie n'est pas valide");
+            $is_valid = false ;
+        }else if (empty($delegation_value)){
+            $delegation_field->addError('Le champ "délégation" est requis.');
+            $is_valid = false ;
         }
-    }*/
+        else if(!in_array($delegation_value, self::CITIES_DELEGATIONS[$city_value])) {
+            $delegation_field->addError("La délégation choisie n'est pas valide.");
+            $is_valid = false ;
+        }
 
-    public function hookDisplayFooter()
+        // validate the phone field
+        $phone_field = $form->getField('phone') ;
+        $phone_value = $phone_field->getValue() ;
+        if (empty($phone_value)){
+            $phone_field->addError('Le champ "téléphone" est requis.');
+            $is_valid = false ;
+        }
+        else if(!preg_match('/^[0-9]{8}$/', $phone_value)) {
+            $phone_field->addError('Le numéro de téléphone doit contenir exactement 8 chiffres.');
+            $is_valid = false ;
+        }
+            
+        return $is_valid ;
+    }
+
+    public function hookafterFillingEditAddressForm($params)
     {
+        // hook location : dolzay\override\classes\form\AbstractForm.php line 32
+        //goal : add the options of the delegation field based on the value of the city field in the address form of the front office
+        // note : I didn’t handle the case of an invalid city value because the user knows their city and can select it from the valid options.
+        //        This is different for the admin user, who doesn’t know the customer’s city—hence why I display it for them.
+       
+        $form = $params['form'] ;
+
+        $city_field = $form->getField('city') ;
+        $city_value = $city_field->getValue() ;
+
+        $delegation_field = $form->getField('delegation') ;
+        $delegation_options = (isset(self::CITIES_DELEGATIONS[$city_value])) ? self::CITIES_DELEGATIONS[$city_value] : array();
+        $delegation_field->setAvailableValues($delegation_options);
+
+
+    }
+
+    public function hookDisplayHeader()
+    {
+        $name = $this->context->controller->php_self;
         try {
             if ($this->context->controller->php_self == 'address' || 
                 $this->context->controller->php_self == 'order') {
-                Media::addJsDef([
-                    'cities_delegations' => self::cities_delegations
-                ]);
+                    
                 $this->context->controller->addJS($this->_path.'views/js/delegation.js');
+
             }
         } catch (Error $e) {
             PrestaShopLogger::addLog("Error in hookDisplayFooter: " . $e->getMessage(), 3, null, 'Dolzay');
         }
     }
+
+    public function hookActionAdminControllerSetMedia($params)
+    {
+        // add the js file that dynamically loads the delegation options based on the city value
+        $controller = $this->context->controller ;
+        //$action = $this->context->controller->action ;
+        $controllerName = Tools::getValue('controller'); // Legacy controller name
+        $action = Tools::getValue('action'); // Symfony action
+        
+        // Check if we are on the Customer Address Form page
+        if ($controllerName === 'AdminAddresses' && ($action == "updateaddress" || $action == "addaddress" || $action == null)) {
+            // Add your custom JS file
+            $this->context->controller->addJS($this->_path . 'views/js/admin_delegation.js');
+        }else if($controllerName == "AdminOrders" && $action == null){
+        
+            $adminBaseUrl = $this->context->link->getAdminLink('AdminDashboard');
+            Media::addJsDef([
+                'adminBaseUrl' => $adminBaseUrl,
+            ]);
+            
+            // get all the carriers and set them in js global var
+            $db = DzDb::getInstance();
+            Carrier::init($db) ;
+            $carriers = Carrier::get_all();
+            Media::addJsDef([
+                'dz_carriers' => array_values($carriers),
+            ]) ;
+            
+            // add fontawesome
+            $this->context->controller->addJS($this->_path . 'views/js/icons/font_awesome.js');
+
+            // add the js and the css of the order submit process
+            $this->context->controller->addCSS($this->_path . 'views/css/order_submit_process.css');
+            $this->context->controller->addJS($this->_path . 'views/js/order_submit_process.js');
+                
+        }
+    }
+
+
+    public function hookActionCustomerAddressFormBuilderModifier($params){
+        // located in prestashop\src\Core\Form\IdentifiableObject\Builder\FormBuilder.php at line : 138
+        // the goal : is to convert the city filed into a select and to add the delegation field , also to 
+        //            the options for both fields based on the db ($params['data']) or the request ($params['request']) in case of an invalide request in the 
+        //            address form of the back-office
+
+        $formBuilder = $params['form_builder'] ;
+        $data = $params['data'] ;
+        $request = $params['request'] ;
+        $is_it_an_edit_form = isset($params['id']) ;
+        
+        $is_it_a_submit =  isset($request->request->all()['customer_address']) ;
+
+        $existing_fields = $formBuilder->all() ;
+
+        // remove all of the existing fields
+        foreach ($existing_fields as $field_name => $field) {
+            $formBuilder->remove($field_name) ;
+        }
+
+        // get the value of the city from the request if it's a submit request otherwise get it from db
+        //$city_value = $is_it_a_submit ? $request->request->all()['customer_address']['city'] : $is_it_an_edit_form ? $data['city'] : null ;
+
+        if ($is_it_a_submit) {
+            $city_value = $request->request->all()['customer_address']['city'];
+        } elseif ($is_it_an_edit_form) {
+            $city_value = $data['city'];
+        } else {
+            $city_value = null;
+        }
+
+        // get the value of the delegation from the db if it's a rendering edit form request (not a submit request) to set it later in the form
+        // because the value of the delegation doesn't show up in the form
+        //$delegation_value = $is_it_an_edit_form && !$is_it_a_submit ? (new Address($params['id']))->delegation : null ;
+        
+        if ($is_it_a_submit) {
+            $delegation_value = $request->request->all()['customer_address']['delegation'];
+        } elseif ($is_it_an_edit_form) {
+            $delegation_value = (new Address($params['id']))->delegation;
+        } else {
+            $delegation_value = null;
+        }
+
+        // prepare the delgation options based on the city value and the type of the form (edit or create)
+        $delegation_options = isset(self::CITIES_DELEGATIONS[$city_value]) ? self::CITIES_DELEGATIONS[$city_value] : [] ;
+
+        // add the fields in the right order
+        foreach ($existing_fields as $field_name => $field) {
+            // add the city and delegation
+            if ($field_name === 'city') {
+                $formBuilder->add('city', ChoiceType::class, [
+                    'label' => 'Ville',
+                    'required' => true,
+                    'choices' => $is_it_an_edit_form && !isset(self::CITIES[$city_value]) ? array_merge([$city_value." (invalide)"=>$city_value],self::CITIES) : self::CITIES,
+                    'placeholder' => 'Veuillez choisir une ville',
+                    'constraints' => [
+                        new NotBlank([
+                            'message' => 'Ce champ est requis.'
+                        ]),
+                        new Choice([
+                            'choices' => self::CITIES,
+                            'message' => "La ville choisie n'est pas valide."
+                        
+                        ])
+                    ]
+                ]) 
+                ->add('delegation', ChoiceType::class, [
+                    'label' => 'Délégation',
+                    'choices'  => $delegation_options,
+                    'required' => true,
+                    'placeholder' => 'Veuillez choisir une délégation',
+                    'data' => $delegation_value, // set the value of the delegation in the rendering edit form request only 
+                    'constraints' => [
+                        new NotBlank([
+                            'message' => 'Ce champ est requis.'
+                        ]),
+                        new Choice([
+                            'choices' => $delegation_options,
+                            'message' => "La délégation choisie n'est pas valide."
+                        ])
+                    ]
+                ]) ;
+            } else if($field_name == "phone"){
+                $formBuilder->add('phone', TextType::class, [
+                    'label' => 'Téléphone',
+                    'required' => true,
+                    'constraints' => [
+                        new NotBlank([
+                            'message' => 'Ce champ est requis.'
+                        ]),
+                        new Regex([
+                            'pattern' => '/^[0-9]{8}$/',
+                            'message' => 'Le numéro de téléphone doit contenir exactement 8 chiffres.'
+                        ])
+                    ]
+                ]) ;
+            }else{
+                $formBuilder->add($field) ;
+            }
+
+
+        }
+
+    }
+
+    public function hookActionObjectAddressAddBefore($params)
+    {
+        // location prestashop\classes\ObjectModel.php at line  : 727
+        // the goal : persisting the delegation in the db when adding a new address with the address form of the back-office
+        $address = $params['object'];
+        if (isset($_POST['customer_address']['delegation'])) {
+            $address->delegation = Tools::getValue('customer_address')['delegation'];
+        }
+    }
+
+    public function hookActionObjectAddressUpdateBefore($params)
+    {
+        // location prestashop\classes\ObjectModel.php at line  : 557
+        // the goal : persisting the delegation in the db when updating an address with the address form of the back-office
+        $address = $params['object'];
+        if (isset($_POST['customer_address']['delegation'])) {
+            $delegation = Tools::getValue('customer_address')['delegation'] ;
+            $address->delegation = Tools::getValue('customer_address')['delegation'];
+        }
+    }
+
+    public function hookActionAfterUpdateCustomerAddressFormHandler($params){
+        // location C:\xampp\htdocs\prestashop\src\Core\Form\IdentifiableObject\Handler\FormHandler.php
+        // the goal : because when i edit the address in the order detail page of the back-office a new address gets created
+        //            without the delegation (for reason i didn't know) and it gets assigned as the delivery address of a the order i have to use this hook 
+        //            to set the delegation for this new address )
+
+        // check if the route is admin_order_addresses_edit
+        if (isset($params['route']) && $params['route'] === "admin_order_addresses_edit") {
+            
+            $order  = new Order($params['id']) ;
+
+            if (strpos($_SERVER['REQUEST_URI'], 'invoice') !== false) {
+                // "invoice" exists in the pathname
+                PrestaShopLogger::addLog("Invoice found in the request URI", 1, null, 'Dolzay');
+            }
+            
+            $address = new Address(strpos($_SERVER['REQUEST_URI'], 'invoice') ? $order->id_address_invoice : $order->id_address_delivery) ;
+
+            if ($address->delegation != $params['form_data']['delegation']) {
+                $address->delegation = $params['form_data']['delegation'] ;
+                $address->save() ;
+            }
+
+        }
+
+
+    }
+
+    public function hookActionAdminOrdersListingFieldsModifier($params)
+    {
+        // Add a custom group action
+        $params['actions'][] = [
+            'title' => 'Soumettre les commandes',
+            'class' => 'btn btn-default',
+        ];
+    }
+
+
 
 }

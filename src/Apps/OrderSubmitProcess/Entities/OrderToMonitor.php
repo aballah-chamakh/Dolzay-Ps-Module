@@ -1,6 +1,6 @@
 <?php
 
-namespace Dolzay\Apps\Processes\Entities;
+namespace Dolzay\Apps\OrderSubmitProcess\Entities;
 
 use Dolzay\ModuleConfig;
 use Dolzay\CustomClasses\Db\DzDb;

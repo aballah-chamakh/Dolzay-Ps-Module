@@ -1,0 +1,285 @@
+#dz-order-submit-btn {
+    border: 0px;
+    background-color: #1a456e;
+    margin-right: 15px;
+    border-radius: 5px;
+    padding: 10px 20px;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+#dz-order-submit-btn:active {
+    transform: scale(1.02); /* Shrink slightly on click */
+    background-color: #1f4f7a; /* Darker blue during click */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Optional pressed shadow */
+}
+
+/* STYLING THE EVENT POPUP */
+.dz-event-popup{
+    display : none ;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #ffffff;
+    border-radius: 10px;
+    width: 600px;
+    z-index: 2001;
+}
+
+.dz-event-popup-header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding : 10px ;
+    border-radius: 10px 10px 0px 0px;
+    color: white ;
+}
+
+
+.dz-event-popup-header p{
+    font-size: 18px;
+    margin: 0px;
+}
+.dz-event-popup-header i{
+    cursor : pointer ;
+}
+
+
+
+.dz-event-popup-body{
+    display: flex ;
+    justify-content: space-between;
+    align-items : center;
+    padding : 15px 10px ;
+}
+.dz-event-popup-body i {
+    font-size: 80px;
+    margin-right: 20px;
+}
+
+.dz-event-popup-footer{
+    display : flex ;
+    justify-content: center;
+    padding : 15px 10px ;
+    
+}
+
+.dz-event-popup-footer button{
+    border: none;
+    border-radius: 5px;
+    padding : 10px ;
+    width: 100%;
+    color :white
+}
+
+.dz-popup {
+    display : none ;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    background-color: #ffffff;
+    border-radius: 10px;
+    width: 600px;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 2001; /* Ensures it's above the overlay */
+    
+}
+
+.dz-event-popup.dz-show,.dz-popup.dz-show {
+    display : flex ;
+    flex-direction: column;
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.dz-popup-overlay {
+    display : none ;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent gray background */
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 2000; /* Below the popup */
+}
+
+.dz-popup-overlay.dz-show {
+    display : block ;
+    opacity: 1;
+}
+
+.dz-popup-header {
+    padding: 15px 10px;
+    font-size : 16px;
+    background: #1a456e;
+    color: white;
+    border-radius : 10px 10px 0px 0px ;
+}
+.dz-popup-body{
+    padding: 10px;
+    display : flex ;
+    flex-direction: column;
+    justify-content : center ;
+    align-items: center;
+}
+.dz-popup-footer {
+    width : 100% ;
+    padding: 15px 20px;
+    display: flex;
+    justify-content : space-between ;
+    background-color: #f5f5f5;
+    border-top: 1px solid #e0e0e0;
+    border-radius : 0px 0px 10px 10px ;
+}
+
+.dz-continue-btn{
+    width : 65% ;
+    border: 0px;
+    background-color: #1a456e;
+    border-radius: 5px;
+    font-size : 16px;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.dz-terminate-btn{
+    width : 100% ;
+    border: 0px;
+    background-color: #1a456e;
+    border-radius: 5px;
+    font-size : 16px;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+
+.dz-cancel-btn{
+    width : 34% ;
+    border: 0px;
+    color: #1a456e;
+    background-color: white;
+    border : 2px solid #1a456e ;
+    border-radius: 5px;
+    font-size : 16px;
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+
+.dz-carrier-select{
+    border-width : 1px;
+    width : 100% ;
+    padding : 10px ;
+    border-radius :5px ;
+}
+
+.dz-carrier-icon{
+    width : 60% ;
+    margin-bottom : 10px ;
+}
+
+.dz-spinner {
+    color: #1a456e;
+    height: 50px;
+    width: 50px;
+    border-width: 6px;
+}
+
+.dz-btn-spinner-white {
+    color: white;
+    height: 20px;
+    width: 20px;
+    border-width: 3px;
+}
+
+.dz-btn-spinner-blue {
+    color: #1a456e;
+    height: 20px;
+    width: 20px;
+    border-width: 3px;
+}
+
+.dz-meta-data-container{
+    width : 100% ;
+    border : 1px solid gray ;
+    border-radius: 5px;
+    padding : 5px ;
+    display : flex ;
+    flex-direction : column ;
+}
+
+.dz-meta-data-header{
+    width : 100% ;
+    border-bottom : 1px solid gray ;
+    padding-bottom : 5px ; 
+}
+
+.dz-meta-data-table{
+    width : 100% ;
+    text-align: center ;
+}
+
+.dz-meta-data-table thead{
+    background-color :#1f4f7a ;
+    color : white ;
+}
+
+.dz-order-link{
+    padding: 5px 7px;
+    background-color: #1f4f7a;
+    color: white;
+    border-radius: 50%;
+    font-size: 20px;
+
+}
+
+
+.dz-checkbox-container {
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+    background-color: white;
+    border-radius: 4px;
+    margin-bottom : 0px ;
+}
+.dz-checkbox-container input  {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+    
+}
+.dz-checkmark {
+    height: 24px;
+    width: 24px;
+    border: 2px solid #2196F3;
+    border-radius: 4px;
+    display: block;
+    position: relative;
+    transition: background-color 0.2s;
+}
+
+.dz-checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+    left: 7px;
+    top: 2px;
+    width: 7.5px;
+    height: 15px;
+    border: solid #2085d4;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+.dz-checkbox-container input:checked ~ .dz-checkmark:after {
+    display: block;
+}

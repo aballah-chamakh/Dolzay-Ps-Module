@@ -1,0 +1,58 @@
+
+dz_test:
+  path: /dz/test
+  methods: [GET]
+  defaults:
+    _controller: 'Dolzay\Apps\OrderSubmitProcess\Controllers\OrderSubmitProcessController::test'
+    _disable_module_prefix: true
+
+dz_launch_order_submit_process:
+  path: /dz/order_submit_process
+  methods: [POST]
+  defaults:
+    _controller: 'Dolzay\Apps\OrderSubmitProcess\Controllers\OrderSubmitProcessController::launchOrderSubmitProcess'
+    _disable_module_prefix: true
+
+
+dz_continue_order_submit_process:
+  path: /dz/order_submit_process/{process_id}/continue
+  methods: [PUT]
+  requirements:
+    id: \d+
+  defaults:
+    _controller: 'Dolzay\Apps\OrderSubmitProcess\Controllers\OrderSubmitProcessController::continueOrderSubmitProcess'
+    _disable_module_prefix: true
+
+dz_cancel_order_submit_process:
+  path: /dz/order_submit_process/{process_id}/cancel
+  methods: [PUT]
+  requirements:
+    id: \d+
+  defaults:
+    _controller: 'Dolzay\Apps\OrderSubmitProcess\Controllers\OrderSubmitProcessController::cancelOrderSubmitProcess'
+    _disable_module_prefix: true
+
+dz_terminate_order_submit_process:
+  path: /dz/order_submit_process/{process_id}/terminate
+  methods: [PUT]
+  requirements:
+    id: \d+
+  defaults:
+    _controller: 'Dolzay\Apps\OrderSubmitProcess\Controllers\OrderSubmitProcessController::terminateOrderSubmitProcess'
+    _disable_module_prefix: true
+
+dz_monitor_order_submit_process:
+  path: /dz/order_submit_process/{process_id}/monitor
+  methods: [GET]
+  requirements:
+    id: \d+
+  defaults:
+    _controller: 'Dolzay\Apps\OrderSubmitProcess\Controllers\OrderSubmitProcessController::monitorOrderSubmitProcess'
+    _disable_module_prefix: true
+
+dz_check_for_running_order_submit_process:
+  path: /dz/order_submit_proces/check_running
+  methods: [GET]
+  defaults:
+    _controller: 'Dolzay\Apps\OrderSubmitProcess\Controllers\OrderSubmitProcessController::checkForRunningProcess'
+    _disable_module_prefix: true
