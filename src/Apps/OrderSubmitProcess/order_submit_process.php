@@ -17,13 +17,11 @@ echo "arguments : $process_id $carrier $employee_id";
 $carrier_class_name = $carrier."Carrier"; // example "Afex"."Carrier"
 
 // require the file of the class
-require_once dirname(__DIR__, 2) . "/CarrierApiclients//" .$carrier_class_name.".php"; // Include PrestaShop's configuration
+require_once dirname(__DIR__, 2) . "/CarrierApiclients//" .$carrier_class_name.".php"; 
 
-// initialize it and submit the orders
 $carrier_class_name::init($process_id,$employee_id) ;
-echo "finish initing the carrier";
-$carrier_class_name::submit_orders();
-echo "submit orders";
+$carrier_class_name::submit_orders(); 
+
 
 /*
 define

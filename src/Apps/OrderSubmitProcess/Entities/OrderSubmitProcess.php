@@ -10,7 +10,15 @@ class OrderSubmitProcess {
 
     public const TABLE_NAME = ModuleConfig::MODULE_PREFIX."order_submit_process";
     private const PROCESS_TYPES = ["Soumission", "Changement du zone", "Mise à jour"];
-    private const STATUS_TYPES = ["Initié","Actif", "Terminé","Terminé par utilisateur", "Interrompu","Annulé"];
+    private const STATUS_TYPES = ["Initié", // has just been created 
+                                  "Contient des commandes invalides",
+                                  "Actif", // submitting orders 
+                                  "Pre-terminé par l'utilisateur", // the user requested to submit the orders
+                                  "Terminé par l'utilisateur", // the osp accepted the terminate request of the user 
+                                   "Interrompu", // interrupted by the user
+                                   "Annulé par l'utilisateur", // canceled by the user  
+                                   "Annulé automatiquement", // canceled automatically because there is valid order to submit after v
+                                   "Terminé"];
     private const CITIES = [
         "Ariana",
         "Beja",
@@ -38,8 +46,19 @@ class OrderSubmitProcess {
         "Zaghouan"
     ];
 
-    private static $db;
+    // Why I added the status: "Pre-terminé par l'utilisateur"
+    // Problematic case caused by directly setting the status of the obs 
+    // to "Terminé par l'utilisateur" when the user requests to terminate the obs:
+    // The client-side monitor tracking the progress of the obs gets the status "Terminé par l'utilisateur," 
+    // which triggers a finish popup to open. 
+    // However, the current order being processed by the obs may encounter an exception 
+    // or might be the last one processed, which would override the status of the obs to 
+    // "Interrompu" or "Terminé."
+    // By adding the "Pre-terminé par l'utilisateur" status, the obs will check after submitting each 
+    // order whether the user has requested to terminate the obs by evaluating if its status == "Pre-terminé par l'utilisateur."
+    // If so, it will then set its status to "Terminé par l'utilisateur."
 
+    private static $db;
 
     public static function init($db) {
         self::$db = $db;
@@ -90,11 +109,11 @@ class OrderSubmitProcess {
         return $process ;
     }
 
-    public static function check_running_process(){
-        $query = "SELECT id,processed_items_cnt,items_to_process_cnt,status,error_msg FROM ".self::TABLE_NAME." WHERE status IN ('Initié','Actif')" ;
+    public static function get_running_process(){
+        $query = "SELECT id FROM ".self::TABLE_NAME." WHERE status IN ('Initié','Contient des commandes invalides','Actif')" ;
         $stmt = self::$db->query($query) ;
         $process = $stmt->fetch();
-        return $process ;
+        return $process === false ? null : $process;
     }
 
     public static function insert(string $carrier): int {
@@ -104,7 +123,7 @@ class OrderSubmitProcess {
     }
 
     public static function is_there_a_running_process(){
-        $query = "SELECT id FROM ".self::TABLE_NAME." WHERE status IN ('Initié','Actif');" ;
+        $query = "SELECT id FROM ".self::TABLE_NAME." WHERE status IN ('Initié','Contient des commandes invalides','Actif');" ;
         $stmt = self::$db->query($query);
         $order_submit_process = $stmt->fetch();
         return ($order_submit_process) ? $order_submit_process['id'] : false ;
@@ -150,24 +169,28 @@ class OrderSubmitProcess {
         }
 
         // construct the meta_data
+        $has_invalid_orders = false ;
         $order_submit_process_metadata = [] ;
+           
+        $order_submit_process_metadata['valid_order_ids'] = $valid_order_ids ;
         
-        if($valid_order_ids){
-            $order_submit_process_metadata['valid_order_ids'] = $valid_order_ids ;
-        }
-
         if ($orders_with_invalid_fields){
             $order_submit_process_metadata['orders_with_invalid_fields'] = $orders_with_invalid_fields ;
+            $has_invalid_orders = true ;
         }
 
         if($already_submitted_orders){
             $order_submit_process_metadata['already_submitted_orders'] = $already_submitted_orders ;
+            $has_invalid_orders = true ;
         }
 
         // set the meta data of the order submit process 
-        $query = "UPDATE ".OrderSubmitProcess::TABLE_NAME." SET meta_data='".json_encode($order_submit_process_metadata)."'" ;
+        $query = "UPDATE ".OrderSubmitProcess::TABLE_NAME." SET meta_data='".json_encode($order_submit_process_metadata,JSON_UNESCAPED_UNICODE)."'" ;
         if($valid_order_ids){
             $query .=  ",items_to_process_cnt=".count($order_submit_process_metadata['valid_order_ids']) ;
+        }
+        if($has_invalid_orders){
+            $query .= ",status='Contient des commandes invalides'" ;
         }
         $query .= " WHERE id=".$order_submit_process_id ;
         self::$db->query($query) ;
@@ -183,11 +206,7 @@ class OrderSubmitProcess {
 
         // add the orders to resubmit
         if($order_to_resubmit_ids){
-            if(isset($meta_data['valid_order_ids'])){
-                $meta_data['valid_order_ids'] = array_merge($meta_data['valid_order_ids'],$order_to_resubmit_ids) ;
-            }else{
-                $meta_data['valid_order_ids'] = $order_to_resubmit_ids ;
-            }
+            $meta_data['valid_order_ids'] = array_merge($meta_data['valid_order_ids'],$order_to_resubmit_ids) ;
         }
 
         // check if there is an old invalid order that got fixed then add them to the valid_order_ids
@@ -217,26 +236,22 @@ class OrderSubmitProcess {
                 }
             }
         }
-
+    
         // unset other meta data other than valid_order_ids
-        $meta_data_fields = array_keys($meta_data) ;
-        foreach($meta_data_fields as $field){
-            if ($field != "valid_order_ids"){
-                unset($meta_data[$field]) ;
-            }
-        }
-        $items_to_process_cnt = count($meta_data['valid_order_ids']);
+        $new_meta_data = ['valid_order_ids'=>$meta_data['valid_order_ids']];
+        $items_to_process_cnt = count($new_meta_data['valid_order_ids']);
         // persist the new meta data and activate the process the process 
-        self::$db->query("UPDATE ".self::TABLE_NAME." SET status='Actif',meta_data='".json_encode($meta_data)."',items_to_process_cnt=$items_to_process_cnt WHERE id=".$process['id']) ;
+        self::$db->query("UPDATE ".self::TABLE_NAME." SET status='Actif',meta_data='".json_encode($meta_data,JSON_UNESCAPED_UNICODE)."',items_to_process_cnt=$items_to_process_cnt WHERE id=".$process['id']) ;
         return $items_to_process_cnt ;
     }
 
-    public static function cancel($process_id){
-        self::$db->query("UPDATE ".self::TABLE_NAME." SET status='Annulé' WHERE id=".$process_id) ;
+
+    public static function cancel($process_id,$cancel_status){
+        self::$db->query("UPDATE ".self::TABLE_NAME." SET status='$cancel_status' WHERE id=".$process_id) ;
     }
 
     public static function terminate($process_id){
-        self::$db->query("UPDATE ".self::TABLE_NAME." SET status='Terminé par utilisateur' WHERE id=".$process_id) ;
+        self::$db->query("UPDATE ".self::TABLE_NAME." SET status='Pre-terminé par l'utilisateur' WHERE id=".$process_id) ;
     }
 
     public static function get_order_submit_process_list($query_parameter){

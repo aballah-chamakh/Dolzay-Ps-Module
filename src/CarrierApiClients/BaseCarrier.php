@@ -74,7 +74,7 @@ class BaseCarrier {
         self::$db->query("UPDATE "._DB_PREFIX_."orders SET ".implode(", ", $updates)." WHERE id_order=".$order_id);
     }
 
-    protected static function updateOrderSubmitProcess($updates){
+    public static function updateOrderSubmitProcess($updates){
         $query = "UPDATE "._MODULE_PREFIX_."order_submit_process SET ".implode(", ", $updates)." WHERE id=".self::$process_id ;
         self::$db->query($query);
     }

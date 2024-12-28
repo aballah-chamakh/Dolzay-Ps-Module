@@ -1,6 +1,14 @@
 <?php
 
-$arr = ["A","B","C"] ;
+class Human {
+    public static function sayHi($sender="",$receiver="People"){
+        echo "hi $sender !!!!!!!!!!!!!!!! \n" ;
+    }
+}
+Human::sayHi($aaa="Abdallah");
+Human::sayHi("Youssef");
+Human::sayHi();
+exit;
 
 foreach($arr as $index=>$char){
     if(true){

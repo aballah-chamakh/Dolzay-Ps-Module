@@ -118,16 +118,14 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         $order_ids = $request_body['order_ids'] ;
         $carrier = $request_body['carrier'];
 
-
-
         // create an order submit process
         $db = DzDb::getInstance();
         $db->query("LOCK TABLES ".OrderSubmitProcess::TABLE_NAME." WRITE");
         OrderSubmitProcess::init($db);
-        if($process_id = OrderSubmitProcess::is_there_a_running_process())
+        if($process = OrderSubmitProcess::get_running_process())
         {
             $db->query("UNLOCK TABLES");
-            return new JsonResponse(['status'=>'conflict','process_id'=>$process_id],JsonResponse::HTTP_CONFLICT);
+            return new JsonResponse(['status'=>'conflict','process'=>$process],JsonResponse::HTTP_CONFLICT);
         } 
         $order_submit_process_id = OrderSubmitProcess::insert($carrier); 
         $db->query("UNLOCK TABLES");
@@ -137,15 +135,16 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         $order_submit_process_metadata = OrderSubmitProcess::set_and_get_the_metadata_of_the_order_submit_process($order_submit_process_id,$order_ids) ;        
         
 
-        $response = ["status"=>"success","process_id"=>$order_submit_process_id] ;
+        $response = ["status"=>"success","process"=>["id"=>$order_submit_process_id]] ; 
+        
         if($order_submit_process_metadata){
-            $response = array_merge($response,$order_submit_process_metadata) ;
+            $response['process']['meta_data'] = $order_submit_process_metadata ;
             return new JsonResponse($response) ;
         }
 
         // launch the order submit process 
         $this->launchObsScript($order_submit_process_id,$carrier,$employee_id) ;
-        new JsonResponse(['status'=>'success','process_id' => $order_submit_process_id], 200);                
+        return new JsonResponse($response) ;
     }
 
     // this route can be called after the user selected the order to re-submit 
@@ -195,17 +194,21 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         }
 
         // handle the process isn't not still initiated
-        if ($process['status'] != "Initié"){
+        if ($process['status'] != "Contient des commandes invalides"){
             $db->commit();
             return new JsonResponse(['status'=>"conflict",'process_status'=>$process['status']],JsonResponse::HTTP_CONFLICT);
         }
 
         // the orders to resubmit, check if the invalid orders were fixed and activate the process
         $items_to_process_cnt = OrderSubmitProcess::add_orders_to_resubmit_and_activate_the_process($process,$order_to_resubmit_ids);
-        $db->commit() ;
-
+        if ($items_to_process_cnt == 0){
+            OrderSubmitProcess::cancel($process['id'],"Annulé automatiquement");
+            $db->commit() ;
+        }else{
+            $db->commit() ;
+            $this->launchObsScript($process['id'],$process['carrier'],$employee_id) ;
+        }
         // launch the order submit process 
-        $this->launchObsScript($process['id'],$process['carrier'],$employee_id) ;
         return new JsonResponse(['status'=>'success','items_to_process_cnt' => $items_to_process_cnt], 200);                
     }
 
@@ -227,12 +230,12 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         }
 
         // handle the process isn't still initiated
-        if ($process['status'] != "Initié"){
+        if ($process['status'] != "Contient des commandes invalides"){
             $db->commit();
             return new JsonResponse(['status'=>"conflict",'process_status'=>$process['status']],JsonResponse::HTTP_CONFLICT);
         }
 
-        OrderSubmitProcess::cancel($process['id']);
+        OrderSubmitProcess::cancel($process['id'],"Annulé par l'utilisateur");
         $db->commit() ;
         return new JsonResponse(['status'=>"success"]) ;
 
@@ -280,13 +283,18 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
     }
 
     public function checkForRunningProcess(){
+        $db = DzDb::getInstance() ;
         OrderSubmitProcess::init($db);
-        $process = OrderSubmitProcess::check_running_process($process_id);
-        if (!$process){
-            return new JsonResponse(['status'=>'not_found'],JsonResponse::HTTP_NOT_FOUND) ;
+        $process = OrderSubmitProcess::get_running_process();
+
+        if($process && !in_array($process['status'], ["Initié","Contient des commandes invalides","Actif"]) ){
+            $process = null ;
         }
-        return new JsonResponse(['status'=>'sucess','process'=>$process]); 
+
+        return new JsonResponse(['status'=>'success','process'=>$process]); 
     }
+
+
 
 
 }

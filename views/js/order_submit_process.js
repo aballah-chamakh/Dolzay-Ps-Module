@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const moduleMediaBaseUrl = window.location.href.split('/dz_admin/index.php')[0]+"/modules/dolzay/uploads";
     const urlParams = new URLSearchParams(window.location.search);
     const _token = urlParams.get('_token');
+    const ospFinalStatuses = ["Terminé par l'utilisateur", "Interrompu","Annulé","Terminé"]
     let selectedCarrier = "" ;
 
     const eventPopupTypesData = {
@@ -19,12 +20,27 @@ document.addEventListener('DOMContentLoaded', function() {
         const order_submit_btn = document.createElement('button')
         order_submit_btn.id="dz-order-submit-btn" ;
         order_submit_btn.innerText = "Soumttre les commandes"
+        //order_submit_btn.disabled = true ;
         order_table_header.appendChild(order_submit_btn)
         order_submit_btn.addEventListener('click', ()=>{selectCarrierStep.render()});
+        
     }
 
-    const server = {
-        launchObs : function(orderIds,carrier){
+    function showTheLoaderOfCheckingAlreadySubmittedAnOrdersWithInvalidFields(){
+        popup.popupHeaderEl.innerText = "Vérification des commandes déjà soumises et invalides"
+        popup.popupBodyEl.innerHTML = `              
+            <div class="spinner-border dz-btn-spinner-blue" role="status" >
+                <span class="sr-only">Loading...</span>
+            </div>
+        `
+        popup.popupFooterEl.innerHTML = ""
+        popup.open()
+    }
+
+
+
+    const Server = {
+        launchOsp : function(orderIds,carrier){
             fetch(moduleControllerBaseUrl+"/order_submit_process?_token="+_token, {
                 method: 'POST',
                 credentials: 'include', // Ensures cookies are sent with the request
@@ -36,13 +52,22 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(function (data){
 
-                if(data.status == 'conflict'){
+                if(data.status == "success"){
+                    let process  = data.process 
+                    if (process.hasOwnProperty('meta_data')){
+                        alreadySubmittedAndInvalidOrdersStep.render(process)
+                    }else{
+                        selectedCarrier = carrier ;
+                        process['items_to_process_cnt'] = orderIds.length
+                        progressOfSubmittingOrdersStep.render(process)
+                    }
+                } else if(data.status == 'conflict'){ // handle the case of an exsint osp running
                     buttons = [
                         {
                             'name' : 'Détail du processus',
                             'className' : "dz-process-detail-btn",
                             'clickHandler' : function(){
-                                            console.log(`go to the detail page of the process with the id : ${data.process_id}`)
+                                            console.log(`go to the detail page of the process with the id : ${data.process.id}`)
                             }
                         }
                     ]
@@ -51,21 +76,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                     ,"Vous ne pouvez pas soumettre de commandes pour le moment, car un processus de soumission de commandes est déjà en cours",
                                     buttons)
                 }
-                else if(data.status == "success" && (data.hasOwnProperty('orders_with_invalid_fields') || data.hasOwnProperty('already_submitted_orders'))){
-                    // render Already submitted and invalid orders 
-                    console.log("there is meta data")
-                    console.log(data)
-                    selectedCarrier = carrier ;
-                    alreadySubmittedAndInvalidOrdersStep.render(data)
-                }
-                else if(data.status == "success"){
-                    selectedCarrier = carrier ;
-                    progressOfSubmittingOrdersStep.render(process_id,orderIds.length)
-                }
+
             })
             .catch(error => console.error('Error:', error));
         },
-        continueObs : function(process_id,ordersToResubmitIds){
+        continueOsp : function(process_id,ordersToResubmitIds){
             let url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/continue?_token="+_token
             console.log("url : "+url)
             fetch(url, {
@@ -79,12 +94,32 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(function (data){
                 if(data.status == "success"){
-                    progressOfSubmittingOrdersStep.render(process_id,data.items_to_process_cnt)
+                    let items_to_process_cnt = data.items_to_process_cnt
+                    if (items_to_process_cnt == 0){
+                        popup.close()
+                        buttons = [
+                            {
+                                'name' : 'Ok',
+                                'className' : "dz-process-detail-btn",
+                                'clickHandler' : function(){
+                                    eventPopup.close()
+                                }
+                            }
+                        ]
+                        let message = ""
+
+                        message = `Ce processus a été annulé, car il n'a aucune commande valide à soumettre.`
+                        
+                        eventPopup.open("info","Information",message,buttons)
+                    }else{
+                        progressOfSubmittingOrdersStep.render(process_id,{processed_items_cnt :'__',items_to_process_cnt:items_to_process_cnt},selectedCarrier)
+                    }
+                    
                 }else if(data.status == "conflict"){
                     popup.close()
                     buttons = [
                         {
-                            'name' : 'Détail du processus',
+                            'name' : 'Détail',
                             'className' : "dz-process-detail-btn",
                             'clickHandler' : function(){
                                             console.log(`go to the detail page of the process with the id : ${data.process_id}`)
@@ -102,7 +137,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => console.error('Error:', error));
         },
-        cancelObs : function(process_id){
+        cancelOsp : function(process_id){
             let url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/cancel?_token="+_token
             console.log("url : "+url)
             fetch(url, {
@@ -117,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     popup.close()
                     buttons = [
                         {
-                            'name' : 'Détail du processus',
+                            'name' : 'Détail',
                             'className' : "dz-process-detail-btn",
                             'clickHandler' : function(){
                                             console.log(`go to the detail page of the process with the id : ${process_id}`)
@@ -137,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => console.error('Error:', error));
         },
-        terminateObs : function(terminate){
+        terminateOsp : function(terminate){
             let url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/terminate?_token="+_token
             console.log("url : "+url)
             fetch(url, {
@@ -154,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => console.error('Error:', error));
         },
-        monitorObs : function(process_id){
+        monitorOsp : function(process_id){
             let url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/monitor?_token="+_token
             console.log("url : "+url)
             fetch(url, {
@@ -165,7 +200,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(function(data){
                 if(data.status == "success"){
                     let process = data.process
-                    // update the interfece with the progress of the obs
+                    // update the interfece with the progress of the osp
                     let submittedOrdersCntEl = popup.popupBodyEl.firstElementChild
                     submittedOrdersCntEl.innerText = process.processed_items_cnt
 
@@ -183,7 +218,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         ]
     
                         let message = `${process.processed_items_cnt}/${process.items_to_process_cnt} commandes ont été soumises avec succès à ${process.carrier}.`
-    
                         eventPopup.open("success","Succés",message,buttons)
                     }else if(process.status == "Terminé par utilisateur"){
                         popup.close()
@@ -198,7 +232,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                         ]
 
-                        let message = `avant que vous avez terminer le processus du soummission ${process.processed_items_cnt}/${process.items_to_process_cnt} commandes ont été soumises avec succès à ${process.carrier}.`
+                        let message = "Le processus de soumission des commandes a bien été arrêté"
+                        if(process.processed_items_cnt > 0){
+                            message =`Le processus de soumission des commandes a bien été arrêté après la soumission de ${process.processed_items_cnt}/${process.items_to_process_cnt} commandes à ${process.carrier}.`
+                        }
                         eventPopup.open("success","Succés",message,buttons)
                     }else if (process.status == "Interrompu"){
                         popup.close()
@@ -215,13 +252,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         eventPopup.open("error","Erreur",process.error.message,buttons)
                     }else{
                         setTimeout(()=>{
-                            this.monitorObs(process_id);
+                            this.monitorOsp(process_id);
                         },3000)
                     }
                 }
             })
             .catch(error => console.error('Error:', error));
-        }       
+        }  
     }
 
     const popupOverlay = {
@@ -415,17 +452,18 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         continue : function(continueBtn){
             // disable the button then add to it a spinner
-            continueBtn.disabled =true 
+            continueBtn.disabled = true 
+            console.log("continueBtn : ")
+            console.log(continueBtn)
             continueBtn.innerHTML += `              
                 <div class="spinner-border dz-btn-spinner-white" role="status" >
                     <span class="sr-only">Loading...</span>
                 </div>
             `
-
-            const selectedCarrier = document.querySelector(".dz-carrier-select").value;
+            selectedCarrier = document.querySelector(".dz-carrier-select").value;
 
             // make a request to initialize the order submit process 
-            server.launchObs(this.orderIds,selectedCarrier)
+            Server.launchOsp(this.orderIds,selectedCarrier)
         },
         cancel : function(){
             popup.close();
@@ -433,15 +471,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const alreadySubmittedAndInvalidOrdersStep = {
-        render : function(order_submit_process_meta_data){
+
+        render : function(process){
             popup.popupHeaderEl.innerText = "Choisir les commandes à re-soumettre et fixer les commandes invalides"
             popup.popupBodyEl.innerHTML = ''
             popup.popupFooterEl.innerHTML = ''
             popup.popupFooterEl.style.display = 'flex'
 
             // add the already submitted orders
-            if(order_submit_process_meta_data.hasOwnProperty('already_submitted_orders')){
-                let already_submitted_orders = order_submit_process_meta_data.already_submitted_orders
+            if(process.meta_data.hasOwnProperty('already_submitted_orders')){
+                let already_submitted_orders = process.meta_data.already_submitted_orders
                 let table_rows = ""            
                 for (let i = 0; i < already_submitted_orders.length; i++) {
                     let currentOrderLink = this.getOrderLink(already_submitted_orders[i].order_id)
@@ -485,8 +524,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             }
             // add the already submitted orders
-            if(order_submit_process_meta_data.hasOwnProperty('orders_with_invalid_fields')){
-                let orders_with_invalid_fields = order_submit_process_meta_data.orders_with_invalid_fields
+            if(process.meta_data.hasOwnProperty('orders_with_invalid_fields')){
+                let orders_with_invalid_fields = process.meta_data.orders_with_invalid_fields
                 
                 let table_rows = ""            
                 for (let i = 0; i < orders_with_invalid_fields.length; i++) {
@@ -556,12 +595,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 {
                     'name' : 'Annuler',
                     'className' : "dz-cancel-btn",
-                    'clickHandler' : function (){alreadySubmittedAndInvalidOrdersStep.cancel(this,order_submit_process_meta_data['process_id'])}
+                    'clickHandler' : function (){alreadySubmittedAndInvalidOrdersStep.cancel(this,process['id'])}
                 },
                 {
                     'name' : 'Continuer',
                     'className' : "dz-continue-btn",
-                    'clickHandler' : function (){alreadySubmittedAndInvalidOrdersStep.continue(this,order_submit_process_meta_data['process_id'])}
+                    'clickHandler' : function (){alreadySubmittedAndInvalidOrdersStep.continue(this,process['id'])}
                 }
             ]
             popup.addButtons(buttons);
@@ -577,7 +616,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let ordersToResubmitIds = this.getOrdersToResubmitIds()
             let url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/continue?_token="+_token
             console.log("url : "+url)
-            server.continueObs(process_id,ordersToResubmitIds)
+            Server.continueOsp(process_id,ordersToResubmitIds)
 
         },
         cancel : function(cancelBtn,process_id){
@@ -591,7 +630,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             let url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/cancel?_token="+_token
             console.log("url : "+url)
-            server.cancelObs(process_id);
+            Server.cancelOsp(process_id);
         },
         getOrderLink : function(order_id){
             let splitted_url = window.location.href.split("?")
@@ -618,13 +657,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const progressOfSubmittingOrdersStep = {
         interval : null,
-        render : function(process_id,items_to_process_cnt){
+        render : function(process,carrier){
             popup.popupHeaderEl.innerText = "Progrès de la soumission des commandes"        
             popup.popupBodyEl.innerHTML = `
                 <div class="spinner-border dz-spinner" role="status" >
                 <span class="sr-only">Loading...</span>
                 </div>
-                <p style="position:relative"><span class="dz-submitted-orders-cnt">__</span>/<span class="orders-to-submit-cnt">${items_to_process_cnt}</span> commandes ont été soumises à <span class="dz-carrier">${selectedCarrier}</span></p>`
+                <p style="position:relative"><span class="dz-submitted-orders-cnt">${process.processed_items_cnt}</span>/<span class="orders-to-submit-cnt">${process.items_to_process_cnt}</span> commandes ont été soumises à <span class="dz-carrier">${carrier}</span></p>`
             popup.popupFooterEl.innerHTML = ''
 
             // add the cancel and the continue buttons 
@@ -632,7 +671,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 {
                     'name' : 'Terminer',
                     'className' : "dz-terminate-btn",
-                    'clickHandler' : function (){progressOfSubmittingOrdersStep.terminate(this,process_id)}
+                    'clickHandler' : function (){progressOfSubmittingOrdersStep.terminate(this,process.id)}
                 }
             ]
 
@@ -640,7 +679,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // here i have to put a set interval that periodically pulls the state of the order submit process
             // also i have to caputure the value of the interval to clear it later once the process is completed or has an error or was terminated by the user
-            server.monitorObs(process_id);
+            Server.monitorOsp(process.id);
 
         },
         terminate : function(terminateBtn,process_id){
@@ -654,7 +693,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `
 
-            server.terminateObs(process_id)
+            Server.terminateOsp(process_id)
         }
 
     }
@@ -667,3 +706,51 @@ document.addEventListener('DOMContentLoaded', function() {
     //popupOverlay.show();
 
 })
+
+/*
+TRASH CODE : 
+
+        checkForARunningProcess : function(recursive){
+            fetch(
+                moduleControllerBaseUrl+"/order_submit_process/check_for_a_running_process?_token="+_token,{
+                    method : 'GET',
+                    credentials: 'include'
+                }
+            ).then(response => response.json())
+            .then(function (data){
+                if(data.status == 'success' && data.process ){
+                    let process = data.process ;
+                    if(process.status == "Initié"){
+                        if(!recursive){
+                            showTheLoaderOfCheckingAlreadySubmittedAnOrdersWithInvalidFields(false)
+                        }
+                        // re-check the status the osp after 2 seconds 
+                        setTimeout(()=>{Server.checkForARunningProcess(true)},2000)
+                    }else if(process.status == "Contient des commandes invalides"){
+                        
+                        alreadySubmittedAndInvalidOrdersStep.render(data.process)
+                    }
+                    else if (process.status == "Actif"){
+                        progressOfSubmittingOrdersStep.render(process)
+                    }
+    
+                    // handle the case of recursive=true and the process did end 
+                    if(recursive && ospFinalStatuses.includes(process['status'])){
+                        popup.close()
+                        buttons = [
+                            {
+                                'name' : 'Détail',
+                                'className' : "dz-process-detail-btn",
+                                'clickHandler' : function(){
+                                    console.log("go to the detail page of the process with the id : "+process['id'])
+                                }
+                            }
+                        ]
+                        let message = "Le processus s'est arrêté avec le statut :"+process['status']
+                        eventPopup.open("information","Information",message,buttons)
+                    }
+                }
+            })
+        } 
+
+*/
