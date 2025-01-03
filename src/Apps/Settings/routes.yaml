@@ -1,0 +1,6 @@
+dz_get_settings : 
+  path: /dz/settings
+  methods: [GET]
+  defaults:
+    _controller: 'Dolzay\Apps\OrderSubmitProcess\Controllers\OrderSubmitProcessController::getSettings'
+    _disable_module_prefix: true

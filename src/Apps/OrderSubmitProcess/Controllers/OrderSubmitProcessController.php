@@ -51,23 +51,27 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
     }
 
 
-    public function OrderSubmitProcessList(){
-        $query_parameter  = [
+    public function OrderSubmitProcessList(Request $request){
+        $query_parameter = [
             "status" => $request->query->get('status'),
             "carrier" => $request->query->get('carrier'),
             "page_nb" =>  $request->query->get('page_nb') ?? 1,
             "batch_size" => $request->query->get('batch_size') ?? 25,
             "start_date" => $request->query->get('start_date'),
             "end_date" => $request->query->get('end_date'),
+            "is_json" => $request->query->get('is_json'),
         ];
 
         $db = DzDb::getInstance();
-
         OrderSubmitProcess::init($db);
-
         $order_submit_processes = OrderSubmitProcess::get_order_submit_process_list($query_parameter);
-
-        return new JsonResponse(['status'=>'success','order_submit_processes'=>$order_submit_processes]);
+        
+        if($query_parameter['is_json']){
+            return new JsonResponse(['status'=>'success','order_submit_processes'=>$order_submit_processes]);
+        }
+        return $this->render('@Modules/dolzay/views/templates/admin/process/process_list.html.twig',[
+            'order_submit_processes'=>$order_submit_processes
+        ]);
     }
 
     public function OrderSubmitProcessDetail($process_id){
@@ -194,7 +198,7 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         }
 
         // handle the process isn't not still initiated
-        if ($process['status'] != "Contient des commandes invalides"){
+        if ($process['status'] != "Initié"){
             $db->commit();
             return new JsonResponse(['status'=>"conflict",'process_status'=>$process['status']],JsonResponse::HTTP_CONFLICT);
         }
@@ -230,7 +234,7 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         }
 
         // handle the process isn't still initiated
-        if ($process['status'] != "Contient des commandes invalides"){
+        if ($process['status'] != "Initié"){
             $db->commit();
             return new JsonResponse(['status'=>"conflict",'process_status'=>$process['status']],JsonResponse::HTTP_CONFLICT);
         }
@@ -282,17 +286,7 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
       
     }
 
-    public function checkForRunningProcess(){
-        $db = DzDb::getInstance() ;
-        OrderSubmitProcess::init($db);
-        $process = OrderSubmitProcess::get_running_process();
 
-        if($process && !in_array($process['status'], ["Initié","Contient des commandes invalides","Actif"]) ){
-            $process = null ;
-        }
-
-        return new JsonResponse(['status'=>'success','process'=>$process]); 
-    }
 
 
 

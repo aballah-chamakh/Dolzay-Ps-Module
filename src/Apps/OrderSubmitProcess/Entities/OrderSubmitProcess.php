@@ -11,7 +11,6 @@ class OrderSubmitProcess {
     public const TABLE_NAME = ModuleConfig::MODULE_PREFIX."order_submit_process";
     private const PROCESS_TYPES = ["Soumission", "Changement du zone", "Mise à jour"];
     private const STATUS_TYPES = ["Initié", // has just been created 
-                                  "Contient des commandes invalides",
                                   "Actif", // submitting orders 
                                   "Pre-terminé par l'utilisateur", // the user requested to submit the orders
                                   "Terminé par l'utilisateur", // the osp accepted the terminate request of the user 
@@ -110,7 +109,7 @@ class OrderSubmitProcess {
     }
 
     public static function get_running_process(){
-        $query = "SELECT id FROM ".self::TABLE_NAME." WHERE status IN ('Initié','Contient des commandes invalides','Actif')" ;
+        $query = "SELECT id FROM ".self::TABLE_NAME." WHERE status IN ('Initié','Actif')" ;
         $stmt = self::$db->query($query) ;
         $process = $stmt->fetch();
         return $process === false ? null : $process;
@@ -123,7 +122,7 @@ class OrderSubmitProcess {
     }
 
     public static function is_there_a_running_process(){
-        $query = "SELECT id FROM ".self::TABLE_NAME." WHERE status IN ('Initié','Contient des commandes invalides','Actif');" ;
+        $query = "SELECT id FROM ".self::TABLE_NAME." WHERE status IN ('Initié','Actif');" ;
         $stmt = self::$db->query($query);
         $order_submit_process = $stmt->fetch();
         return ($order_submit_process) ? $order_submit_process['id'] : false ;
@@ -169,19 +168,16 @@ class OrderSubmitProcess {
         }
 
         // construct the meta_data
-        $has_invalid_orders = false ;
         $order_submit_process_metadata = [] ;
            
         $order_submit_process_metadata['valid_order_ids'] = $valid_order_ids ;
         
         if ($orders_with_invalid_fields){
             $order_submit_process_metadata['orders_with_invalid_fields'] = $orders_with_invalid_fields ;
-            $has_invalid_orders = true ;
         }
 
         if($already_submitted_orders){
             $order_submit_process_metadata['already_submitted_orders'] = $already_submitted_orders ;
-            $has_invalid_orders = true ;
         }
 
         // set the meta data of the order submit process 
@@ -189,9 +185,7 @@ class OrderSubmitProcess {
         if($valid_order_ids){
             $query .=  ",items_to_process_cnt=".count($order_submit_process_metadata['valid_order_ids']) ;
         }
-        if($has_invalid_orders){
-            $query .= ",status='Contient des commandes invalides'" ;
-        }
+
         $query .= " WHERE id=".$order_submit_process_id ;
         self::$db->query($query) ;
 
@@ -247,6 +241,7 @@ class OrderSubmitProcess {
 
 
     public static function cancel($process_id,$cancel_status){
+        $cancel_status = str_replace("'", "\'", $cancel_status);
         self::$db->query("UPDATE ".self::TABLE_NAME." SET status='$cancel_status' WHERE id=".$process_id) ;
     }
 
@@ -259,19 +254,19 @@ class OrderSubmitProcess {
         $values = ['limit'=>$query_parameter['batch_size'],'offset'=>($query_parameter['page_nb'] - 1) * $query_parameter['batch_size']] ;
         
         // note : i did add 1=1 for the case of there is no query parameters to filter by 
-        $query = "SELECT carrier,started_at,processed_items_cnt,items_to_process_cnt,status FROM ".self::TABLE_NAME." WHERE 1=1" ;
+        $query = "SELECT id,carrier,started_at,processed_items_cnt,items_to_process_cnt,status,COUNT(*) OVER() as total_count FROM ".self::TABLE_NAME." WHERE 1=1 " ;
         
-        if ($carrier){
-            $values['carrier'] = $carrier ;
+        if ($query_parameter['carrier']){
+            $values['carrier'] = $query_parameter['carrier'] ;
             $query .= "AND carrier= :carrier " ; 
         }
 
-        if ($status){
+        if ( $query_parameter['status']){
             $values['status'] = $query_parameter['status'] ;
             $query .= "AND status= :status " ;
         }
 
-        if ($start_date && $end_date){
+        if ($query_parameter['start_date'] && $query_parameter['end_date']){
             $values['start_date'] = $query_parameter['start_date'] ;
             $values['end_date'] = $query_parameter['end_date'] ;
             $query .= "AND started_at BETWEEN :start_date AND :end_date " ;
@@ -279,7 +274,7 @@ class OrderSubmitProcess {
 
         $query .= "LIMIT :limit OFFSET :offset ;" ;
 
-        self::$db->prepare($query);
+        $stmt = self::$db->prepare($query);
         $stmt->execute($values);
         return $stmt->fetchAll();
     }

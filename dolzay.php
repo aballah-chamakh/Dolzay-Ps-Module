@@ -15,6 +15,7 @@ try {
 //use Dolzay\Apps\Notifications\Entities\Notification ;
 use Dolzay\Apps\Settings\Entities\ApiCredentials ;
 use Dolzay\Apps\Settings\Entities\Carrier ;
+use Dolzay\Apps\Settings\Entities\Settings ;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\TextType ;
 use Symfony\Component\Validator\Constraints\NotBlank;
@@ -120,6 +121,7 @@ class Dolzay extends Module
     {
         try {
             return parent::install() && 
+                    $this->registerTabs() &&
                     $this->create_app_tables() &&
                     $this->registerHook('additionalCustomerAddressFields') &&
                     $this->registerHook('displayHeader') && 
@@ -134,7 +136,8 @@ class Dolzay extends Module
                     $this->add_submitted_and_tracking_code_to_order() &&
                     $this->add_carriers() &&
                     $this->add_delegation_to_address() &&
-                    $this->add_delegation_to_the_address_format();
+                    $this->add_delegation_to_the_address_format() &&
+                    $this->add_settings();
         } catch (Error $e) {
             PrestaShopLogger::addLog("Error during installation: " . $e->getMessage()."\n".
                                      "Traceback : \n".$e->getTraceAsString(), 3, null, 'Dolzay');
@@ -146,6 +149,7 @@ class Dolzay extends Module
     {
         try {
             return parent::uninstall() && 
+                   $this->unregisterTabs() &&
                    $this->drop_app_tables() && 
                    $this->unregisterHook('additionalCustomerAddressFields') &&
                    $this->unregisterHook('displayHeader') && 
@@ -158,12 +162,103 @@ class Dolzay extends Module
                    $this->unregisterHook('actionAfterUpdateCustomerAddressFormHandler') &&
                    $this->unregisterHook('actionAdminOrdersListingFieldsModifier') &&
                    $this->remove_delegation_from_address() &&
-                   $this->remove_delegation_from_the_address_format();
+                   $this->remove_delegation_from_the_address_format() ;
         } catch (Error $e) {
             PrestaShopLogger::addLog("Error during uninstallation: " . $e->getMessage()."\n".
                                      "Traceback : \n".$e->getTraceAsString(), 3, null, 'Dolzay'); 
             return false;
         }
+    }
+
+    private function registerTabs(){
+
+        // Get the ID of the parent tab (Shipping)
+        $idParentShipping = Tab::getIdFromClassName('IMPROVE'); 
+        if (!$idParentShipping) {
+            PrestaShopLogger::addLog('Parent tab AdminParentShipping not found', 3);
+            return false;
+        }
+    
+        // Create your parent tab under Shipping
+        $parentTab = new Tab();
+        $parentTab->class_name = $this->name; // Your module's name
+        $parentTab->id_parent = $idParentShipping; // Set the parent tab to Shipping
+        $parentTab->module = $this->name;
+        $parentTab->name = [];
+        $parentTab->icon = 'D';
+    
+        foreach (Language::getLanguages(true) as $lang) {
+            $parentTab->name[$lang['id_lang']] = ucwords($this->name); // Name of your module
+        }
+    
+        $parentTab->active = 1;
+    
+        if (!$parentTab->add()) {
+            PrestaShopLogger::addLog('Failed to create parent tab for My Module under Shipping', 3);
+            return false;
+        }
+    
+        // Retrieve the ID of the newly created parent tab
+        $parentTabId = (int) Tab::getIdFromClassName($this->name);
+        if (!$parentTabId) {
+            PrestaShopLogger::addLog('Failed to retrieve parent tab ID after creation', 3);
+            return false;
+        }
+    
+        // Create sub-tabs under the parent tab (My Module)
+        $subTabs = [
+            [
+                'class_name' => 'DzAdminProcessus',
+                'name' => 'Processus',
+                'id_parent' => $parentTabId, // Assign the parent tab ID
+                'route_name' => 'dz_order_submit_process_list',
+            ],
+            [
+                'class_name' => 'DzAdminParametres',
+                'name' => 'Parametres',
+                'id_parent' => $parentTabId, // Assign the parent tab ID
+                'route_name' => 'dz_get_settings',
+            ],
+        ];
+    
+        // Create each sub-tab
+        foreach ($subTabs as $tabData) {
+            $tab = new Tab();
+            $tab->class_name = $tabData['class_name'];
+            $tab->id_parent = $tabData['id_parent']; // Set the valid parent tab ID
+            $tab->module = $this->name;
+            $tab->route_name = $tabData['route_name']; 
+            $tab->name = [];
+    
+            foreach (Language::getLanguages(true) as $lang) {
+                $tab->name[$lang['id_lang']] = $tabData['name']; // Set the sub-tab name
+            }
+    
+            $tab->icon = 'subdirectory_arrow_right'; // Optional icon for sub-tabs
+            $tab->active = 1;
+    
+            if (!$tab->add()) {
+                PrestaShopLogger::addLog('Failed to create sub-tab: ' . $tabData['class_name'], 3);
+                return false;
+            }
+        }
+    
+        return true;
+    }
+
+    private function unregisterTabs()
+    {
+        $tabs = ['dolzay', 'DzAdminProcessus', 'DzAdminParametres'];
+        foreach ($tabs as $className) {
+            $idTab = (int) Tab::getIdFromClassName($className);
+            if ($idTab) {
+                $tab = new Tab($idTab);
+                if (!$tab->delete()) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
 
@@ -379,13 +474,18 @@ class Dolzay extends Module
         return true ;
     }
 
-    /*
-    private function remove_carriers(){
-        // the delete of the api credentials will lead to the delete of the carrier (but no vice versa)
-        $query = "DELETE FROM ". ApiCredentials::TABLE_NAME.";";
-        $this->db->query($query);
-        return true ;
-    }*/
+    private function add_settings(){
+        try {
+        $query = "INSERT INTO ".Settings::TABLE_NAME." (`post_submit_state_id`) VALUES (3);";
+        return $this->db->query($query);
+        }
+        catch (Error $e) {
+            PrestaShopLogger::addLog("Error during adding the settings table: " . $e->getMessage(), 3, null, 'Dolzay');
+            return false;
+        }
+    }
+
+
 
     public function hookAdditionalCustomerAddressFields($params)
     {

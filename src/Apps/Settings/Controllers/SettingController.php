@@ -16,7 +16,7 @@ class SettingController extends FrameworkBundleAdminController
 
 
 
-    public function getSettingDetail(Request $request)
+    public function getSettings(Request $request)
     { 
         $db = DzDb::getInstance();
         $db->beginTransaction();

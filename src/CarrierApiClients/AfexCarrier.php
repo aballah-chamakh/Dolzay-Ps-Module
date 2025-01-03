@@ -70,7 +70,7 @@ class AfexCarrier extends BaseCarrier {
             $response = json_decode($response, true);
             if ($status_code == 200){
                 $index = $index + 1 ;
-                echo "\n =============== ORDER WITH THE ID : $order_id IS DONE =============== \n" ;
+                echo "=============== ORDER WITH THE ID : $order_id IS DONE =============== \n" ;
                 
                 
                 self::$db->beginTransaction();
@@ -85,30 +85,26 @@ class AfexCarrier extends BaseCarrier {
                 self::addOrderStatusHistory($order['id_order'],$post_submit_status_id);
                     
                 // update the progress of the order submit process
-                $orderSubmitProcessUpdates = ["processed_items_cnt=".($index),] ;
+                $orderSubmitProcessUpdates = ["processed_items_cnt=$index"] ;
+                // check if it's the last order to submit
                 if ($index == $orders_cnt){
                     $orderSubmitProcessUpdate[] = "status='Terminé'" ;
-                    self::updateOrderSubmitProcess($orderSubmitProcessUpdates);
-                    self::$db->commit();
                 }else{
+                    // check if the obs was terinated by the user 
                     $obsStatus = self::getObsStatus();
                     if($obsStatus == "Pre-terminé par l'utilisateur"){
-                        $orderSubmitProcessUpdate[] = "status='$obsStatus'" ;
+                        $orderSubmitProcessUpdate[] = "status='Terminé'" ;
                         self::updateOrderSubmitProcess($orderSubmitProcessUpdates);
+                        self::$db->commit();
                         break ;
                     }
                 }
-
-
-                // check if the obs was terinated by the user 
-                if ($index != $orders_cnt){
-                    
-
-                }
+                self::updateOrderSubmitProcess($orderSubmitProcessUpdates);
+                self::$db->commit();
 
             }else if ($status_code == 422){
                 // 422 means invalid data were sent
-                echo "\n =============== ORDER WITH THE ID : $order_id GOT 422 STATUS CODE =============== \n" ;
+                echo "=============== ORDER WITH THE ID : $order_id GOT 422 STATUS CODE =============== \n" ;
                 
                 // set the error
                 $message = "Une erreur de code 422 s'est produite lors de la soumission de la 1ʳᵉ commande portant l'ID : $order_id. Veuillez appeler le support de Dolzay au " . SUPPORT_PHONE . " afin qu'ils résolvent votre problème.";
@@ -133,7 +129,7 @@ class AfexCarrier extends BaseCarrier {
                                               );
                 break;
             }else if ($status_code == 401){
-                echo "\n =============== ORDER WITH THE ID : $order_id GOT 401 STATUS CODE =============== \n" ;
+                echo "=============== ORDER WITH THE ID : $order_id GOT 401 STATUS CODE =============== \n" ;
 
                 // set for the order submit process the status and the error data 
                 $message = "Le token d'Afex est invalide. Veuillez le mettre à jour avec un token valide." ;
@@ -153,7 +149,7 @@ class AfexCarrier extends BaseCarrier {
                 break ;
                 
             }else{
-                echo "\n =============== ORDER WITH THE ID : $order_id GOT AN UNEXPECTED ERROR =============== \n" ;
+                echo "=============== ORDER WITH THE ID : $order_id GOT AN UNEXPECTED ERROR =============== \n" ;
                 // set for the order submit process the status and the error data 
                 
                 $message = "Une erreur de code $status_code s'est produite lors de la soumission de la 1ʳᵉ commande portant l'ID : $order_id. Veuillez appeler le support de Dolzay au " . SUPPORT_PHONE . " afin qu'ils résolvent votre problème.";

@@ -1,0 +1,217 @@
+{% extends '@PrestaShop/Admin/layout.html.twig' %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('../modules/dolzay/views/css/process/process_list.css') }}">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+{% endblock %}
+
+
+
+{% block content %}
+  
+  <div class="process-list-container">
+        
+        <div class="filter-container">
+            <div class="filter-header">
+                <p>LE FILTRE</p>
+            </div> 
+            <div class="filter-form">
+                <div class="first-row">
+                    <div class="form-group">
+                        <label>carrier</label>
+                        <select class="dz-carrier-select form-control" name="carrier">
+                            <option value="">Tous</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>status</label>
+                        <select class="dz-status-select form-control" name="status">
+                            <option value="">Tous</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="second-row">
+                    <div class="form-group">
+                        <label>L'Intervalle de dates</label>
+                        <input class="dz-date-range form-control" type="text" name="daterange"  />
+                    </div>
+                </div>
+                <button class="filter-btn">Filtrer</button>
+            </div>
+        </div>
+
+        <div class="process-list-table-container">
+            <div class="dz-loading-overlay">
+                <div class="process-list-table-spinner spinner-border" role="status">
+                </div>
+            </div>
+            <div class="process-list-table-header">
+                <p>LES PROCESSUS</p>
+            </div>
+            <div class="process-list-table">
+                <table class="table">
+                    <thead >
+                        <tr>
+                            <th>id</th>
+                            <th>heure et date du lancement</th>
+                            <th>progrès</th>
+                            <th>transporteur</th>
+                            <th>état</th>
+                            <th>detail</th>
+                        </tr>
+                    </thead>
+                    <tbody id="processTable" >
+                        {% for order_submit_process in order_submit_processes %}
+                            <td>{{order_submit_process.id}}</td>
+                            <td>{{order_submit_process.started_at}}</td>
+                            {% if order_submit_process.items_to_process_cnt %}
+                                <td>{{order_submit_process.processed_items_cnt}}/{{order_submit_process.items_to_process_cnt}}</td>
+                            {% else %}
+                                <td>___</td>
+                            {% endif %}
+                            <td>{{order_submit_process.carrier}}</span></td>
+                            <td><span class="dz-badge">{{order_submit_process.status}}</span></td>
+                            <td><button class="btn btn-link p-0">👁️</button></td>
+                        </tr>
+                        {% endfor %}
+
+                    </tbody>
+                </table>
+                <div class="process-list-table-footer">
+                    <p class="pagination-range">1 to 20 / 40</p>
+                    <div class="page-number" >
+                        <label>page : </label>
+                        <select  class="dz-page-nb-select form-control" >
+                            <option value="1" selected >1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                        </select>
+                    </div>
+                    <select class="dz-batch-size-select form-control" >
+                            <option value="20" selected >20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        
+        $(document).ready(function() {
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const _token = urlParams.get('_token');
+            let processListOverlay = $(".dz-loading-overlay")
+
+            function updateTheProcessList(trigger) {
+                // show the loading spinner 
+                processListOverlay.show()
+
+                // disable all of the selects and input in the page 
+                $(".process-list-container select,.process-list-container input").prop('disabled',true)
+
+                // make the request 
+                let splitted_date_range_value = $('.dz-date-range').val().split(" ")
+                const params = new URLSearchParams({
+                    carrier: $('.dz-carrier-select').val(),
+                    status: $('.dz-status-select').val(),
+                    start_date: splitted_date_range_value[2],
+                    end_date: splitted_date_range_value[5],
+                    page_nb: trigger == "page_nb" ? $('.dz-page-nb-select').val() : 1,
+                    batch_size: $(".dz-batch-size-select").val()
+                });
+
+                fetch(`http://localhost/prestashop/dz_admin/index.php/dz/order_submit_processes?_token=${_token}&is_json=true&${params}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status == "success"){
+                            //updateTable(data.order_submit_processes);
+                            let order_submit_processes = data.order_submit_processes
+                            let total_count = data.order_submit_processes.length ? data.order_submit_processes[0].total_count : 0
+                            updateTable(processes)
+                            updatePagination(total_count);
+                            
+                        }   
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+
+            function updateTable(processes) {
+                const tbody = $('#processTable');
+                tbody.empty();
+                
+                processes.forEach(process => {
+                    // id,carrier,started_at,processed_items_cnt,items_to_process_cnt,status
+                    tbody.append(`
+                        <tr>
+                            <td>${process.id}</td>
+                            <td>${process.started_at}</td>
+                            <td>${process.processed_items_cnt}/${process.items_to_process_cnt}</td>
+                            <td><span class="badge badge-secondary">${process.carrier}</span></td>
+                            <td><span class="badge badge-secondary">${process.status}</span></td>
+                            <td><button class="btn btn-link p-0">👁️</button></td>
+                        </tr>
+                    `);
+                });
+            }
+
+            function updatePagination(totalCount) {
+                let batch_size_val = $(".dz-batch-size-select").val()
+                
+                // update the options of the page_nb select
+                let page_nb_select = $(".dz-page-nb-select")
+                let page_nb_val = page_nb_select.val()
+                page_nb_select.empty()
+                total_pages = Math.ceil(totalCount / batch_size_val)
+                for (let i = 1; i <= total_pages; i++) {
+                    $('#pageSelect').append(new Option(`Page ${i}`, i));
+                }
+
+                // update the pagination_range :
+                let firstEnd =  batch_size * (page_nb_val - 1) + 1
+                let lastEnd = batch_size * page_nb_val
+                if(lastEnd > totalCount){
+                    lastEnd = totalCount
+                }
+
+            }
+
+
+            $(".dz-date-range").daterangepicker({
+                opens: 'left',
+                autoUpdateInput: false,
+                locale: {
+                    cancelLabel: 'Clear'
+                }
+            }, function(start, end, label) {
+                console.log("A new date selection was made: " + start.format('DD-MM-YYYY') + ' to ' + end.format('YYYY-MM-DD'));
+                $('.dz-date-range').val("du : "+start.format('DD-MM-YYYY')+" au : "+end.format('DD-MM-YYYY'));
+            });
+
+            $('.dz-date-range').on('cancel.daterangepicker', function(ev, picker) {
+                $('.dz-date-range').val('');
+            });
+
+            
+            $('.filter-btn').on('click', function(e) {
+                updateTheProcessList("filter");
+            });
+
+            $('.dz-batch-size-select').on('change', function() {
+                updateTheProcessList("batch_size");
+            });
+
+            $('.dz-page-nb-select').on('change', function() {
+                updateTheProcessList("page_nb");
+            });
+        });
+
+
+    </script>
+{% endblock %}

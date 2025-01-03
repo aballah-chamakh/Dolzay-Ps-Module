@@ -1,5 +1,5 @@
 <?php
-echo "executed !!!!!!!!!!!!!!!!!" ;
+echo "executed !!!!!!!!!!!!!!!!! \n" ;
 
 require_once dirname(__DIR__, 5) . '/config/config.inc.php'; // Include PrestaShop's configuration
 
@@ -11,7 +11,7 @@ $process_id = (int)$argv[1] ;
 $carrier = $argv[2] ;
 $employee_id = (int)$argv[3] ;
 
-echo "arguments : $process_id $carrier $employee_id";
+echo "arguments : $process_id $carrier $employee_id \n";
 
 // construct the carrier class name
 $carrier_class_name = $carrier."Carrier"; // example "Afex"."Carrier"

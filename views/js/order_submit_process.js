@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const moduleMediaBaseUrl = window.location.href.split('/dz_admin/index.php')[0]+"/modules/dolzay/uploads";
     const urlParams = new URLSearchParams(window.location.search);
     const _token = urlParams.get('_token');
-    const ospFinalStatuses = ["Terminé par l'utilisateur", "Interrompu","Annulé","Terminé"]
     let selectedCarrier = "" ;
 
     const eventPopupTypesData = {
@@ -20,27 +19,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const order_submit_btn = document.createElement('button')
         order_submit_btn.id="dz-order-submit-btn" ;
         order_submit_btn.innerText = "Soumttre les commandes"
-        //order_submit_btn.disabled = true ;
         order_table_header.appendChild(order_submit_btn)
         order_submit_btn.addEventListener('click', ()=>{selectCarrierStep.render()});
         
     }
 
-    function showTheLoaderOfCheckingAlreadySubmittedAnOrdersWithInvalidFields(){
-        popup.popupHeaderEl.innerText = "Vérification des commandes déjà soumises et invalides"
-        popup.popupBodyEl.innerHTML = `              
-            <div class="spinner-border dz-btn-spinner-blue" role="status" >
-                <span class="sr-only">Loading...</span>
-            </div>
-        `
-        popup.popupFooterEl.innerHTML = ""
-        popup.open()
-    }
-
-
-
     const Server = {
-        launchOsp : function(orderIds,carrier){
+        launchOsp : function(orderIds,carrier,continueBtn,cancelBtn){
             fetch(moduleControllerBaseUrl+"/order_submit_process?_token="+_token, {
                 method: 'POST',
                 credentials: 'include', // Ensures cookies are sent with the request
@@ -51,23 +36,23 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json())
             .then(function (data){
-
+                
                 if(data.status == "success"){
                     let process  = data.process 
                     if (process.hasOwnProperty('meta_data')){
                         alreadySubmittedAndInvalidOrdersStep.render(process)
                     }else{
-                        selectedCarrier = carrier ;
                         process['items_to_process_cnt'] = orderIds.length
                         progressOfSubmittingOrdersStep.render(process)
                     }
-                } else if(data.status == 'conflict'){ // handle the case of an exsint osp running
+                }else if(data.status == 'conflict'){ // handle the case of an exsint osp running
+                    let process  = data.process 
                     buttons = [
                         {
-                            'name' : 'Détail du processus',
+                            'name' : 'Détail',
                             'className' : "dz-process-detail-btn",
                             'clickHandler' : function(){
-                                            console.log(`go to the detail page of the process with the id : ${data.process.id}`)
+                                            console.log(`go to the detail page of the process with the id : ${process.id}`)
                             }
                         }
                     ]
@@ -75,12 +60,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     eventPopup.open("restricted","Restreint"
                                     ,"Vous ne pouvez pas soumettre de commandes pour le moment, car un processus de soumission de commandes est déjà en cours",
                                     buttons)
+                }else{
+                    continueBtn.disabled = false 
+                    cancelBtn.disabled = false 
                 }
 
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                continueBtn.disabled = false 
+                cancelBtn.disabled = false 
+                console.error('Error:', error)
+
+            });
         },
-        continueOsp : function(process_id,ordersToResubmitIds){
+        continueOsp : function(process_id,ordersToResubmitIds,continueBtn,cancelBtn){
             let url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/continue?_token="+_token
             console.log("url : "+url)
             fetch(url, {
@@ -93,6 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json())
             .then(function (data){
+                
                 if(data.status == "success"){
                     let items_to_process_cnt = data.items_to_process_cnt
                     if (items_to_process_cnt == 0){
@@ -112,9 +106,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         eventPopup.open("info","Information",message,buttons)
                     }else{
-                        progressOfSubmittingOrdersStep.render(process_id,{processed_items_cnt :'__',items_to_process_cnt:items_to_process_cnt},selectedCarrier)
+                        let process = {id:process_id,items_to_process_cnt:items_to_process_cnt}
+                        progressOfSubmittingOrdersStep.render(process)
                     }
-                    
                 }else if(data.status == "conflict"){
                     popup.close()
                     buttons = [
@@ -127,17 +121,23 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     ]
                     let message = ""
-                    if (data.process_status == "Annulé"){
+                    if (data.process_status == "Annulé par l'utilisateur"){
                         message = "Ce processus a été annulé par un autre utilisateur."
                     }else{
                         message = `Ce processus a été poursuivi par un autre utilisateur, et son état actuel est : ${data.process_status}.`
                     }
                     eventPopup.open("info","Information",message,buttons)
+                }else{
+                    continueBtn.disabled = false
+                    cancelBtn.disabled = false 
                 }
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                continueBtn.disabled = false
+                cancelBtn.disabled = false 
+                console.error('Error:', error)});
         },
-        cancelOsp : function(process_id){
+        cancelOsp : function(process_id,cancelBtn,continueBtn){
             let url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/cancel?_token="+_token
             console.log("url : "+url)
             fetch(url, {
@@ -161,18 +161,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     ]
 
                     let message = ""
-                    if (data.process_status == "Annulé"){
+                    if (data.process_status == "Annulé par l'utilisateur"){
                         message = "Ce processus a été annulé par un autre utilisateur."
                     }else{
                         message = `Ce processus a été poursuivi par un autre utilisateur, et son état actuel est : ${data.process_status}.`
                     }
-
                     eventPopup.open("info","Information",message,buttons)
+                }else{
+                    cancelBtn.disabled = false 
+                    continueBtn.disabled = false 
                 }
+
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error =>{ 
+                console.error('Error:', error)
+                cancelBtn.disabled = false
+                continueBtn.disabled = false 
+            });
         },
-        terminateOsp : function(terminate){
+        terminateOsp : function(process_id,terminateBtn){
             let url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/terminate?_token="+_token
             console.log("url : "+url)
             fetch(url, {
@@ -186,8 +193,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 }else if(data.status == "conflict"){
                     console.log(`the process did stop by this status : ${data.process_status}`)
                 }
+                terminateBtn.disabled = false
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error =>{ 
+                console.error('Error:', error)
+                terminateBtn.disabled = false
+            });
         },
         monitorOsp : function(process_id){
             let url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/monitor?_token="+_token
@@ -198,10 +209,13 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json())
             .then(function(data){
+                console.log("monitoring data : ")
+                console.log(data)
                 if(data.status == "success"){
                     let process = data.process
                     // update the interfece with the progress of the osp
-                    let submittedOrdersCntEl = popup.popupBodyEl.firstElementChild
+                    let submittedOrdersCntEl = popup.popupBodyEl.querySelector(".dz-submitted-orders-cnt")
+                    console.log(submittedOrdersCntEl)
                     submittedOrdersCntEl.innerText = process.processed_items_cnt
 
                     // handle final statuses
@@ -251,8 +265,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         ]
                         eventPopup.open("error","Erreur",process.error.message,buttons)
                     }else{
-                        setTimeout(()=>{
-                            this.monitorOsp(process_id);
+                        setTimeout(function(){
+                            Server.monitorOsp(process_id);
                         },3000)
                     }
                 }
@@ -432,7 +446,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 {
                     'name' : 'Annuler',
                     'className' : "dz-cancel-btn",
-                    'clickHandler' : function(){selectCarrierStep.cancel()}
+                    'clickHandler' : function(){selectCarrierStep.cancel(this)}
                 },
                 {
                     'name' : 'Continuer',
@@ -453,8 +467,8 @@ document.addEventListener('DOMContentLoaded', function() {
         continue : function(continueBtn){
             // disable the button then add to it a spinner
             continueBtn.disabled = true 
-            console.log("continueBtn : ")
-            console.log(continueBtn)
+            let cancelBtn = document.querySelector(".dz-cancel-btn")
+            cancelBtn.disabled = false 
             continueBtn.innerHTML += `              
                 <div class="spinner-border dz-btn-spinner-white" role="status" >
                     <span class="sr-only">Loading...</span>
@@ -463,9 +477,10 @@ document.addEventListener('DOMContentLoaded', function() {
             selectedCarrier = document.querySelector(".dz-carrier-select").value;
 
             // make a request to initialize the order submit process 
-            Server.launchOsp(this.orderIds,selectedCarrier)
+            Server.launchOsp(this.orderIds,selectedCarrier,continueBtn,cancelBtn)
         },
-        cancel : function(){
+        cancel : function(cancelBtn){
+            cancelBtn.disabled = true 
             popup.close();
         }
     }
@@ -589,7 +604,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 headSubmittedOrderCheckbox.addEventListener('click',function(e){alreadySubmittedAndInvalidOrdersStep.handleHeadCheckbox(e)})
             }
 
-    
             // add the cancel and the continue buttons 
             const buttons = [
                 {
@@ -607,7 +621,9 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         continue : function(continueBtn,process_id){ 
             // disable the button then add to it a spinner
-            continueBtn.disabled=true;           
+            continueBtn.disabled=true; 
+            let cancelBtn = document.querySelector(".dz-cancel-btn")  
+            cancelBtn.disabled = true ;      
             continueBtn.innerHTML += `              
                 <div class="spinner-border dz-btn-spinner-white" role="status" >
                     <span class="sr-only">Loading...</span>
@@ -616,12 +632,13 @@ document.addEventListener('DOMContentLoaded', function() {
             let ordersToResubmitIds = this.getOrdersToResubmitIds()
             let url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/continue?_token="+_token
             console.log("url : "+url)
-            Server.continueOsp(process_id,ordersToResubmitIds)
+            Server.continueOsp(process_id,ordersToResubmitIds,continueBtn,cancelBtn)
 
         },
         cancel : function(cancelBtn,process_id){
             // disable the button then add to it a spinner
             cancelBtn.disabled=true
+            let continueBtn = document.querySelector(".dz-continue-btn")
             cancelBtn.innerHTML += `              
                 <div class="spinner-border dz-btn-spinner-blue" role="status" >
                     <span class="sr-only">Loading...</span>
@@ -630,7 +647,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             let url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/cancel?_token="+_token
             console.log("url : "+url)
-            Server.cancelOsp(process_id);
+            Server.cancelOsp(process_id,cancelBtn,continueBtn);
         },
         getOrderLink : function(order_id){
             let splitted_url = window.location.href.split("?")
@@ -657,13 +674,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const progressOfSubmittingOrdersStep = {
         interval : null,
-        render : function(process,carrier){
+        render : function(process){
             popup.popupHeaderEl.innerText = "Progrès de la soumission des commandes"        
             popup.popupBodyEl.innerHTML = `
                 <div class="spinner-border dz-spinner" role="status" >
                 <span class="sr-only">Loading...</span>
                 </div>
-                <p style="position:relative"><span class="dz-submitted-orders-cnt">${process.processed_items_cnt}</span>/<span class="orders-to-submit-cnt">${process.items_to_process_cnt}</span> commandes ont été soumises à <span class="dz-carrier">${carrier}</span></p>`
+                <p style="position:relative"><span class="dz-submitted-orders-cnt">0</span>/<span class="orders-to-submit-cnt">${process.items_to_process_cnt}</span> commandes ont été soumises à <span class="dz-carrier">${selectedCarrier}</span></p>`
             popup.popupFooterEl.innerHTML = ''
 
             // add the cancel and the continue buttons 
@@ -693,7 +710,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `
 
-            Server.terminateOsp(process_id)
+            Server.terminateOsp(process_id,terminateBtn)
         }
 
     }

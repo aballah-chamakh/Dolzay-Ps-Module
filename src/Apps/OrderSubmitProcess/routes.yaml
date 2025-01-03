@@ -6,6 +6,14 @@ dz_test:
     _controller: 'Dolzay\Apps\OrderSubmitProcess\Controllers\OrderSubmitProcessController::test'
     _disable_module_prefix: true
 
+
+dz_order_submit_process_list : 
+  path: /dz/order_submit_processes
+  methods: [GET]
+  defaults:
+    _controller: 'Dolzay\Apps\OrderSubmitProcess\Controllers\OrderSubmitProcessController::OrderSubmitProcessList'
+    _disable_module_prefix: true
+
 dz_launch_order_submit_process:
   path: /dz/order_submit_process
   methods: [POST]
