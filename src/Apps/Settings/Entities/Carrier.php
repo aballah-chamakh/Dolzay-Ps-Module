@@ -29,7 +29,7 @@ class Carrier {
     public const DROP_TABLE_SQL = 'DROP TABLE IF EXISTS `' . self::TABLE_NAME . '`;';
 
     public static function get_all(){
-        $carriers = self::$db->query("SELECT name FROM ".self::TABLE_NAME)->fetch();
+        $carriers = self::$db->query("SELECT name FROM ".self::TABLE_NAME)->fetchAll();
         return $carriers ;
     }
 

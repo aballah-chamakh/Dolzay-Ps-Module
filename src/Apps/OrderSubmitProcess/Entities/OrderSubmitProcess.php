@@ -10,7 +10,7 @@ class OrderSubmitProcess {
 
     public const TABLE_NAME = ModuleConfig::MODULE_PREFIX."order_submit_process";
     private const PROCESS_TYPES = ["Soumission", "Changement du zone", "Mise à jour"];
-    private const STATUS_TYPES = ["Initié", // has just been created 
+    public const STATUS_TYPES = ["Initié", // has just been created 
                                   "Actif", // submitting orders 
                                   "Pre-terminé par l'utilisateur", // the user requested to submit the orders
                                   "Terminé par l'utilisateur", // the osp accepted the terminate request of the user 
@@ -18,6 +18,17 @@ class OrderSubmitProcess {
                                    "Annulé par l'utilisateur", // canceled by the user  
                                    "Annulé automatiquement", // canceled automatically because there is valid order to submit after v
                                    "Terminé"];
+    public const STATUS_COLORS = [
+        "Initié" => "#FFD700",  // Gold - Start of something important (Initiated).
+        "Actif" => "green",   // Lime Green - Ongoing activity (Active).
+        "Pre-terminé par l'utilisateur" => "orange",  // Orange - Near completion by user (Pre-completed).
+        "Terminé par l'utilisateur" => "gray",     // Dodger Blue - Completed by user.
+        "Interrompu" => "red",  // Tomato Red - Interrupted.
+        "Annulé par l'utilisateur" => "gray",  // Orange-Red - Canceled by user.
+        "Annulé automatiquement" => "gray", // Crimson - Automatically canceled.
+        "Terminé" => "gray"   // Indigo - Final completion.
+    ];    
+
     private const CITIES = [
         "Ariana",
         "Beja",
@@ -267,8 +278,8 @@ class OrderSubmitProcess {
         }
 
         if ($query_parameter['start_date'] && $query_parameter['end_date']){
-            $values['start_date'] = $query_parameter['start_date'] ;
-            $values['end_date'] = $query_parameter['end_date'] ;
+            $values['start_date'] = $query_parameter['start_date']." 00:00:00" ;
+            $values['end_date'] = $query_parameter['end_date']." 23:59:59" ;
             $query .= "AND started_at BETWEEN :start_date AND :end_date " ;
         }
 
@@ -276,22 +287,37 @@ class OrderSubmitProcess {
 
         $stmt = self::$db->prepare($query);
         $stmt->execute($values);
-        return $stmt->fetchAll();
+        $processes = $stmt->fetchAll();
+        if(count($processes) == 0){
+            $values['offset'] = 0 ;
+            $values['limit'] = $query_parameter['batch_size'] ;
+            $stmt = self::$db->prepare($query);
+            $stmt->execute($values);
+            $processes = $stmt->fetchAll();
+            return $processes ;
+        }
+        return $processes ;
     }
 
     public static function get_order_submit_process_detail($process_id){
         $query = "SELECT carrier,status,started_at,ended_at,processed_items_cnt,items_to_process_cnt,error,meta_data" ;
-        $query .= " FROM ".self::TABLE_NAME." WHERE id=".$proces_id ;
+        $query .= " FROM ".self::TABLE_NAME." WHERE id=".$process_id ;
 
         $order_submit_process_detail = self::$db->query($query)->fetch() ;
         if(!$order_submit_process_detail){
             return false ;
         }
         // add the orders_to_submit to order_submit_process_detail
-        $order_ids = $order_submit_process_detail['valid_order_ids'] ;
-        $query = "SELECT id_order,firstname,lastname,submitted, FROM ". _DB_PREFIX_.\OrderCore::$definition['table']." AS Ord INNER JOIN " ;
-        $query .= _DB_PREFIX_.\AddressCore::$definition['table']. " AS addr ON Ord.id_address_delivery=Addr.id_address WHERE id_order IN  (".implode(',',$order_ids).")" ;
-        $orders_to_submit = self::$db->query($query)->fetchAll();
+        $order_submit_process_detail["error"] = json_decode($order_submit_process_detail["error"],true);
+        $order_submit_process_detail['meta_data'] = json_decode($order_submit_process_detail['meta_data'],true);
+        $order_ids = $order_submit_process_detail["meta_data"]['valid_order_ids'] ;
+        if(count($order_ids)){
+            $query = "SELECT id_order,firstname,lastname,submitted FROM ". _DB_PREFIX_.\OrderCore::$definition['table']." AS Ord INNER JOIN " ;
+            $query .= _DB_PREFIX_.\AddressCore::$definition['table']. " AS addr ON Ord.id_address_delivery=Addr.id_address WHERE id_order IN  (".implode(',',$order_ids).")" ;
+            $orders_to_submit = self::$db->query($query)->fetchAll();
+        }else{
+            $orders_to_submit = [];
+        }
         $order_submit_process_detail['orders_to_submit'] = $orders_to_submit ;
 
         return $order_submit_process_detail ;

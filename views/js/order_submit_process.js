@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const moduleMediaBaseUrl = window.location.href.split('/dz_admin/index.php')[0]+"/modules/dolzay/uploads";
     const urlParams = new URLSearchParams(window.location.search);
     const _token = urlParams.get('_token');
+    const dz_carriers = ["Afex"] ;
     let selectedCarrier = "" ;
 
     const eventPopupTypesData = {

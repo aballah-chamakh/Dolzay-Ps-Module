@@ -1,0 +1,53 @@
+{% extends '@PrestaShop/Admin/layout.html.twig' %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('../modules/dolzay/views/css/process/process_detail.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="dz-process-state-container">
+    <div class="dz-process-state-header">
+        <p>ÉTAT DU PROCESSUS</p>
+    </div>
+        <div class="dz-process-state-body">
+            <div class="dz-process-key-value"><label>Transporteur : </label><span>{{process.carrier}}</span></div>
+            <div class="dz-process-key-value"><label>État : </label> <span>{{process.status}}</span></div>
+            <div class="dz-process-key-value"><label>Heure et Date de début : </label> <span>{{process.started_at|date('d-m-Y H:i:s')}}</span></div>
+            <div class="dz-process-key-value"><label>Heure et Date de fin : </label> <span>{{process.ended_at ? process.ended_at|date('d-m-Y H:i:s') : "____"}}</span></div>
+            <div class="dz-process-key-value dz-vertical-direction"><label>Progrés : </label>
+            {% if process.items_to_process_cnt %}
+                <div class="dz-progress-placeholder">
+                    <div class="dz-progress">
+                        <span class="dz-submitted-orders">200</span>
+                    </div>
+                    <span class="dz-orders-to-submit">600</span>
+                </div>
+            {% else %}
+                <span>____</span>
+            {% endif %}
+            </div>
+            <div class="dz-process-key-value dz-vertical-direction">
+                <label>message d ‘erreur : </label> 
+                {% if process.error %}
+                    <div class="dz-error-message-container">
+                        {{ process.error.message }}
+                    </div>
+                {% else %}
+                    <span>____</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="dz-orders-to-submit-container">
+    <div class="dz-orders-to-submit-filter">
+    
+    </div>
+        <div class="dz-orders-to-submit-list">
+    
+    </div>
+</div>
+{% endblock %}

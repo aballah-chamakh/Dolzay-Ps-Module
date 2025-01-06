@@ -13,6 +13,7 @@ use Symfony\Component\Validator\Validation;
 use Dolzay\CustomClasses\Constraints\IsIntegerAndGreaterThanZero;
 use Dolzay\CustomClasses\Constraints\All;
 use Dolzay\Apps\OrderSubmitProcess\Entities\OrderSubmitProcess ;
+use Dolzay\Apps\Settings\Entities\Carrier ;
 
 class OrderSubmitProcessController extends FrameworkBundleAdminController
 {   
@@ -52,13 +53,14 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
 
 
     public function OrderSubmitProcessList(Request $request){
+        $batch_sizes = [20,50,100];
         $query_parameter = [
             "status" => $request->query->get('status'),
             "carrier" => $request->query->get('carrier'),
             "page_nb" =>  $request->query->get('page_nb') ?? 1,
-            "batch_size" => $request->query->get('batch_size') ?? 25,
-            "start_date" => $request->query->get('start_date'),
-            "end_date" => $request->query->get('end_date'),
+            "batch_size" => $request->query->get('batch_size') ?? $batch_sizes[0],
+            "start_date" => ($request->query->get('start_date') == "null") ? null : $request->query->get('start_date'),
+            "end_date" => ($request->query->get('end_date') == "null") ? null : $request->query->get('end_date'),
             "is_json" => $request->query->get('is_json'),
         ];
 
@@ -69,8 +71,33 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         if($query_parameter['is_json']){
             return new JsonResponse(['status'=>'success','order_submit_processes'=>$order_submit_processes]);
         }
+
+        Carrier::init($db);
+        $carriers = Carrier::get_all();
+
+        $total_pages = 1 ;
+        $total_count = 0 ;
+        $first_end = 0 ;
+        $last_end = 0 ;
+
+        if(count($order_submit_processes)){
+            $total_count = $order_submit_processes[0]['total_count'] ;
+            $total_pages = ceil($total_count / $batch_sizes[0]) ;
+            $first_end = 1 ;
+            $last_end = $total_count >= $batch_sizes[0] ? $batch_sizes[0] : $total_count ;
+        }
+        
+
         return $this->render('@Modules/dolzay/views/templates/admin/process/process_list.html.twig',[
-            'order_submit_processes'=>$order_submit_processes
+            'order_submit_processes'=>$order_submit_processes,
+            'status_types'=> OrderSubmitProcess::STATUS_TYPES,
+            'carriers'=>$carriers,
+            'batch_sizes'=>$batch_sizes,
+            'total_pages'=>$total_pages,
+            'first_end'=>$first_end,
+            'last_end'=>$last_end,
+            'total_count'=>$total_count,
+            'status_colors'=>OrderSubmitProcess::STATUS_COLORS
         ]);
     }
 
@@ -83,7 +110,8 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
             return new JsonResponse(['status'=>'not_found'],JsonResponse::HTTP_NOT_FOUND) ;
         }
         
-        return new JsonResponse($order_submit_process_detail) ;
+        return $this->render("@Modules/dolzay/views/templates/admin/process/process_detail.html.twig",
+                             ["process"=>$order_submit_process_detail]) ;
 
     }
 

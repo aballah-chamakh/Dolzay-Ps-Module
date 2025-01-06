@@ -1,0 +1,74 @@
+.dz-process-state-container{
+    display : flex ; 
+    flex-direction: column;
+    border: 1px solid #ddd;
+    background-color: white;
+    border-radius : 5px ;
+    width : 100% ;
+}
+.dz-process-state-header{
+    display : flex ; 
+    border-bottom : 1px solid #ddd; 
+    padding : 10px ;
+    width : 100% ;
+}
+
+.dz-process-state-header p{
+    margin: 0;
+    font-weight: 600;
+    font-size: 17px;
+}
+
+.dz-process-state-body{
+    display: flex;
+    width : 100% ;
+    flex-direction: column;
+    padding : 10px ;
+}
+
+.dz-process-key-value{
+    display : flex ;
+    gap : 4px ;
+}
+
+.dz-process-key-value.dz-vertical-direction{
+    flex-direction: column;
+}
+
+.dz-process-key-value label{
+    font-weight: 600;
+}
+
+.dz-progress-placeholder {
+    height : 20px ;
+    width : 100% ;
+    position : relative ;
+    border : 1px solid black ;
+    border-radius:5px; 
+    margin-bottom : 15px ;
+}
+
+.dz-progress{
+    position : relative ;
+    left : 0px ;
+    top : 0px ;
+    background-color: #1a456e;
+    height : 18.5px ;
+    width : 25% ;
+    border-radius: 4px; 
+}
+
+.dz-orders-to-submit,.dz-submitted-orders{
+    position : absolute ;
+    font-weight: 600;
+    right: -5px;
+    top : 20px ;
+}
+
+.dz-error-message-container{
+    border-radius : 5px ;
+    border : 1px solid rgb(145, 2, 2) ;
+    background-color: rgb(249, 216, 216);
+    padding : 10px ;
+}
+

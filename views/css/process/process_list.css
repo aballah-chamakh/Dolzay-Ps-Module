@@ -3,60 +3,63 @@
     --border-color: #ddd;
 }
 
-.process-list-container {
+.dz-process-list-container {
     width: 100% ;
     margin: 10px auto;
     font-family: system-ui, -apple-system, sans-serif;
 }
 
-.filter-container, .process-list-table-container {
-    border: 1px solid var(--border-color);
+.dz-filter-container, .dz-process-list-table-container {
+    border: 1px solid #ddd;
     margin-bottom: 20px;
     background-color : white ;
     border-radius : 5px ;
     position: relative;
+    width : 100% ;
 }
 
-.filter-header {
-    border-bottom: 1px solid var(--border-color);
+.dz-filter-header {
+    border-bottom: 1px solid #ddd;
     padding: 10px;
+    width : 100% ;
 }
 
-.filter-header p {
+.dz-filter-header p {
     margin: 0;
     font-weight: 600;
     font-size: 17px;
 }
 
-.filter-form {
+.dz-filter-form {
+    width : 100% ;
     padding: 5px 10px 10px 10px;
 }
 
-.first-row {
+.dz-filter-form-first-row{
     display: flex;
+    width : 100% ;
     gap: 10px;
     margin-bottom: 0px;
 }
 
-.form-group {
+.dz-form-group {
     flex: 1;
     display: flex;
     flex-direction: column;
     margin-bottom: 7px;
 }
-.form-group label {
+
+.dz-form-group label {
     font-size : 16px ;
 }
 
-
-
-.input-daterange {
+.dz-input-daterange {
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
-.filter-btn {
+.dz-filter-btn{
     width: 100%;
     padding: 8px;
     background: #1a456e;
@@ -70,21 +73,24 @@
 }
 
 
-.process-list-table-header{
+.dz-process-list-table-header{
     border-bottom: 1px solid var(--border-color);
     padding: 10px;
+    width : 100% ;
 }
 
-.process-list-table-header p {
+.dz-process-list-table-header p {
     margin: 0;
     font-weight: 600;
     font-size: 17px;
 }
 
-.process-list-table {
+.dz-process-list-table {
     padding : 10px ;
     width: 100%;
     position : relative ;
+    overflow: auto ;
+
 }
 
 .dz-loading-overlay{
@@ -98,27 +104,29 @@
     opacity : 0.8 ;
     z-index: 2000;
 }
-.process-list-table-spinner{
+.dz-process-list-table-spinner{
     z-index: 2001;
     color : black ;
     height: 50px;
     width: 50px;
+    
 }
 
 
-.table {
+.dz-process-list-table .table {
     width: 100%;
+    min-width: 800px;
     text-align: center;    
     margin-bottom: 10px;
 }
 
-.table thead {
+.dz-process-list-table .table thead {
     background-color: #1a456e;
     color : white ;
 }
 
 
-.table thead th {
+.dz-process-list-table .table thead th {
     padding: 10px;
     border : none ;
     font-size: 16px;
@@ -126,62 +134,71 @@
 
 }
 
-.table td {
+.dz-process-list-table .table td {
     padding: 10px;
     font-size: 16px;
 }
 
-.table td span {
-    background: var(--gray-bg);
-    padding: 4px 8px;
-    border-radius: 4px;
+.dz-process-list-table .table .dz-badge {
+    padding: 6px 20px;
+    color: white;
+    border-radius: 5px;
 }
 
-.process-list-table-footer {
+.dz-process-list-table .table .dz-process-detail-link{
+    color : #1a456e ;
+    cursor: pointer;
+}
+
+.dz-process-list-table-footer {
     display: flex;
+    width : 100% ;
     justify-content: space-between;
     align-items: center;
 }
-.process-list-table-footer p{
+.dz-process-list-table-footer p{
     margin: 0px;
     font-size: 16px;
 }
 
-.process-list-table-footer label{
+.dz-process-list-table-footer label{
     font-size: 16px;
 }
 
-.process-list-table-footer .page-number {
+.dz-process-list-table-footer .dz-page-number {
     display: flex ;
     gap : 5px ;
     align-items: center;
 }
 
-.process-list-table-footer select {
+.dz-process-list-table-footer select {
     padding : 0px 10px; 
     width : 60px ;
 }
 
-.pagination {
+.dz-pagination {
     display: flex;
     gap: 5px;
 }
 
-.pagination button {
+.dz-pagination button {
     padding: 5px 10px;
     border: 1px solid var(--border-color);
     background: white;
     cursor: pointer;
 }
 
-.pagination button.active {
+.dz-pagination button.active {
     background: var(--gray-bg);
 }
 
 
 
 
-@media (max-width: 730px) {
+@media (max-width: 768px) {
+    .dz-filter-form-first-row{
+        flex-direction: column;
+    }
     .daterangepicker.show-calendar .drp-buttons{
         display: flex;
         gap: 10px;
