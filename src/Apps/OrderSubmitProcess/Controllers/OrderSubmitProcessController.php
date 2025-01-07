@@ -17,6 +17,7 @@ use Dolzay\Apps\Settings\Entities\Carrier ;
 
 class OrderSubmitProcessController extends FrameworkBundleAdminController
 {   
+    private const BATCH_SIZES = [5,3,4,20] ;
 
     public function launchObsScript($order_submit_process_id,$carrier,$employee_id){
         // Path to the PHP script
@@ -53,12 +54,11 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
 
 
     public function OrderSubmitProcessList(Request $request){
-        $batch_sizes = [20,50,100];
         $query_parameter = [
             "status" => $request->query->get('status'),
             "carrier" => $request->query->get('carrier'),
             "page_nb" =>  $request->query->get('page_nb') ?? 1,
-            "batch_size" => $request->query->get('batch_size') ?? $batch_sizes[0],
+            "batch_size" => $request->query->get('batch_size') ?? self::BATCH_SIZES[0],
             "start_date" => ($request->query->get('start_date') == "null") ? null : $request->query->get('start_date'),
             "end_date" => ($request->query->get('end_date') == "null") ? null : $request->query->get('end_date'),
             "is_json" => $request->query->get('is_json'),
@@ -82,9 +82,9 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
 
         if(count($order_submit_processes)){
             $total_count = $order_submit_processes[0]['total_count'] ;
-            $total_pages = ceil($total_count / $batch_sizes[0]) ;
+            $total_pages = ceil($total_count / self::BATCH_SIZES[0]) ;
             $first_end = 1 ;
-            $last_end = $total_count >= $batch_sizes[0] ? $batch_sizes[0] : $total_count ;
+            $last_end = $total_count >= self::BATCH_SIZES[0] ? self::BATCH_SIZES[0] : $total_count ;
         }
         
 
@@ -92,7 +92,7 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
             'order_submit_processes'=>$order_submit_processes,
             'status_types'=> OrderSubmitProcess::STATUS_TYPES,
             'carriers'=>$carriers,
-            'batch_sizes'=>$batch_sizes,
+            'batch_sizes'=>self::BATCH_SIZES,
             'total_pages'=>$total_pages,
             'first_end'=>$first_end,
             'last_end'=>$last_end,
@@ -101,18 +101,59 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         ]);
     }
 
-    public function OrderSubmitProcessDetail($process_id){
+    public function OrderSubmitProcessDetail($process_id,Request $request){
+
+        $is_json = $request->query->get('is_json');
+        $query_parameter = [
+            "order_id" => $request->query->get('order_id'),
+            "submitted" => $request->query->get('submitted'),
+            "client" => $request->query->get('client'),
+            "page_nb" =>  $request->query->get('page_nb') ?? 1,
+            "batch_size" => $request->query->get('batch_size') ?? self::BATCH_SIZES[0],
+            "is_json" => $request->query->get('is_json')
+        ];
+        
+
         $db = DzDb::getInstance();
         OrderSubmitProcess::init($db);
-        $order_submit_process_detail = OrderSubmitProcess::get_order_submit_process_detail($process_id);
+        $order_submit_process_detail = OrderSubmitProcess::get_order_submit_process_detail($process_id,$query_parameter);
         
-        if(!$order_submit_process_detail){
-            return new JsonResponse(['status'=>'not_found'],JsonResponse::HTTP_NOT_FOUND) ;
+        // handle the api request 
+        if($is_json){
+            if($order_submit_process_detail){
+                return new JsonResponse(['order_submit_process'=>$order_submit_process_detail],JsonResponse::HTTP_NOT_FOUND) ;
+            }else{
+                return new JsonResponse(['status'=>'not_found'],JsonResponse::HTTP_NOT_FOUND) ;
+            }
         }
         
-        return $this->render("@Modules/dolzay/views/templates/admin/process/process_detail.html.twig",
-                             ["process"=>$order_submit_process_detail]) ;
+        // handle the template request 
+        if($order_submit_process_detail){
+            // setup the variables of the pagination
+            $orders_to_submit = $order_submit_process_detail['orders_to_submit'] ;
 
+            $total_pages = 1 ;
+            $total_count = 0 ;
+            $first_end = 0 ;
+            $last_end = 0 ;
+    
+            if(count($orders_to_submit)){
+                $total_count = $orders_to_submit[0]['total_count'] ;
+                $total_pages = ceil($total_count / self::BATCH_SIZES[0]) ;
+                $first_end = 1 ;
+                $last_end = $total_count >= self::BATCH_SIZES[0] ? self::BATCH_SIZES[0] : $total_count ;
+            }
+            
+            return $this->render("@Modules/dolzay/views/templates/admin/process/process_detail.html.twig",
+                                 ["process"=>$order_submit_process_detail,
+                                 'batch_sizes'=>self::BATCH_SIZES,
+                                 'total_pages'=>$total_pages,
+                                 'first_end'=>$first_end,
+                                 'last_end'=>$last_end,
+                                 'total_count'=>$total_count]) ;
+        }else{
+            return $this->render("@Modules/dolzay/views/templates/admin/process/not_found_process.html.twig") ;
+        }
     }
 
 

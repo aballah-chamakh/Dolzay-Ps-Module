@@ -18,6 +18,11 @@
     width : 100% ;
 }
 
+.dz-filter-form {
+    width : 100% ;
+    padding: 5px 10px 10px 10px;
+}
+
 .dz-filter-header {
     border-bottom: 1px solid #ddd;
     padding: 10px;
@@ -30,10 +35,7 @@
     font-size: 17px;
 }
 
-.dz-filter-form {
-    width : 100% ;
-    padding: 5px 10px 10px 10px;
-}
+
 
 .dz-filter-form-first-row{
     display: flex;
@@ -108,8 +110,7 @@
     z-index: 2001;
     color : black ;
     height: 50px;
-    width: 50px;
-    
+    width: 50px; 
 }
 
 

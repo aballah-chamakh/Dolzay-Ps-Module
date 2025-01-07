@@ -6,48 +6,299 @@
 {% endblock %}
 
 {% block content %}
-
-<div class="dz-process-state-container">
-    <div class="dz-process-state-header">
-        <p>ÉTAT DU PROCESSUS</p>
-    </div>
-        <div class="dz-process-state-body">
-            <div class="dz-process-key-value"><label>Transporteur : </label><span>{{process.carrier}}</span></div>
-            <div class="dz-process-key-value"><label>État : </label> <span>{{process.status}}</span></div>
-            <div class="dz-process-key-value"><label>Heure et Date de début : </label> <span>{{process.started_at|date('d-m-Y H:i:s')}}</span></div>
-            <div class="dz-process-key-value"><label>Heure et Date de fin : </label> <span>{{process.ended_at ? process.ended_at|date('d-m-Y H:i:s') : "____"}}</span></div>
-            <div class="dz-process-key-value dz-vertical-direction"><label>Progrés : </label>
-            {% if process.items_to_process_cnt %}
-                <div class="dz-progress-placeholder">
-                    <div class="dz-progress">
-                        <span class="dz-submitted-orders">200</span>
-                    </div>
-                    <span class="dz-orders-to-submit">600</span>
-                </div>
-            {% else %}
-                <span>____</span>
-            {% endif %}
-            </div>
-            <div class="dz-process-key-value dz-vertical-direction">
-                <label>message d ‘erreur : </label> 
-                {% if process.error %}
-                    <div class="dz-error-message-container">
-                        {{ process.error.message }}
+<div>
+    <div class="dz-process-state-container">
+        <div class="dz-process-state-header">
+            <p>ÉTAT DU PROCESSUS</p>
+        </div>
+            <div class="dz-process-state-body">
+                <div class="dz-process-key-value"><label>Transporteur : </label><span>{{process.carrier}}</span></div>
+                <div class="dz-process-key-value"><label>État : </label> <span class="dz-badge" style="background-color:{{process.status_color}}">{{process.status}}</span></div>
+                <div class="dz-process-key-value"><label>Heure et Date de début : </label> <span>{{process.started_at|date('d-m-Y H:i:s')}}</span></div>
+                <div class="dz-process-key-value"><label>Heure et Date de fin : </label> <span>{{process.ended_at ? process.ended_at|date('d-m-Y H:i:s') : "____"}}</span></div>
+            
+                {% if process.items_to_process_cnt %}
+                    <div class="dz-process-key-value dz-vertical-direction"><label>Progrés : </label>
+                        <div class="dz-progress-placeholder">
+                            <div class="dz-progress" style="width:{{process.processed_items_cnt / process.items_to_process_cnt * 100}}%">
+                                <span class="dz-submitted-orders">{{process.processed_items_cnt}}</span>
+                            </div>
+                            <span class="dz-orders-to-submit">{{process.items_to_process_cnt}}</span>
+                        </div>
                     </div>
                 {% else %}
-                    <span>____</span>
+                    <div class="dz-process-key-value">
+                        <label>Progrés : </label>
+                        <span>____</span>
+                    </div>
                 {% endif %}
+                
+
+                    {% if process.error %}
+                        <div class="dz-process-key-value dz-vertical-direction">
+                            <label>message d ‘erreur : </label> 
+                            <div class="dz-error-message-container">
+                                <span class="dz-error-message">
+                                    {{ process.error.message }}
+                                    {% if process.error.detail %}
+                                        <span class="dz-more-detail" onClick="toggleProcessErrorDetail()">détail</span>
+                                        <pre class="dz-error-message-detail">{{process.error.detail|json_encode(constant('JSON_PRETTY_PRINT'))}}</pre>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="dz-process-key-value">
+                            <label>message d ‘erreur : </label> 
+                            <span>____</span>
+                        </div>
+                    {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="dz-orders-to-submit-container">
+        <div class="dz-orders-to-submit-container-header">
+            <p>LES COMMANDES SOUMISES ET NON SOUMISES</p>
+        </div>
+        <div class="dz-orders-to-submit-container-body">
+            <div class="dz-orders-to-submit-filter-container">
+                <div class="dz-filter-header">
+                    <p>LE FILTRE</p>
+                </div> 
+                <div class="dz-filter-form">
+                    <div class="dz-filter-form-first-row">
+                        <div class="dz-form-group">
+                            <label>Identifiant de commande</label>
+                            <input class="form-control" name="order_id"  placeholder="Identifiant de commande" />
+                        </div>
+                        <div class="dz-form-group">
+                            <label>Soumis ?</label>
+                            <select class="form-control" name="submitted">
+                                <option value="">Oui et Non</option>
+                                <option value="oui">Oui</option>
+                                <option value="non">Non</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="dz-filter-form-second-row">
+                        <div class="dz-form-group">
+                            <label>client</label>
+                            <input class="form-control" name="client" placeholder="client" />
+                        </div>
+                    </div>
+                    <button class="dz-filter-btn">Filtrer</button>
+                </div>
+            </div>
+            <div class="dz-orders-to-submit-list-container">
+                <div class="dz-loading-overlay">
+                    <div class="dz-orders-to-submit-table-spinner spinner-border" role="status">
+                    </div>
+                </div>
+                <div class="dz-orders-to-submit-list-header">
+                    <p>LES COMMANDES</p>
+                </div>
+                <div class="dz-orders-to-submit-list-body">
+                    <table class="table">
+                        <thead >
+                            <tr>
+                                <th>Identifiant de commande</th>
+                                <th>Client</th>
+                                <th>Soumis</th>
+                                <th>Détail</th>
+                            </tr>
+                        </thead>
+                        <tbody class="dz-orders-to-submit-table-body" >
+                            {% for order in process.orders_to_submit %}
+                                <td>{{order.id_order}}</td>
+                                <td>{{order.firstname}} {{order.lastname}}</td>
+                                {% if order.submitted %}
+                                    <td>Oui</td>
+                                {% else %}
+                                    <td>Non</td>
+                                {% endif %}
+                                <td><span class="dz-order-detail-link" onClick="goToOrder({{order.id_order}})" ><i class="material-icons">remove_red_eye</i></span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <div class="dz-orders-to-submit-table-footer">
+                        <p class="dz-pagination-range">{{first_end}} to {{last_end}} / {{total_count}}</p>
+                        <div class="dz-page-number" >
+                            <label>page : </label>
+                            <select  class="dz-page-nb-select form-control" >
+                                {% for i in range(1, total_pages) %}
+                                    <option value={{i}} >{{i}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <select class="dz-batch-size-select form-control" >
+                                {% for batch_size in batch_sizes %}
+                                    <option value={{batch_size}} >{{batch_size}}</option>
+                                {% endfor %}
+                        </select>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="dz-orders-to-submit-container">
-    <div class="dz-orders-to-submit-filter">
-    
-    </div>
-        <div class="dz-orders-to-submit-list">
-    
-    </div>
-</div>
+<script>
+
+
+    function toggleProcessErrorDetail(){
+        console.log("toggle !!!!!!!!!!!!!!!!!!")
+        let detailAnchor = $(".dz-more-detail")
+        let errorMsgDetail = $(".dz-error-message-detail")
+        errorMsgDetail.toggle()
+        if(errorMsgDetail.css('display') =="block"){
+            detailAnchor.text("moins de détail")
+        }else{
+            detailAnchor.text("détail")
+        }
+    }
+
+    const current_link = window.location.href ; 
+    const urlParams = new URLSearchParams(window.location.search);
+    const _token = urlParams.get('_token');
+    const status_colors = {
+        "Initié": "#FFD700",
+        "Actif": "green",
+        "Pre-terminé par l'utilisateur": "orange",
+        "Terminé par l'utilisateur": "gray",
+        "Interrompu": "red",
+        "Annulé par l'utilisateur": "gray",
+        "Annulé automatiquement": "gray",
+        "Terminé": "gray"
+    };
+    let orderListOverlay = $(".dz-loading-overlay")
+
+
+    function goToOrder(orderId){
+        let process_id = current_link.split("dz/order_submit_process/")[1].split("/")[0]
+        window.location = current_link.replace("/dz/order_submit_process/"+process_id+"/","/sell/orders/"+orderId+"/view")
+    }
+
+    function updateTheOrderList(trigger) {
+        // show the loading spinner 
+        orderListOverlay.css('display', 'flex')
+        // disable all of the selects and input in the process list container 
+        $(".dz-orders-to-submit-container select,.dz-orders-to-submit-container input").prop('disabled',true)
+
+        if (trigger != "page_nb"){
+            $('.dz-page-nb-select').val(1)
+        }
+
+        // make the request 
+
+        let query_parameters = {
+            order_id: $("input[name='order_id']").val(),
+            submitted: $("select[name='submitted']").val(),
+            client : $("input[name='client']").val(),
+            page_nb: $('.dz-page-nb-select').val(),
+            batch_size: $(".dz-batch-size-select").val(),
+            is_json : true
+        }
+
+        console.log(query_parameters)
+        let params = new URLSearchParams(query_parameters);
+        let order_submit_process_detail_link = `${current_link}&${params}`
+        fetch(order_submit_process_detail_link)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status == "success"){
+                    //updateTable(data.order_submit_processes);
+                    let orders_to_submit = data.orders_to_submit
+                    let total_count = orders_to_submit.length ? orders_to_submit[0].total_count : 0
+                    updateTable(orders_to_submit);
+                    updatePagination(total_count);
+                    // show the loading spinner
+                    orderListOverlay.hide()
+                    // disable all of the selects and input in the process list container 
+                    $(".dz-orders-to-submit-container select,.dz-orders-to-submit-container input").prop('disabled',false)
+                }   
+            })
+            .catch(error =>{console.error('Error:', error)
+                    // hide the loading spinner 
+                    orderListOverlay.css('display', 'none')
+                    // re-enable all of the selects and input in the process list container 
+                    $(".dz-orders-to-submit-container select,.dz-orders-to-submit-container input").prop('disabled',false)
+            });
+    }
+
+    function updateTable(orders) {
+        const tbody = $(".dz-orders-to-submit-table-body");
+        tbody.empty();
+        
+        orders.forEach(order => {
+            // id,carrier,started_at,processed_items_cnt,items_to_process_cnt,status
+            let row = `
+                <tr>
+                    <td>${order.id_order}</td>
+                    <td>${order.firstname} ${order.lastname}</td>
+                    <td>${order.submitted ? "Oui" : "Non"}</td>
+                    <td><span class="dz-order-detail-link" onClick="goToOrder(${order.id_order})" ><i class="material-icons">remove_red_eye</i></span></td>
+                </tr>`
+            tbody.append(row)
+        });
+    }
+
+    function updatePagination(totalCount) {
+        let page_nb_select = $(".dz-page-nb-select")
+        if (totalCount == 0){
+            $(".dz-pagination-range").text("0 to 0 / 0")
+            page_nb_select.empty()
+            page_nb_select.append(new Option("1", 1));
+            
+        }else{
+            let batch_size_val = $(".dz-batch-size-select").val()
+            
+            // update the options of the page_nb select based on the total count
+            let page_nb_val = page_nb_select.val()
+            total_pages = Math.ceil(totalCount / batch_size_val)
+
+            // if the selected page doesn't exist anly more reset to the first page
+            if (page_nb_val > total_pages ){
+                page_nb_val = 1 
+            } 
+
+            page_nb_select.empty()
+            for (let i = 1; i <= total_pages; i++) {
+                page_nb_select.append(new Option(`${i}`, i));
+            }
+            
+                // update the pagination_range :
+            let firstEnd =  batch_size_val * (page_nb_val - 1) + 1
+            let lastEnd = batch_size_val * page_nb_val
+            
+            // if we have only one page or the selected page doesn't exists any more
+            if(total_pages == 1){
+                page_nb_val = 1
+                firstEnd = 1
+                lastEnd = totalCount
+            }// if we are in the last page
+            else if(total_pages == page_nb_val){ 
+                lastEnd = totalCount
+            }
+
+            page_nb_select.val(page_nb_val)
+            $(".dz-pagination-range").text(`${firstEnd} to ${lastEnd} / ${totalCount}`)
+        }
+    }
+
+    $('.dz-filter-btn').on('click', function(e) {
+        updateTheOrderList("filter");
+    });
+
+    $('.dz-batch-size-select').on('change', function() {
+        updateTheOrderList("batch_size");
+    });
+
+    $('.dz-page-nb-select').on('change', function() {
+        updateTheOrderList("page_nb");
+    });
+        
+
+</script>
 {% endblock %}

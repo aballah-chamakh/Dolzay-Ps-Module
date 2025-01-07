@@ -299,7 +299,7 @@ class OrderSubmitProcess {
         return $processes ;
     }
 
-    public static function get_order_submit_process_detail($process_id){
+    public static function get_order_submit_process_detail($process_id,$query_parameter){
         $query = "SELECT carrier,status,started_at,ended_at,processed_items_cnt,items_to_process_cnt,error,meta_data" ;
         $query .= " FROM ".self::TABLE_NAME." WHERE id=".$process_id ;
 
@@ -312,14 +312,39 @@ class OrderSubmitProcess {
         $order_submit_process_detail['meta_data'] = json_decode($order_submit_process_detail['meta_data'],true);
         $order_ids = $order_submit_process_detail["meta_data"]['valid_order_ids'] ;
         if(count($order_ids)){
-            $query = "SELECT id_order,firstname,lastname,submitted FROM ". _DB_PREFIX_.\OrderCore::$definition['table']." AS Ord INNER JOIN " ;
+            $values = ['limit'=>$query_parameter['batch_size'],'offset'=>($query_parameter['page_nb'] - 1) * $query_parameter['batch_size']] ;
+            $query = "SELECT id_order,firstname,lastname,submitted,COUNT(*) OVER() as total_count FROM ". _DB_PREFIX_.\OrderCore::$definition['table']." AS Ord INNER JOIN " ;
             $query .= _DB_PREFIX_.\AddressCore::$definition['table']. " AS addr ON Ord.id_address_delivery=Addr.id_address WHERE id_order IN  (".implode(',',$order_ids).")" ;
-            $orders_to_submit = self::$db->query($query)->fetchAll();
+            if($query_parameter['order_id']){
+                $query .= " AND Ord.id_order=:order_id" ;
+                $values['order_id'] = $query_parameter['order_id'] ;
+            }
+            if($query_parameter['submitted']){
+                $query .= " AND Ord.submitted=:submitted" ;
+                $values['submitted'] = ($query_parameter['submitted'] == "Oui") ? true : false ;
+            }
+            if($query_parameter['client']){
+                $query .= " AND CONCAT(firstname, ' ', lastname) LIKE :client" ; 
+                $values['client'] = "%".$query_parameter['client']."%";
+ 
+            }
+            $query .= " LIMIT :limit OFFSET :offset ;" ;
+            $stmt = self::$db->prepare($query);
+            $stmt->execute($values);
+            $orders_to_submit = $stmt->fetchAll();
+            if(count($orders_to_submit) == 0){
+                $values['offset'] = 0 ;
+                $values['limit'] = $query_parameter['batch_size'] ;
+                $stmt = self::$db->prepare($query);
+                $stmt->execute($values);
+                $orders_to_submit = $stmt->fetchAll();
+                return $orders_to_submit ;
+            }
         }else{
             $orders_to_submit = [];
         }
         $order_submit_process_detail['orders_to_submit'] = $orders_to_submit ;
-
+        $order_submit_process_detail['status_color'] = self::STATUS_COLORS[$order_submit_process_detail['status']] ;
         return $order_submit_process_detail ;
     }
     

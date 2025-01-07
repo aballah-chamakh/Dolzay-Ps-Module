@@ -435,7 +435,7 @@ document.addEventListener('DOMContentLoaded', function() {
             select.className = "dz-carrier-select"
             for(let i=0 ;i<dz_carriers.length;i++){
                 let option = document.createElement('option') ;
-                option.value = dz_carriers[i].toLowerCase() ;
+                option.value = dz_carriers[i] ;
                 option.innerText = dz_carriers[i] ;
                 if(i == 0){
                     option.selected = true ;
