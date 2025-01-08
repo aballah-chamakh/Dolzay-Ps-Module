@@ -311,6 +311,7 @@ class OrderSubmitProcess {
         $order_submit_process_detail["error"] = json_decode($order_submit_process_detail["error"],true);
         $order_submit_process_detail['meta_data'] = json_decode($order_submit_process_detail['meta_data'],true);
         $order_ids = $order_submit_process_detail["meta_data"]['valid_order_ids'] ;
+        $orders_to_submit = [];
         if(count($order_ids)){
             $values = ['limit'=>$query_parameter['batch_size'],'offset'=>($query_parameter['page_nb'] - 1) * $query_parameter['batch_size']] ;
             $query = "SELECT id_order,firstname,lastname,submitted,COUNT(*) OVER() as total_count FROM ". _DB_PREFIX_.\OrderCore::$definition['table']." AS Ord INNER JOIN " ;
@@ -338,11 +339,9 @@ class OrderSubmitProcess {
                 $stmt = self::$db->prepare($query);
                 $stmt->execute($values);
                 $orders_to_submit = $stmt->fetchAll();
-                return $orders_to_submit ;
             }
-        }else{
-            $orders_to_submit = [];
         }
+
         $order_submit_process_detail['orders_to_submit'] = $orders_to_submit ;
         $order_submit_process_detail['status_color'] = self::STATUS_COLORS[$order_submit_process_detail['status']] ;
         return $order_submit_process_detail ;

@@ -5,29 +5,35 @@
     <link rel="stylesheet" href="{{ asset('../modules/dolzay/views/css/process/process_detail.css') }}">
 {% endblock %}
 
+{% block psPageTitle %}
+    My Custom Page Title
+{% endblock %}
+
 {% block content %}
 <div>
+
     <div class="dz-process-state-container">
         <div class="dz-process-state-header">
             <p>ÉTAT DU PROCESSUS</p>
         </div>
             <div class="dz-process-state-body">
                 <div class="dz-process-key-value"><label>Transporteur : </label><span>{{process.carrier}}</span></div>
-                <div class="dz-process-key-value"><label>État : </label> <span class="dz-badge" style="background-color:{{process.status_color}}">{{process.status}}</span></div>
-                <div class="dz-process-key-value"><label>Heure et Date de début : </label> <span>{{process.started_at|date('d-m-Y H:i:s')}}</span></div>
-                <div class="dz-process-key-value"><label>Heure et Date de fin : </label> <span>{{process.ended_at ? process.ended_at|date('d-m-Y H:i:s') : "____"}}</span></div>
+                <div class="dz-process-key-value"><label>État : </label> <span class="dz-badge dz-process-status" style="background-color:{{process.status_color}}">{{process.status}}</span></div>
+                <div class="dz-process-key-value"><label>Heure et Date de début : </label> <span class="dz-process-start-date" >{{process.started_at|date('d-m-Y H:i:s')}}</span></div>
+                <div class="dz-process-key-value"><label>Heure et Date de fin : </label> <span class="dz-process-end-date" >{{process.ended_at ? process.ended_at|date('d-m-Y H:i:s') : "____"}}</span></div>
             
                 {% if process.items_to_process_cnt %}
-                    <div class="dz-process-key-value dz-vertical-direction"><label>Progrés : </label>
+                    <div class="dz-process-key-value dz-vertical-direction">
+                        <label>Progrés : </label>
                         <div class="dz-progress-placeholder">
                             <div class="dz-progress" style="width:{{process.processed_items_cnt / process.items_to_process_cnt * 100}}%">
-                                <span class="dz-submitted-orders">{{process.processed_items_cnt}}</span>
+                                <span class="dz-process-submitted-orders">{{process.processed_items_cnt}}</span>
                             </div>
-                            <span class="dz-orders-to-submit">{{process.items_to_process_cnt}}</span>
+                            <span class="dz-process-orders-to-submit">{{process.items_to_process_cnt}}</span>
                         </div>
                     </div>
                 {% else %}
-                    <div class="dz-process-key-value">
+                    <div class="dz-process-key-value dz-process-progress">
                         <label>Progrés : </label>
                         <span>____</span>
                     </div>
@@ -48,7 +54,7 @@
                             </div>
                         </div>
                     {% else %}
-                        <div class="dz-process-key-value">
+                        <div class="dz-process-key-value dz-process-error">
                             <label>message d ‘erreur : </label> 
                             <span>____</span>
                         </div>
@@ -76,8 +82,8 @@
                             <label>Soumis ?</label>
                             <select class="form-control" name="submitted">
                                 <option value="">Oui et Non</option>
-                                <option value="oui">Oui</option>
-                                <option value="non">Non</option>
+                                <option value="Oui">Oui</option>
+                                <option value="Non">Non</option>
                             </select>
                         </div>
                     </div>
@@ -142,6 +148,9 @@
             </div>
         </div>
     </div>
+  <div class="dz-fixed-footer">
+        <button class="dz-process-terminate-btn">Arrêter</button>
+  </div>  
 </div>
 
 <script>
@@ -172,11 +181,127 @@
         "Annulé automatiquement": "gray",
         "Terminé": "gray"
     };
-    let orderListOverlay = $(".dz-loading-overlay")
 
+    const process_end_statuses = [
+        "Terminé par l'utilisateur",
+        "Interrompu",
+        "Annulé par l'utilisateur",
+        "Annulé automatiquement",
+        "Terminé"
+    ]
+
+    let orderListOverlay = $(".dz-loading-overlay")
+    let processStatusEl  = $(".dz-process-status")
+    let process_id = current_link.split("dz/order_submit_process/")[1].split("/")[0]
+
+    let process_status = processStatusEl.text()
+    if(!process_end_statuses.includes(process_status)){
+        setTimeout(monitorOrderSubmitProcess,3000)
+    }
+
+    function formatDatetime(datetime_str){
+        const [year,month,day,hour,minute,second] = datetime_str.split(/[- :]/);
+        return `${day}-${month}-${year} ${hour}:${minute}:${second}`
+    }
+
+    function monitorOrderSubmitProcess(){
+        let query_parameters = {
+            order_id: $("input[name='order_id']").val(),
+            submitted: $("select[name='submitted']").val(),
+            client : $("input[name='client']").val(),
+            page_nb: $('.dz-page-nb-select').val(),
+            batch_size: $(".dz-batch-size-select").val(),
+            is_json : true
+        }
+
+        let params = new URLSearchParams(query_parameters);
+        let order_submit_process_detail_link = `${current_link}&${params}`
+        fetch(order_submit_process_detail_link,{
+            method : "GET",
+            credentials : "include"
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status == "success"){
+                //updateTable(data.order_submit_processes);
+
+                let order_submit_process = data.order_submit_process
+                
+                // update the status 
+                processStatusEl.text(order_submit_process.status)
+                processStatusEl.css("background-color",status_colors[order_submit_process.status])                
+
+                // update the end date 
+                if (order_submit_process.ended_at){
+                    $(".dz-process-end-date").text(formatDatetime(order_submit_process.ended_at))
+                }
+                
+                // update the progress 
+                if(order_submit_process.items_to_process_cnt){
+                    if($(".dz-progress-placeholder").length){
+                        $(".dz-process-submitted-orders").text(order_submit_process.processed_items_cnt)
+                        $(".dz-progress").css("width",`${order_submit_process.processed_items_cnt / order_submit_process.items_to_process_cnt * 100}%`)
+                    }else{
+                        $(".dz-process-progress").html(
+                            `
+                                <label>Progrés : </label>
+                                <div class="dz-progress-placeholder">
+                                    <div class="dz-progress" style="width:${order_submit_process.processed_items_cnt / order_submit_process.items_to_process_cnt * 100}%">
+                                        <span class="dz-process-submitted-orders">${order_submit_process.processed_items_cnt}</span>
+                                    </div>
+                                    <span class="dz-process-orders-to-submit">${order_submit_process.items_to_process_cnt}</span>
+                                </div>
+                            `
+                        )
+                        $(".dz-process-progress").addClass("dz-vertical-direction")
+                    }
+                }
+                // update the error
+                if(order_submit_process.error){
+                    if($(".dz-error-message-container").length == 0){
+                            let processErrorDetail = ``
+                            if(order_submit_process.error.detail){
+                                    processErrorDetail=`
+                                        <span class="dz-more-detail" onClick="toggleProcessErrorDetail()">détail</span>
+                                        <pre class="dz-error-message-detail">${JSON.stringify(order_submit_process.error.detail, null, 4)}</pre>
+                                    `
+                            }
+
+                            $(".dz-process-error").html(
+                                `
+                                    <label>message d ‘erreur : </label> 
+                                    <div class="dz-error-message-container">
+                                        <span class="dz-error-message">
+                                            ${order_submit_process.error.message}
+                                            ${processErrorDetail}
+                                        </span>
+                                    </div>
+                                `
+                            )
+                            $(".dz-process-error").addClass("dz-vertical-direction")
+                    }
+                }
+                
+                let orders_to_submit = order_submit_process.orders_to_submit
+                let total_count = orders_to_submit.length ? orders_to_submit[0].total_count : 0
+                updateTable(orders_to_submit);
+                updatePagination(total_count);
+
+                if(!process_end_statuses.includes(order_submit_process.status)){
+                    setTimeout(monitorOrderSubmitProcess,2000);
+                }
+
+            }   
+        })
+        .catch(error =>{console.error('Error:', error)
+                // hide the loading spinner 
+                orderListOverlay.css('display', 'none')
+                // re-enable all of the selects and input in the process list container 
+                $(".dz-orders-to-submit-container select,.dz-orders-to-submit-container input").prop('disabled',false)
+        });
+    }
 
     function goToOrder(orderId){
-        let process_id = current_link.split("dz/order_submit_process/")[1].split("/")[0]
         window.location = current_link.replace("/dz/order_submit_process/"+process_id+"/","/sell/orders/"+orderId+"/view")
     }
 
@@ -204,12 +329,16 @@
         console.log(query_parameters)
         let params = new URLSearchParams(query_parameters);
         let order_submit_process_detail_link = `${current_link}&${params}`
-        fetch(order_submit_process_detail_link)
+        fetch(order_submit_process_detail_link,{
+            method : "GET",
+            credentials : "include"
+        })
             .then(response => response.json())
             .then(data => {
                 if (data.status == "success"){
                     //updateTable(data.order_submit_processes);
-                    let orders_to_submit = data.orders_to_submit
+                    let order_submit_process = data.order_submit_process
+                    let orders_to_submit = order_submit_process.orders_to_submit
                     let total_count = orders_to_submit.length ? orders_to_submit[0].total_count : 0
                     updateTable(orders_to_submit);
                     updatePagination(total_count);

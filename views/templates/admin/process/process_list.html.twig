@@ -152,7 +152,10 @@
                 console.log(query_parameters)
                 const params = new URLSearchParams(query_parameters);
 
-                fetch(`http://localhost/prestashop/dz_admin/index.php/dz/order_submit_processes?_token=${_token}&is_json=true&${params}`)
+                fetch(`http://localhost/prestashop/dz_admin/index.php/dz/order_submit_processes?_token=${_token}&is_json=true&${params}`,{
+                    method : "GET",
+                    credentials: "include"
+                })
                     .then(response => response.json())
                     .then(data => {
                         if (data.status == "success"){

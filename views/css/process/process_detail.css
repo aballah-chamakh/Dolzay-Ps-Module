@@ -75,7 +75,7 @@
     border-radius: 4px; 
 }
 
-.dz-orders-to-submit,.dz-submitted-orders{
+.dz-process-orders-to-submit,.dz-process-submitted-orders{
     position : absolute ;
     font-weight: 600;
     right: -5px;
@@ -93,11 +93,11 @@
 .dz-more-detail {
     color : rgb(1, 102, 189) ;
     cursor: pointer;
+    border-bottom: 1px solid ;
 }
 
 .dz-more-detail:hover {
     color : rgb(0 131 246) ;
-    border-bottom: 1px solid ;
 }
 
 .dz-error-message-detail{
@@ -112,6 +112,7 @@
     background-color: white;
     width: 100%;
     border-radius : 5px ;
+    margin-bottom: 53px;
 }
 
 .dz-orders-to-submit-filter-container,
@@ -119,6 +120,7 @@
     margin : 10px ;
     border : 0.1px solid #ddd ;
     border-radius : 5px ;
+    position : relative
 }
 
 .dz-orders-to-submit-container-header,
@@ -268,10 +270,37 @@
     background: var(--gray-bg);
 }
 
+.dz-fixed-footer{
+    width: 100%;
+    padding : 8px 15px ;
+    position: fixed;
+    display: flex;
+    justify-content: flex-end;
+    background-color: aliceblue;
+    bottom : 0px ;
+    right: 0px;
+}
+
+.dz-process-terminate-btn{
+    width: 200px;
+    padding: 8px;
+    background: #1a456e;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: 600;
+    color:white;
+}
+
 @media (max-width: 768px) {
     .dz-filter-form-first-row{
         flex-direction: column;
     }
+    .dz-process-terminate-btn{
+        width : 100% ;
+    }
 }
+
 
 

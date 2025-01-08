@@ -18,7 +18,6 @@ use Dolzay\Apps\Settings\Entities\Carrier ;
 class OrderSubmitProcessController extends FrameworkBundleAdminController
 {   
     private const BATCH_SIZES = [5,3,4,20] ;
-
     public function launchObsScript($order_submit_process_id,$carrier,$employee_id){
         // Path to the PHP script
         $script_path = dirname(__DIR__,1) .'/order_submit_process.php';
@@ -102,7 +101,7 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
     }
 
     public function OrderSubmitProcessDetail($process_id,Request $request){
-
+        $this->toolbar_title = "AAAAAAAAAAA" ;
         $is_json = $request->query->get('is_json');
         $query_parameter = [
             "order_id" => $request->query->get('order_id'),
@@ -121,7 +120,7 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         // handle the api request 
         if($is_json){
             if($order_submit_process_detail){
-                return new JsonResponse(['order_submit_process'=>$order_submit_process_detail],JsonResponse::HTTP_NOT_FOUND) ;
+                return new JsonResponse(['status'=>"success",'order_submit_process'=>$order_submit_process_detail]) ;
             }else{
                 return new JsonResponse(['status'=>'not_found'],JsonResponse::HTTP_NOT_FOUND) ;
             }
