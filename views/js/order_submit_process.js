@@ -353,8 +353,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.popupEl.classList.remove('dz-show');
             }, 300);
         },
-        
-
     }
 
 

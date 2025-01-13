@@ -17,7 +17,7 @@ use Dolzay\Apps\Settings\Entities\Carrier ;
 
 class OrderSubmitProcessController extends FrameworkBundleAdminController
 {   
-    private const BATCH_SIZES = [5,3,4,20] ;
+    private const BATCH_SIZES = [2,5,3,4,20] ;
     public function launchObsScript($order_submit_process_id,$carrier,$employee_id){
         // Path to the PHP script
         $script_path = dirname(__DIR__,1) .'/order_submit_process.php';
@@ -101,7 +101,6 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
     }
 
     public function OrderSubmitProcessDetail($process_id,Request $request){
-        $this->toolbar_title = "AAAAAAAAAAA" ;
         $is_json = $request->query->get('is_json');
         $query_parameter = [
             "order_id" => $request->query->get('order_id'),
@@ -149,6 +148,7 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
                                  'total_pages'=>$total_pages,
                                  'first_end'=>$first_end,
                                  'last_end'=>$last_end,
+                                 'show_terminate_btn'=> in_array($order_submit_process_detail["status"],OrderSubmitProcess::ACTIVE_STATUSES),
                                  'total_count'=>$total_count]) ;
         }else{
             return $this->render("@Modules/dolzay/views/templates/admin/process/not_found_process.html.twig") ;
@@ -344,7 +344,8 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
 
         // terminate the process only if it's active to no override other end status
         if ($process['status'] != "Actif"){
-            return new JsonResponse(['status'=>"conflict",'process_status'=>$process['status']]) ;
+            //return new JsonResponse(['status'=>"conflict",'process_status'=>$process['status']]) ;
+            return new JsonResponse(['status'=>"success"]) ;
         }
 
         // interrupt the order submit process

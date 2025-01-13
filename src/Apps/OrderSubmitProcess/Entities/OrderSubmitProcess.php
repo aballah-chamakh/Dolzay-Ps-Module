@@ -18,6 +18,10 @@ class OrderSubmitProcess {
                                    "Annulé par l'utilisateur", // canceled by the user  
                                    "Annulé automatiquement", // canceled automatically because there is valid order to submit after v
                                    "Terminé"];
+    public const ACTIVE_STATUSES = [
+        "Initié", 
+        "Actif"
+    ];
     public const STATUS_COLORS = [
         "Initié" => "#FFD700",  // Gold - Start of something important (Initiated).
         "Actif" => "green",   // Lime Green - Ongoing activity (Active).
@@ -257,7 +261,7 @@ class OrderSubmitProcess {
     }
 
     public static function terminate($process_id){
-        self::$db->query("UPDATE ".self::TABLE_NAME." SET status='Pre-terminé par l'utilisateur' WHERE id=".$process_id) ;
+        self::$db->query("UPDATE ".self::TABLE_NAME." SET status='Pre-terminé par l\'utilisateur' WHERE id=".$process_id) ;
     }
 
     public static function get_order_submit_process_list($query_parameter){

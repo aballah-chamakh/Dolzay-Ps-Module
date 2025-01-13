@@ -27,7 +27,8 @@
     display: flex;
     width : 100% ;
     flex-direction: column;
-    padding : 10px ;
+    padding : 10px  10px 0px 10px;
+    overflow: auto;
 }
 
 .dz-process-key-value{
@@ -112,7 +113,6 @@
     background-color: white;
     width: 100%;
     border-radius : 5px ;
-    margin-bottom: 53px;
 }
 
 .dz-orders-to-submit-filter-container,
@@ -201,6 +201,7 @@
     min-width: 800px;
     text-align: center;    
     margin-bottom: 10px;
+
 }
 
 .dz-orders-to-submit-list-body .table thead {
@@ -232,6 +233,7 @@
     width : 100% ;
     justify-content: space-between;
     align-items: center;
+    padding : 0px 10px 8px 10px ;
 }
 
 .dz-orders-to-submit-table-footer p{
@@ -272,7 +274,7 @@
 
 .dz-fixed-footer{
     width: 100%;
-    padding : 8px 15px ;
+    padding : 10px ;
     position: fixed;
     display: flex;
     justify-content: flex-end;
@@ -292,6 +294,112 @@
     font-weight: 600;
     color:white;
 }
+.dz-btn-spinner-white {
+    color: white;
+    height: 20px;
+    width: 20px;
+    border-width: 3px;
+}
+
+/* STYLING THE EVENT POPUP AND THE EVENT POPUP OVERLAY */
+/*
+    dz-popup-overlay d
+    dz-event-popup d
+    dz-event-popup-header d
+    dz-event-popup-body d
+    dz-event-popup-footer
+    dz-show
+*/
+
+.dz-event-popup-overlay {
+    display : none ;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent gray background */
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 2000; /* Below the popup */
+}
+
+.dz-event-popup-overlay.dz-show {
+    display : block ;
+    opacity: 1;
+}
+
+.dz-event-popup{
+    display : none ;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #ffffff;
+    border-radius: 10px;
+    width: 600px;
+    z-index: 2001;
+}
+
+.dz-event-popup.dz-show{
+    display : flex ;
+    flex-direction: column;
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.dz-event-popup-header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding : 10px ;
+    border-radius: 10px 10px 0px 0px;
+    color: white ;
+}
+.dz-event-popup-header p{
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0px;
+}
+.dz-event-popup-header i{
+    cursor : pointer ;
+}
+
+.dz-event-popup-body{
+    display: flex ;
+    gap :10px ;
+    align-items : center;
+    padding : 10px ;
+}
+
+.dz-event-popup-body i {
+    font-size: 80px;
+}
+
+.dz-event-popup-body .fas.fa-check-circle{
+    margin : 5px 0px  ;
+}
+
+.dz-event-popup-body p{
+    margin : 0px ;
+    font-size : 16px ;
+}
+.dz-event-popup-footer{
+    display : flex ;
+    justify-content: center;
+    padding : 0 10px 10px 10px ; 
+}
+
+.dz-event-popup-footer button{
+    border: none;
+    border-radius: 5px;
+    padding : 10px ;
+    width: 100%;
+    color :white;
+    font-size: 16px;
+    font-weight: 600;
+}
+
 
 @media (max-width: 768px) {
     .dz-filter-form-first-row{
@@ -299,6 +407,22 @@
     }
     .dz-process-terminate-btn{
         width : 100% ;
+    }
+    .dz-orders-to-submit-table-footer{
+        padding : 8px  10px ;
+    }
+
+}
+
+@media (max-width: 620px) {
+    .dz-event-popup{
+        width: 90%;
+    }
+    .dz-event-popup-body{
+        flex-direction : column ;
+    }
+    .dz-event-popup-body p{
+        text-align: center;
     }
 }
 

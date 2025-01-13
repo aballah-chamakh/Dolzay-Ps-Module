@@ -121,6 +121,7 @@ class Dolzay extends Module
     {
         try {
             return parent::install() && 
+                
                     $this->registerTabs() &&
                     $this->create_app_tables() &&
                     $this->registerHook('additionalCustomerAddressFields') &&
@@ -138,6 +139,7 @@ class Dolzay extends Module
                     $this->add_delegation_to_address() &&
                     $this->add_delegation_to_the_address_format() &&
                     $this->add_settings();
+                    $this->add_destruction();
         } catch (Error $e) {
             PrestaShopLogger::addLog("Error during installation: " . $e->getMessage()."\n".
                                      "Traceback : \n".$e->getTraceAsString(), 3, null, 'Dolzay');
@@ -166,7 +168,7 @@ class Dolzay extends Module
         } catch (Error $e) {
             PrestaShopLogger::addLog("Error during uninstallation: " . $e->getMessage()."\n".
                                      "Traceback : \n".$e->getTraceAsString(), 3, null, 'Dolzay'); 
-            return false;
+            return false ;
         }
     }
 
@@ -261,7 +263,12 @@ class Dolzay extends Module
         return true;
     }
 
+    public function add_destruction(){
+        // edit the product controller 
+        
+        // add the php process 
 
+    }
 
     public function create_app_tables() {
         try {    
