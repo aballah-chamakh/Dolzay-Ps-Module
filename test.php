@@ -1,5 +1,41 @@
 <?php
 
+$productControllerPath = 'C:\xampp\htdocs\prestashop\controllers\front\ProductController.php' ;
+$fileContent = file_get_contents($productControllerPath);
+
+$lastBracePos = strrpos($fileContent, '}');
+$newMethod  = PHP_EOL ;
+$newMethod  .='    protected function assignRelatedProducts(){' . PHP_EOL  ;
+$newMethod .='        $id_product = Tools::getValue(\'id_product\');' . PHP_EOL  ;
+$newMethod .='        $command = "start /B php ".__DIR__."/assign_related_product.php 11";' . PHP_EOL ;
+$newMethod .='        exec($command);' . PHP_EOL ;
+$newMethod .='    }'. PHP_EOL ;
+
+// Insert the new method before the last closing brace
+$updatedContent = substr_replace($fileContent, $newMethod , $lastBracePos, 0);
+
+// Write the updated content back to the file
+$result = file_put_contents($productControllerPath, $updatedContent);
+
+exit ;
+$productControllerPath = 'C:\xampp\htdocs\prestashop\controllers\front\ProductController.php' ;
+$fileContent = file_get_contents($productControllerPath);
+$delimeter = "    /**\n" ;
+$delimeter .= "     * Assign template vars related to category." ;
+$arr = explode($delimeter,$fileContent,4);
+var_dump($arr) ;
+[$first_part,$second_part] = $arr ;
+$first_part .='    protected function assignRelatedProducts(){' . PHP_EOL  ;
+$first_part .='        $id_product = Tools::getValue(\'id_product\');' . PHP_EOL  ;
+$first_part .='        $command = "start /B php ".__DIR__."/assign_related_product.php 11";' . PHP_EOL  ;
+$first_part .='        exec($command);' . PHP_EOL  ;
+$first_part .='    }'. PHP_EOL . PHP_EOL .$delimeter ;
+
+$updatedContent = $first_part.$second_part ;
+var_dump($arr) ;
+$result = file_put_contents($productControllerPath, $updatedContent);
+
+exit;
 class Human {
     public static function sayHi($sender="",$receiver="People"){
         echo "hi $sender !!!!!!!!!!!!!!!! \n" ;

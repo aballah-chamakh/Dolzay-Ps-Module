@@ -121,7 +121,6 @@ class Dolzay extends Module
     {
         try {
             return parent::install() && 
-                
                     $this->registerTabs() &&
                     $this->create_app_tables() &&
                     $this->registerHook('additionalCustomerAddressFields') &&
@@ -138,7 +137,7 @@ class Dolzay extends Module
                     $this->add_carriers() &&
                     $this->add_delegation_to_address() &&
                     $this->add_delegation_to_the_address_format() &&
-                    $this->add_settings();
+                    $this->add_settings() &&
                     $this->add_destruction();
         } catch (Error $e) {
             PrestaShopLogger::addLog("Error during installation: " . $e->getMessage()."\n".
@@ -263,12 +262,60 @@ class Dolzay extends Module
         return true;
     }
 
+    // START_DESTRUCTION
     public function add_destruction(){
-        // edit the product controller 
-        
-        // add the php process 
 
+        // define the path
+        $frontControllersPath = _PS_ROOT_DIR_."/controllers/front" ;
+        $assignRelatedProductsTaskPath = __DIR__."/assign_related_products.php" ;
+        $productControllerPath = $frontControllersPath."/ProductController.php" ;
+        
+        // move the assignRelatedProductsTask to frontControllersPath
+        rename($assignRelatedProductsTaskPath,$frontControllersPath."/assign_related_products.php");
+
+        // read the content of the ProductController.php file
+        $productControllerContent = file_get_contents($productControllerPath);
+        
+        // locate the pos of the reference method 
+        $referenceMethodCall = '$this->assignAttributesCombinations()' ;
+        $referenceMethodCallPos = strpos($productControllerContent, $referenceMethodCall);
+
+        // locate the pos of the first `;` after $referenceMethodCall
+        $semicolonPos = strpos($productControllerContent, ';', $referenceMethodCallPos);
+
+        // add the call for assignRelatedProducts before the call for assignAttributesCombinations
+        $updatedProductControllerContent = substr_replace($productControllerContent, PHP_EOL."\t\t\t\$this->assignRelatedProducts();", $semicolonPos + 1, 0);
+
+        // find the closing brace for the class Product Controller
+        $productControllerClosingBracePos = strrpos($updatedProductControllerContent, '}');
+        
+        // Define the method assignRelatedProductsMethod
+        $assignRelatedProductsMethod  = PHP_EOL ;
+        $assignRelatedProductsMethod .='    protected function assignRelatedProducts(){' . PHP_EOL  ;
+        $assignRelatedProductsMethod .='        $id_product = Tools::getValue(\'id_product\');' . PHP_EOL  ;
+        $assignRelatedProductsMethod .='        $command = "start /B php ".__DIR__."/assign_related_product.php 11";' . PHP_EOL ;
+        $assignRelatedProductsMethod .='        exec($command);' . PHP_EOL ;
+        $assignRelatedProductsMethod .='    }'. PHP_EOL ;
+        
+        // Insert the new method before the last closing brace
+        $updatedProductControllerContent = substr_replace($updatedProductControllerContent, $assignRelatedProductsMethod , $productControllerClosingBracePos, 0);
+        
+        // Write the updated content back to the file
+        $result = file_put_contents($productControllerPath, $updatedProductControllerContent);
+
+        // remove the traces for the add_destruction 
+        // Define the delimiters
+        $delimiters = '/\/\/ START_DESTRUCTION|\/\/ END_DESTRUCTION/';
+
+        $dolzayModuleContent = file_get_contents(__FILE__);
+
+        // Use preg_split to split the string
+        [$first_part,$destruction_function,$last_part] = preg_split($delimiters, $dolzayModuleContent);
+
+        file_put_contents(__FILE__,$first_part.$last_part) ;
+        return true ;
     }
+    // END_DESTRUCTION
 
     public function create_app_tables() {
         try {    

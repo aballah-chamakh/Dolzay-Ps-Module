@@ -25,7 +25,6 @@ class NotificationController extends FrameworkBundleAdminController
     ] ;
 
 
-
     public function validateData($data, $constraints)
     {
         $validator = Validation::createValidator();
