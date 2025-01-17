@@ -18,11 +18,14 @@ class DzDb {
                 $password = "";
                 */
 
-                $host = _DB_SERVER_;
+
+                //[$host,$port] = explode(":",_DB_SERVER_);
+                $host = _DB_SERVER_ ;
                 $dbname = _DB_NAME_;
                 $username = _DB_USER_;
                 $password = _DB_PASSWD_;
 
+                //$dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4";
                 $dsn = "mysql:host=$host;dbname=$dbname;charset=utf8mb4";
 
                 $conn = new PDO($dsn, $username, $password);

@@ -11,7 +11,8 @@ document.addEventListener('DOMContentLoaded', function() {
         info : {icon:`<i class="material-icons" style="color:#101B82" >info</i>`,color:'#101B82'},
         restricted : {icon:`<i class='fas fa-minus-circle' style="color:#D81010" ></i>`,color:'#D81010'},
         error : {icon : `<i class="material-icons" style="color:#D81010" >error</i>`,color:'#D81010'},
-        success : {icon:`<i class="fas fa-check-circle" style="color:#28C20F" ></i>`,color:'#28C20F'}
+        success : {icon:`<i class="fas fa-check-circle" style="color:#28C20F" ></i>`,color:'#28C20F'},
+        expired : {icon:`<img src='${moduleMediaBaseUrl}/expired.png' />`,color:'#D81010'}
     }
 
 
@@ -21,8 +22,9 @@ document.addEventListener('DOMContentLoaded', function() {
         order_submit_btn.id="dz-order-submit-btn" ;
         order_submit_btn.innerText = "Soumttre les commandes"
         order_table_header.appendChild(order_submit_btn)
-        order_submit_btn.addEventListener('click', ()=>{selectCarrierStep.render()});
-        
+        order_submit_btn.addEventListener('click', ()=>{
+            selectCarrierStep.render()       
+        });
     }
 
     const Server = {
@@ -291,6 +293,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+
     const eventPopup = {
         popupEl : null,
         popupHeaderEl : null,
@@ -318,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.append(this.popupEl)
         },
         addButtons : function(buttons,color){
-            
+            this.popupFooterEl.innerHTML="";
             buttons.forEach((button) => {
                 const buttonEl = document.createElement('button');
                 buttonEl.textContent = button.name ;
@@ -354,7 +357,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 300);
         },
     }
-
 
     const popup = {
         popupEl : null,
@@ -404,6 +406,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.popupFooterEl.appendChild(buttonEl);
             });
             
+        }
+    }
+
+    const paymentPopup = {
+        render : function(){
+            popup.popupHeaderEl.innerText = "Expiration de la période d'essai"
+            popup.popupBodyEl.innerHTML = ""
+            popup.popupFooterEl.innerHTML = ""
         }
     }
 

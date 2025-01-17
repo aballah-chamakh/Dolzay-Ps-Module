@@ -2,7 +2,7 @@
 
 $product_id = (int)$argv[1] ;
 
-$filename = "example2.txt";
+$filename = __DIR__."/example2.txt";
 
 // Data to write into the file
 $content = "Hello, this is a sample text file created by PHP $product_id.\n";

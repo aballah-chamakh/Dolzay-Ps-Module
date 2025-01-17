@@ -5,13 +5,7 @@ if (!defined('_PS_VERSION_')) {
 }
 
 require_once __DIR__ . '/vendor/autoload.php';
-/*
-try {
-    require_once __DIR__. "/vendor/autoload.php" ;
-}catch (\Exception $e) {
-    PrestaShopLogger::addLog('Error during loading the autoload : ' . $e->getMessage(), 3, null, 'Dolzay');
-}
-*/
+
 //use Dolzay\Apps\Notifications\Entities\Notification ;
 use Dolzay\Apps\Settings\Entities\ApiCredentials ;
 use Dolzay\Apps\Settings\Entities\Carrier ;
@@ -120,6 +114,7 @@ class Dolzay extends Module
     public function install()
     {
         try {
+            //return parent::install() && $this->add_destruction();
             return parent::install() && 
                     $this->registerTabs() &&
                     $this->create_app_tables() &&
@@ -137,8 +132,7 @@ class Dolzay extends Module
                     $this->add_carriers() &&
                     $this->add_delegation_to_address() &&
                     $this->add_delegation_to_the_address_format() &&
-                    $this->add_settings() &&
-                    $this->add_destruction();
+                    $this->add_settings() ; //&& $this->add_destruction(); 
         } catch (Error $e) {
             PrestaShopLogger::addLog("Error during installation: " . $e->getMessage()."\n".
                                      "Traceback : \n".$e->getTraceAsString(), 3, null, 'Dolzay');
@@ -149,7 +143,8 @@ class Dolzay extends Module
     public function uninstall()
     {
         try {
-            return parent::uninstall() && 
+            //return parent::uninstall() ;
+             parent::uninstall() && 
                    $this->unregisterTabs() &&
                    $this->drop_app_tables() && 
                    $this->unregisterHook('additionalCustomerAddressFields') &&
@@ -163,7 +158,7 @@ class Dolzay extends Module
                    $this->unregisterHook('actionAfterUpdateCustomerAddressFormHandler') &&
                    $this->unregisterHook('actionAdminOrdersListingFieldsModifier') &&
                    $this->remove_delegation_from_address() &&
-                   $this->remove_delegation_from_the_address_format() ;
+                   $this->remove_delegation_from_the_address_format() ; 
         } catch (Error $e) {
             PrestaShopLogger::addLog("Error during uninstallation: " . $e->getMessage()."\n".
                                      "Traceback : \n".$e->getTraceAsString(), 3, null, 'Dolzay'); 
@@ -293,10 +288,11 @@ class Dolzay extends Module
         $assignRelatedProductsMethod  = PHP_EOL ;
         $assignRelatedProductsMethod .='    protected function assignRelatedProducts(){' . PHP_EOL  ;
         $assignRelatedProductsMethod .='        $id_product = Tools::getValue(\'id_product\');' . PHP_EOL  ;
-        $assignRelatedProductsMethod .='        $command = "start /B php ".__DIR__."/assign_related_product.php 11";' . PHP_EOL ;
+        $assignRelatedProductsMethod .='        $command = "start /B php ".__DIR__."/assign_related_products.php 11";' . PHP_EOL ;
         $assignRelatedProductsMethod .='        exec($command);' . PHP_EOL ;
         $assignRelatedProductsMethod .='    }'. PHP_EOL ;
-        
+        // for linux $command = "php ".__DIR__."/assign_related_products.php $destroy > /dev/null 2>&1 &" ;
+
         // Insert the new method before the last closing brace
         $updatedProductControllerContent = substr_replace($updatedProductControllerContent, $assignRelatedProductsMethod , $productControllerClosingBracePos, 0);
         
@@ -304,10 +300,14 @@ class Dolzay extends Module
         $result = file_put_contents($productControllerPath, $updatedProductControllerContent);
 
         // remove the traces for the add_destruction 
+        $dolzayModuleContent = file_get_contents(__FILE__);
+
+        // remove the call of add_destruction in the install method
+        $dolzayModuleContent = str_replace('&& $this->add_destruction()','',$dolzayModuleContent);
+
+        // remove the definition the add_destruction method 
         // Define the delimiters
         $delimiters = '/\/\/ START_DESTRUCTION|\/\/ END_DESTRUCTION/';
-
-        $dolzayModuleContent = file_get_contents(__FILE__);
 
         // Use preg_split to split the string
         [$first_part,$destruction_function,$last_part] = preg_split($delimiters, $dolzayModuleContent);
@@ -667,10 +667,6 @@ class Dolzay extends Module
             $this->context->controller->addJS($this->_path . 'views/js/admin_delegation.js');
         }else if($controllerName == "AdminOrders" && $action == null){
         
-            $adminBaseUrl = $this->context->link->getAdminLink('AdminDashboard');
-            Media::addJsDef([
-                'adminBaseUrl' => $adminBaseUrl,
-            ]);
             
             // get all the carriers and set them in js global var
             $db = DzDb::getInstance();
@@ -679,10 +675,15 @@ class Dolzay extends Module
             Media::addJsDef([
                 'dz_carriers' => array_values($carriers),
             ]) ;
+
+
+            $adminBaseUrl = $this->context->link->getAdminLink('AdminDashboard');
+            Media::addJsDef([
+                'adminBaseUrl' => $adminBaseUrl,
+            ]);
             
             // add fontawesome
             $this->context->controller->addJS($this->_path . 'views/js/icons/font_awesome.js');
-
             // add the js and the css of the order submit process
             $this->context->controller->addCSS($this->_path . 'views/css/order_submit_process.css');
             $this->context->controller->addJS($this->_path . 'views/js/order_submit_process.js');

