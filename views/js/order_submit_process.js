@@ -729,8 +729,6 @@ document.addEventListener('DOMContentLoaded', function() {
     eventPopup.create()
     popupOverlay.create();
     
-    //popupOverlay.show();
-
 })
 
 /*

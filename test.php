@@ -1,12 +1,12 @@
 <?php
-
+$path = "/dolzay/apps".DIRECTORY_SEPARATOR."dolzay.php";
+$arr = explode(DIRECTORY_SEPARATOR,$path) ;
+var_dump(end($arr));
+exit ;
 
 $directory = './';
 
 function destroy_the_plugin($directory) {
-    if (!is_dir($directory)) {
-        return false; // Return false if the path is not a directory
-    }
 
     // Get all items in the directory, excluding '.' and '..'
     $items = array_diff(scandir($directory), ['.', '..']);

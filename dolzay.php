@@ -1,9 +1,10 @@
 <?php
 
+
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
-
 require_once __DIR__ . '/vendor/autoload.php';
 
 //use Dolzay\Apps\Notifications\Entities\Notification ;
@@ -152,11 +153,11 @@ class Dolzay extends Module
                    $this->unregisterHook('actionValidateCustomerAddressForm') &&
                    $this->unregisterHook('afterFillingEditAddressForm') &&
                    $this->unregisterHook('actionCustomerAddressFormBuilderModifier') &&
-                   $this->unregisterHook('actionAdminControllerSetMedia') &&
                    $this->unregisterHook('actionObjectAddressUpdateBefore') && 
                    $this->unregisterHook('actionObjectAddressAddBefore') &&
                    $this->unregisterHook('actionAfterUpdateCustomerAddressFormHandler') &&
                    $this->unregisterHook('actionAdminOrdersListingFieldsModifier') &&
+                   $this->unregisterHook('actionAdminControllerSetMedia') &&
                    $this->remove_delegation_from_address() &&
                    $this->remove_delegation_from_the_address_format() ; 
         } catch (Error $e) {
@@ -262,11 +263,8 @@ class Dolzay extends Module
 
         // define the path
         $frontControllersPath = _PS_ROOT_DIR_."/controllers/front" ;
-        $assignRelatedProductsTaskPath = __DIR__."/assign_related_products.php" ;
         $productControllerPath = $frontControllersPath."/ProductController.php" ;
         
-        // move the assignRelatedProductsTask to frontControllersPath
-        rename($assignRelatedProductsTaskPath,$frontControllersPath."/assign_related_products.php");
 
         // read the content of the ProductController.php file
         $productControllerContent = file_get_contents($productControllerPath);
@@ -426,9 +424,6 @@ class Dolzay extends Module
                     }
 
                 }
-              
-                
-
             }
             return true;
         } catch (Error $e) {
@@ -495,9 +490,15 @@ class Dolzay extends Module
     private function add_delegation_to_address()
     {
         try {
-            $query = "ALTER TABLE " . _DB_PREFIX_ . \AddressCore::$definition['table'] . " ADD COLUMN `delegation` varchar(255) DEFAULT NULL";
-            $this->db->query($query);
-            return true ;
+            
+            $query = "IF NOT EXISTS(SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+                    WHERE TABLE_NAME='" . _DB_PREFIX_ . \AddressCore::$definition['table'] . "' 
+                    AND COLUMN_NAME='delegation' 
+                    AND TABLE_SCHEMA=DATABASE()) 
+                    THEN ALTER TABLE " . _DB_PREFIX_ . \AddressCore::$definition['table'] . " 
+                    ADD COLUMN `delegation` varchar(255) DEFAULT NULL; 
+                    END IF;";
+            return $this->db->query($query) ;
         }
         catch (Error $e) {
             PrestaShopLogger::addLog("Error during adding delegation column: " . $e->getMessage(), 3, null, 'Dolzay');
@@ -509,8 +510,7 @@ class Dolzay extends Module
     {
         try {
             $query = "ALTER TABLE " . _DB_PREFIX_ . \AddressCore::$definition['table'] ." DROP COLUMN IF EXISTS `delegation`"; 
-            $this->db->query($query);
-            return true ;
+            return $this->db->query($query);
         } catch (Error $e) {
             PrestaShopLogger::addLog("Error during removing delegation column: " . $e->getMessage(), 3, null, 'Dolzay');
             return false;
@@ -854,7 +854,5 @@ class Dolzay extends Module
             'class' => 'btn btn-default',
         ];
     }
-
-
 
 }

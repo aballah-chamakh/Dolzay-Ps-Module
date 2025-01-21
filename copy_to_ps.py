@@ -12,11 +12,18 @@ def copy_directory(src, dst):
     # Walk through the source directory
     for root, dirs, files in os.walk(src):
         # Skip the .git directory
-        if '.git' in dirs:
+        if '.git' in dirs :
             dirs.remove('.git')
+
+        if  ".vscode" in dirs :
+            dirs.remove('.vscode')
         
         if 'copy_to_ps.py' in files:
             files.remove('copy_to_ps.py')
+        
+        if 'test.php' in files:
+            files.remove('test.php')
+
         
         # Determine destination path for each directory and file
         dest_dir = os.path.join(dst, os.path.relpath(root, src))
