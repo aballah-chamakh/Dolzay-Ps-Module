@@ -77,7 +77,7 @@ class OrderSubmitProcess {
     public static function init($db) {
         self::$db = $db;
     }
-    
+    // START DEFINING get_create_table_sql
     public static function get_create_table_sql() {
 
         $process_types_str = '"'.implode('","', self::PROCESS_TYPES).'"';
@@ -97,8 +97,7 @@ class OrderSubmitProcess {
              FOREIGN KEY (`carrier`) REFERENCES `'.Carrier::TABLE_NAME.'` (`name`) ON DELETE CASCADE
         );';
     }
-
-    // INSERT INTO `ps_order_submit_process` (`items_to_process_cnt`, `status`) VALUES (100, 'Initié');
+    // END DEFINING get_create_table_sql
     
     public const DROP_TABLE_SQL = 'DROP TABLE IF EXISTS `'.self::TABLE_NAME.'`;';
 
@@ -112,6 +111,7 @@ class OrderSubmitProcess {
         $process = $stmt->fetch();
         return $process ;
     }
+
 
     public static function get_process_status(int $process_id){
         $query = "SELECT processed_items_cnt,items_to_process_cnt,status,error,carrier FROM ".self::TABLE_NAME." WHERE id=".$process_id ;

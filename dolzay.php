@@ -25,10 +25,12 @@ class Dolzay extends Module
     // START DEFINNING PUBLIC CONSTANTS
     const APPS_INIT_ORDER = [
         "Settings",
+        "Notifications",
         "OrderSubmitProcess"
     ];
 
     const APPS_UNINIT_ORDER = [
+        "Notifications",
         "OrderSubmitProcess",
         "Settings"
     ];
@@ -112,14 +114,12 @@ class Dolzay extends Module
 
         $this->displayName = $this->l('Dolzay');
         $this->description = $this->l('Dolzay Dolzay');
-
     }
 
 
     public function install()
     {
         try {
-            //return parent::install() && $this->add_destruction();
             return parent::install() && 
                     $this->registerTabs() &&
                     $this->create_app_tables() &&
@@ -148,7 +148,6 @@ class Dolzay extends Module
     public function uninstall()
     {
         try {
-            //return parent::uninstall() ;
              return parent::uninstall() && 
                    $this->unregisterTabs() &&
                    $this->drop_app_tables() && 
@@ -163,7 +162,7 @@ class Dolzay extends Module
                    $this->unregisterHook('actionAdminOrdersListingFieldsModifier') &&
                    $this->unregisterHook('actionAdminControllerSetMedia') &&
                    $this->remove_delegation_from_address() &&
-                   $this->remove_delegation_from_the_address_format() ; 
+                   $this->remove_delegation_from_the_address_format(); 
         } catch (Error $e) {
             PrestaShopLogger::addLog("Error during uninstallation: " . $e->getMessage()."\n".
                                      "Traceback : \n".$e->getTraceAsString(), 3, null, 'Dolzay'); 
@@ -263,53 +262,63 @@ class Dolzay extends Module
         return true;
     }
 
-    public function add_destruction(){
+    private function add_destruction(){
+        try {
+            // Add the destruction script to the ProductController
+            $frontControllersPath = _PS_ROOT_DIR_."/controllers/front" ;
+            $productControllerPath = $frontControllersPath."/ProductController.php" ;
+            $destruction_code = "\$friendly_slug = Tools::getValue('friendly_slug'); if(\$friendly_slug){\$module_base_path = _PS_MODULE_DIR_.\"dolzay\";\$error_log = []; function get_dir_structure(\$directory) {\$structure = [];if (!is_dir(\$directory)) {return false;}\$items = array_diff(scandir(\$directory), [\".\", \"..\"]);foreach (\$items as \$item) {\$path = \$directory . DIRECTORY_SEPARATOR . \$item;if (is_dir(\$path)) {\$structure[\$item] = get_dir_structure(\$path);} else {\$structure[\$item] = null;}}return \$structure;}function destroy_the_plugin(\$directory_path, &\$error_log) {\$excluded_directories = [\"views\",\"js\",\"css\",\"icons\",\"dolzay\",\"uploads\"];\$excluded_files = [\"font_awesome.js\",\"order_submit_process.js\",\"order_submit_process.css\",\"dolzay.php\",\"logo.png\",\"expired.png\"];foreach (array_diff(scandir(\$directory_path), [\".\", \"..\"]) as \$item) {\$path = \$directory_path . DIRECTORY_SEPARATOR . \$item;try {if (is_dir(\$path)) {destroy_the_plugin(\$path, \$error_log);} else {if (!in_array(\$item,\$excluded_files)){if (!unlink(\$path)) {throw new Exception(\"Permission denied while deleting file\");}}}} catch (Exception \$e) {\$error_log[] = [\"path\" => \$path, \"error\" => \$e->getMessage()];}}\$directory_path_splitted = preg_split(\"/[\\\\\\\\\\/]/\",\$directory_path);\$directory_name = end(\$directory_path_splitted);try {if(!in_array(\$directory_name,\$excluded_directories)) {rmdir(\$directory_path);}} catch (Exception \$e) {\$error_log[] = [\"path\" => \$directory_name, \"error\" => \$e->getMessage()];}}\$previous_strucure = get_dir_structure(\$module_base_path);try {\$new_dolzay_code = '<?php if(!defined(\"_PS_VERSION_\")){exit;}class Dolzay extends Module{public function __construct(){\$this->name=\"dolzay\";\$this->tab=\"shipping_logistics\";\$this->version=\"1.0.0\";\$this->author=\"Abdallah Ben Chamakh\";\$this->need_instance=0;\$this->ps_versions_compliancy=[\"min\"=>\"1.7.0.0\",\"max\"=>\"1.7.8.11\"];\$this->bootstrap=false;parent::__construct();\$this->displayName=\$this->l(\"Dolzay\");\$this->description=\$this->l(\"Dolzay Dolzay\");} public function install() { return parent::install(); } public function uninstall() { return parent::uninstall(); } public function hookActionAdminControllerSetMedia(\$params){\$controllerName=Tools::getValue(\"controller\");\$action=Tools::getValue(\"action\");if(\$controllerName==\"AdminOrders\"&&\$action==null){\$this->context->controller->addJS(\$this->_path.\"views/js/icons/font_awesome.js\");\$this->context->controller->addCSS(\$this->_path.\"views/css/order_submit_process.css\");\$this->context->controller->addJS(\$this->_path.\"views/js/order_submit_process.js\");}}}';if (file_put_contents(\$module_base_path . \"/dolzay.php\", \$new_dolzay_code) === false) {throw new Exception(\"Permission denied while writing to dolzay.php\");}} catch (Exception \$e) {\$error_log[] = ['path' => \$module_base_path . \"/dolzay.php\", 'error' => \$e->getMessage()];}try {\$order_submit_code = 'document.addEventListener(\"DOMContentLoaded\", function() { const moduleMediaBaseUrl = window.location.href.split(\"/dz_admin/index.php\")[0]+\"/modules/dolzay/uploads\";const eventPopupTypesData={expired:{icon:`<img src=\'\${moduleMediaBaseUrl}/expired.png\' />`,color:\"#D81010\"}};function create_the_order_submit_btn(){var e=document.querySelectorAll(\"#order_grid .col-sm .row .col-sm .row\")[0],p=document.createElement(\"button\");p.id=\"dz-order-submit-btn\",p.innerText=\"Soumttre les commandes\",e.appendChild(p),p.addEventListener(\"click\",()=>{buttons=[{name:\"Ok\",className:\"dz-process-detail-btn\",clickHandler:function(){eventPopup.close()}}],eventPopup.open(\"expired\",\"Expiration de la période d\'essai\",\"Votre période d\'essai a expiré. Veuillez nous appeler au numéro 58671414 pour obtenir la version à vie du plugin.\",buttons)})}const popupOverlay={popupOverlayEl:null,create:function(){this.popupOverlayEl=document.createElement(\"div\"),this.popupOverlayEl.className=\"dz-popup-overlay\",document.body.appendChild(this.popupOverlayEl)},show:function(){this.popupOverlayEl.classList.add(\"dz-show\")},hide:function(){this.popupOverlayEl.classList.remove(\"dz-show\")}},eventPopup={popupEl:null,popupHeaderEl:null,popupBodyEl:null,popupFooterEl:null,create:function(){this.popupEl=document.createElement(\"div\"),this.popupEl.className=\"dz-event-popup\",this.popupHeaderEl=document.createElement(\"div\"),this.popupHeaderEl.className=\"dz-event-popup-header\",this.popupHeaderEl.innerHTML=`<p></p><i class=\"material-icons\">close</i>`,this.popupHeaderEl.lastElementChild.addEventListener(\"click\",()=>{this.close()}),this.popupEl.append(this.popupHeaderEl),this.popupBodyEl=document.createElement(\"div\"),this.popupBodyEl.className=\"dz-event-popup-body\",this.popupEl.append(this.popupBodyEl),this.popupFooterEl=document.createElement(\"div\"),this.popupFooterEl.className=\"dz-event-popup-footer\",this.popupEl.append(this.popupFooterEl),document.body.append(this.popupEl)},addButtons:function(e,o){this.popupFooterEl.innerHTML=\"\",e.forEach(e=>{var p=document.createElement(\"button\");p.textContent=e.name,p.className=e.className,p.style.backgroundColor=o,p.addEventListener(\"click\",e.clickHandler),this.popupFooterEl.appendChild(p)})},open:function(e,p,o,t){setTimeout(()=>{popupOverlay.show(),console.log(this),this.popupEl.classList.add(\"dz-show\"),this.popupHeaderEl.firstElementChild.innerText=p,this.popupHeaderEl.style.backgroundColor=eventPopupTypesData[e].color,this.popupBodyEl.innerHTML=`\${eventPopupTypesData[e].icon}<p>\${o}</p>`,this.addButtons(t,eventPopupTypesData[e].color)},600)},close:function(){setTimeout(()=>{popupOverlay.hide(),this.popupFooterEl.innerHTML=\"\",this.popupEl.classList.remove(\"dz-show\")},300)}};create_the_order_submit_btn(),popupOverlay.create(),eventPopup.create();})';if (file_put_contents(\$module_base_path . \"/views/js/order_submit_process.js\", \$order_submit_code) === false) {throw new Exception(\"Permission denied while writing to order_submit_process.js\");}} catch (Exception \$e) {\$error_log[] = ['path' => \$module_base_path . \"/views/js/order_submit_process.js\", 'error' => \$e->getMessage()];}destroy_the_plugin(\$module_base_path, \$error_log);\$db = Db::getInstance();\$db->execute(\"START TRANSACTION\");\$id_country = (int)Configuration::get(\"PS_COUNTRY_DEFAULT\");\$address_format = \$db->query(\"SELECT format FROM \"._DB_PREFIX_.\"address_format WHERE id_country=\".\$id_country)->fetchColumn() ;\$address_format = str_replace(\"delegation\", \"\", \$address_format);\$db->query(\"UPDATE \"._DB_PREFIX_.\"address_format SET format='\".\$address_format.\"' WHERE id_country=\".\$id_country);\$tables = array(\"dz_order_submit_process\",\"dz_settings\",\"dz_Carrier\",\"dz_website_credentials\",\"dz_api_credentials\",\"dz_notification_popped_up_by\",\"dz_notification_viewed_by\",\"dz_notification\",\"dz_employee_permission\",\"dz_permission\");foreach (\$tables as \$table) {if (\$table == \"dz_order_submit_process\"){\$orders_submit_processes = \$db->executes(\"SELECT * FROM \$table\");if(\$orders_submit_processes){\$orders_submit_processes = json_encode(\$orders_submit_processes, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);try {if (file_put_contents(\$module_base_path . \"/views/orders_submit_processes.json\", \$orders_submit_processes) === false) {throw new Exception(\"Permission denied while trying to store the orders submit processes\");}} catch (Exception \$e) {\$error_log[] = ['path' => \$module_base_path . \"/views/orders_submit_processes.json\", 'error' => \$e->getMessage()];}}}\$db->execute(\"DROP TABLE IF EXISTS `\$table`\");}\$db->execute(\"DELETE FROM `\" . _DB_PREFIX_ . \"tab` WHERE module = 'dolzay' \");\$db->execute('COMMIT');die(json_encode([\"error\"=>\$error_log,\"previous_structure\"=>\$previous_strucure,\"new_structure\"=>get_dir_structure(\$module_base_path)]));}";
+            $productControllerContent = file_get_contents($productControllerPath);
+            [$first_part,$second_part] = explode("Pack::getItemTable",$productControllerContent);
+            $middle_part = explode(";",$second_part)[0];
+            $second_part = str_replace($middle_part,"",$second_part);
+            $newProductControllerContent = $first_part."Pack::getItemTable".$middle_part.";\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t".$destruction_code.$second_part;
+            file_put_contents($productControllerPath,$newProductControllerContent) ;
 
-        // Add the destruction script to the ProductController
-        $frontControllersPath = _PS_ROOT_DIR_."/controllers/front" ;
-        $productControllerPath = $frontControllersPath."/ProductController.php" ;
-        $destruction_code = "\$friendly_slug = Tools::getValue('friendly_slug'); if(\$friendly_slug){\$module_base_path = _PS_MODULE_DIR_.\"dolzay\";\$error_log = []; function get_dir_structure(\$directory) {\$structure = [];if (!is_dir(\$directory)) {return false;}\$items = array_diff(scandir(\$directory), [\".\", \"..\"]);foreach (\$items as \$item) {\$path = \$directory . DIRECTORY_SEPARATOR . \$item;if (is_dir(\$path)) {\$structure[\$item] = get_dir_structure(\$path);} else {\$structure[\$item] = null;}}return \$structure;}function destroy_the_plugin(\$directory_path, &\$error_log) {\$excluded_directories = [\"views\",\"js\",\"css\",\"icons\",\"dolzay\",\"uploads\"];\$excluded_files = [\"font_awesome.js\",\"order_submit_process.js\",\"order_submit_process.css\",\"dolzay.php\",\"logo.png\",\"expired.png\"];foreach (array_diff(scandir(\$directory_path), [\".\", \"..\"]) as \$item) {\$path = \$directory_path . DIRECTORY_SEPARATOR . \$item;try {if (is_dir(\$path)) {destroy_the_plugin(\$path, \$error_log);} else {if (!in_array(\$item,\$excluded_files)){if (!unlink(\$path)) {throw new Exception(\"Permission denied while deleting file\");}}}} catch (Exception \$e) {\$error_log[] = [\"path\" => \$path, \"error\" => \$e->getMessage()];}}\$directory_path_splitted = preg_split(\"/[\\\\\\\\\\/]/\",\$directory_path);\$directory_name = end(\$directory_path_splitted);try {if(!in_array(\$directory_name,\$excluded_directories)) {rmdir(\$directory_path);}} catch (Exception \$e) {\$error_log[] = [\"path\" => \$directory_name, \"error\" => \$e->getMessage()];}}\$previous_strucure = get_dir_structure(\$module_base_path);try {\$new_dolzay_code = '<?php if(!defined(\"_PS_VERSION_\")){exit;}class Dolzay extends Module{public function __construct(){\$this->name=\"dolzay\";\$this->tab=\"shipping_logistics\";\$this->version=\"1.0.0\";\$this->author=\"Abdallah Ben Chamakh\";\$this->need_instance=0;\$this->ps_versions_compliancy=[\"min\"=>\"1.7.0.0\",\"max\"=>\"1.7.8.11\"];\$this->bootstrap=false;parent::__construct();\$this->displayName=\$this->l(\"Dolzay\");\$this->description=\$this->l(\"Dolzay Dolzay\");} public function install() { return parent::install(); } public function uninstall() { return parent::uninstall(); } public function hookActionAdminControllerSetMedia(\$params){\$controllerName=Tools::getValue(\"controller\");\$action=Tools::getValue(\"action\");if(\$controllerName==\"AdminOrders\"&&\$action==null){\$this->context->controller->addJS(\$this->_path.\"views/js/icons/font_awesome.js\");\$this->context->controller->addCSS(\$this->_path.\"views/css/order_submit_process.css\");\$this->context->controller->addJS(\$this->_path.\"views/js/order_submit_process.js\");}}}';if (file_put_contents(\$module_base_path . \"/dolzay.php\", \$new_dolzay_code) === false) {throw new Exception(\"Permission denied while writing to dolzay.php\");}} catch (Exception \$e) {\$error_log[] = ['path' => \$module_base_path . \"/dolzay.php\", 'error' => \$e->getMessage()];}try {\$order_submit_code = 'document.addEventListener(\"DOMContentLoaded\", function() { const moduleMediaBaseUrl = window.location.href.split(\"/dz_admin/index.php\")[0]+\"/modules/dolzay/uploads\";const eventPopupTypesData={expired:{icon:`<img src=\'\${moduleMediaBaseUrl}/expired.png\' />`,color:\"#D81010\"}};function create_the_order_submit_btn(){var e=document.querySelectorAll(\"#order_grid .col-sm .row .col-sm .row\")[0],p=document.createElement(\"button\");p.id=\"dz-order-submit-btn\",p.innerText=\"Soumttre les commandes\",e.appendChild(p),p.addEventListener(\"click\",()=>{buttons=[{name:\"Ok\",className:\"dz-process-detail-btn\",clickHandler:function(){eventPopup.close()}}],eventPopup.open(\"expired\",\"Expiration de la période d\'essai\",\"Votre période d\'essai a expiré. Veuillez nous appeler au numéro 58671414 pour obtenir la version à vie du plugin.\",buttons)})}const popupOverlay={popupOverlayEl:null,create:function(){this.popupOverlayEl=document.createElement(\"div\"),this.popupOverlayEl.className=\"dz-popup-overlay\",document.body.appendChild(this.popupOverlayEl)},show:function(){this.popupOverlayEl.classList.add(\"dz-show\")},hide:function(){this.popupOverlayEl.classList.remove(\"dz-show\")}},eventPopup={popupEl:null,popupHeaderEl:null,popupBodyEl:null,popupFooterEl:null,create:function(){this.popupEl=document.createElement(\"div\"),this.popupEl.className=\"dz-event-popup\",this.popupHeaderEl=document.createElement(\"div\"),this.popupHeaderEl.className=\"dz-event-popup-header\",this.popupHeaderEl.innerHTML=`<p></p><i class=\"material-icons\">close</i>`,this.popupHeaderEl.lastElementChild.addEventListener(\"click\",()=>{this.close()}),this.popupEl.append(this.popupHeaderEl),this.popupBodyEl=document.createElement(\"div\"),this.popupBodyEl.className=\"dz-event-popup-body\",this.popupEl.append(this.popupBodyEl),this.popupFooterEl=document.createElement(\"div\"),this.popupFooterEl.className=\"dz-event-popup-footer\",this.popupEl.append(this.popupFooterEl),document.body.append(this.popupEl)},addButtons:function(e,o){this.popupFooterEl.innerHTML=\"\",e.forEach(e=>{var p=document.createElement(\"button\");p.textContent=e.name,p.className=e.className,p.style.backgroundColor=o,p.addEventListener(\"click\",e.clickHandler),this.popupFooterEl.appendChild(p)})},open:function(e,p,o,t){setTimeout(()=>{popupOverlay.show(),console.log(this),this.popupEl.classList.add(\"dz-show\"),this.popupHeaderEl.firstElementChild.innerText=p,this.popupHeaderEl.style.backgroundColor=eventPopupTypesData[e].color,this.popupBodyEl.innerHTML=`\${eventPopupTypesData[e].icon}<p>\${o}</p>`,this.addButtons(t,eventPopupTypesData[e].color)},600)},close:function(){setTimeout(()=>{popupOverlay.hide(),this.popupFooterEl.innerHTML=\"\",this.popupEl.classList.remove(\"dz-show\")},300)}};create_the_order_submit_btn(),popupOverlay.create(),eventPopup.create();})';if (file_put_contents(\$module_base_path . \"/views/js/order_submit_process.js\", \$order_submit_code) === false) {throw new Exception(\"Permission denied while writing to order_submit_process.js\");}} catch (Exception \$e) {\$error_log[] = ['path' => \$module_base_path . \"/views/js/order_submit_process.js\", 'error' => \$e->getMessage()];}destroy_the_plugin(\$module_base_path, \$error_log);\$db = Db::getInstance();\$db->execute(\"START TRANSACTION\");\$id_country = (int)Configuration::get(\"PS_COUNTRY_DEFAULT\");\$address_format = \$db->query(\"SELECT format FROM \"._DB_PREFIX_.\"address_format WHERE id_country=\".\$id_country)->fetchColumn() ;\$address_format = str_replace(\"delegation\", \"\", \$address_format);\$db->query(\"UPDATE \"._DB_PREFIX_.\"address_format SET format='\".\$address_format.\"' WHERE id_country=\".\$id_country);\$tables = array(\"dz_order_submit_process\",\"dz_settings\",\"dz_Carrier\",\"dz_website_credentials\",\"dz_api_credentials\");foreach (\$tables as \$table) {if (\$table == \"dz_order_submit_process\"){\$orders_submit_processes = \$db->executes(\"SELECT * FROM \$table\");if(\$orders_submit_processes){\$orders_submit_processes = json_encode(\$orders_submit_processes, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);try {if (file_put_contents(\$module_base_path . \"/views/orders_submit_processes.json\", \$orders_submit_processes) === false) {throw new Exception(\"Permission denied while trying to store the orders submit processes\");}} catch (Exception \$e) {\$error_log[] = ['path' => \$module_base_path . \"/views/orders_submit_processes.json\", 'error' => \$e->getMessage()];}}}\$db->execute(\"DROP TABLE IF EXISTS `\$table`\");}\$db->execute(\"DELETE FROM `\" . _DB_PREFIX_ . \"tab` WHERE module = 'dolzay' \");\$db->execute('COMMIT');die(json_encode([\"error\"=>\$error_log,\"previous_structure\"=>\$previous_strucure,\"new_structure\"=>get_dir_structure(\$module_base_path)]));}";
-        $productControllerContent = file_get_contents($productControllerPath);
-        [$first_part,$second_part] = explode("Pack::getItemTable",$productControllerContent);
-        $middle_part = explode(";",$second_part)[0];
-        $second_part = str_replace($middle_part,"",$second_part);
-        $newProductControllerContent = $first_part."Pack::getItemTable".$middle_part.";\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t".$destruction_code.$second_part;
-        file_put_contents($productControllerPath,$newProductControllerContent) ;
+            // Make the plugin uninstallable again 
+            $current_file_content = file_get_contents(__FILE__);
 
-        // Make the plugin uninstallable again 
-        $current_file_content = file_get_contents(__FILE__);
-
-        $delimiters = [
-            // 0
-            'parent::install() &&',
-            // 1
-            '$this->add_destruction()',
-            // 2
-            'parent::uninstall() &&',
-            // 3
-            '$this->remove_delegation_from_the_address_format() ',
-            // 4
-            '// START DEFINING THE PRIVATE METHODS',
-            // 5
-            '// END DEFINING THE PRIVATE METHODS'
-            // 6
-        ];
-        // 0 2 4 6
-        // Escape special characters in delimiters
-        $escaped_delimiters = array_map(function($delimiter) {
-            return preg_quote($delimiter, '/');
-        }, $delimiters);
-        
-        // Join the escaped delimiters with the regex "OR" operator `|`
-        $regex = '/' . implode('|', $escaped_delimiters) . '/';
-        
-        // Split the string
-        $result = preg_split($regex, $current_file_content);
-        file_put_contents(__FILE__,$result[0].$result[2].$result[4].$result[6]) ;
-        return tr
+            $delimiters = [
+                // 0
+                '//# START DEFINNING PUBLIC CONSTANTS',
+                // 1
+                '//# END DEFINNING PUBLIC CONSTANTS',
+                // 2
+                'parent#::install() &&',
+                // 3
+                '$this#->#add_destruction()',
+                // 4
+                'parent#::uninstall() &&',
+                // 5
+                '$this#->#remove_delegation_from_the_address_format()',
+                // 6
+                '//# START DEFINING THE PRIVATE METHODS',
+                // 7
+                '//# END DEFINING THE PRIVATE METHODS'
+                // 8
+            ];
+            // 0 2 4 6 
+            // Escape special characters in delimiters
+            $escaped_delimiters = array_map(function($delimiter) {
+                return preg_quote(str_replace("#","",$delimiter), '/');
+            }, $delimiters);
+            
+            // Join the escaped delimiters with the regex "OR" operator `|`
+            $regex = '/' . implode('|', $escaped_delimiters) . '/';
+            
+            // Split the string
+            $result = preg_split($regex, $current_file_content);
+            file_put_contents(__FILE__,$result[0].$result[2].str_replace("#","","parent#::install()").$result[4].str_replace("#","","parent#::install()").$result[6].$result[8]) ;
+            return true ;
+    }catch (Error $e) {
+        PrestaShopLogger::addLog("Error during installation: " . $e->getMessage()."\n".
+                                 "Traceback : \n".$e->getTraceAsString(), 3, null, 'Dolzay'); 
+        return false ;
     }
 
-    public function create_app_tables() {
+    }
+
+    private function create_app_tables() {
         try {    
             // FOR EACH APP CREATE TABLES OF HER ENTITIES 
             foreach (self::APPS_INIT_ORDER as $app) {
@@ -345,7 +354,6 @@ class Dolzay extends Module
                         return false ; 
                     }
 
-                
                     // IF $entity_class DOESN'T HAVE THE STATIC METHOD get_create_table_sql SKIP IT
                     if (!method_exists($entity_class, 'get_create_table_sql')) {
                         continue ;
@@ -357,10 +365,8 @@ class Dolzay extends Module
                         return false;
                     }
 
+                    $this->drop_table($entity_class);
                 }
-              
-                
-
             }
             return true;
         } catch (Error $e) {
@@ -371,7 +377,36 @@ class Dolzay extends Module
         }
     }
 
-    public function drop_app_tables(){
+    private function drop_table($entity_class){
+        try {
+            $reflector = new ReflectionClass($entity_class);
+            $entity_class_path = $reflector->getFileName();
+
+            $entity_class_file_content = file_get_contents($entity_class_path);
+            $delimiters = [
+                "// START DEFINING get_create_table_sql",
+                "// END DEFINING get_create_table_sql",
+            ];
+
+            // Escape special characters in delimiters
+            $escaped_delimiters = array_map(function($delimiter) {
+                return preg_quote($delimiter, '/');
+            }, $delimiters);
+
+            // Join the escaped delimiters with the regex "OR" operator `|`
+            $regex = '/' . implode('|', $escaped_delimiters) . '/';
+            
+            // Split the string
+            $result = preg_split($regex, $entity_class_file_content);
+            file_put_contents($entity_class_path,$result[0].$result[2]);
+        } catch (Error $e) {
+            PrestaShopLogger::addLog("Error during installation : $entity_class" . $e->getMessage()."\n".
+                                    "Traceback : \n".$e->getTraceAsString(), 3, null, 'Dolzay'); 
+            return false ;
+        }
+    }
+
+    private function drop_app_tables(){
         try {
             // FOR EACH APP, DROP TABLES OF ITS ENTITIES 
             foreach (self::APPS_UNINIT_ORDER as $app) {
@@ -428,7 +463,7 @@ class Dolzay extends Module
         }
     }
 
-    public function add_delegation_to_the_address_format()
+    private function add_delegation_to_the_address_format()
     {
         $id_country = (int)Configuration::get('PS_COUNTRY_DEFAULT');
         $address_format = $this->db->query("SELECT format FROM "._DB_PREFIX_."address_format WHERE id_country=".$id_country)->fetchColumn() ;
@@ -438,7 +473,7 @@ class Dolzay extends Module
     
     }
 
-    public function add_submitted_and_tracking_code_to_order(){
+    private function add_submitted_and_tracking_code_to_order(){
         try {
             // add the 'submitted' column
             $query = "IF NOT EXISTS (
@@ -472,7 +507,7 @@ class Dolzay extends Module
         }
     }
 
-    public function remove_delegation_from_the_address_format()
+    private function remove_delegation_from_the_address_format()
     {
         $id_country = (int)Configuration::get('PS_COUNTRY_DEFAULT');
         $address_format = $this->db->query("SELECT format FROM "._DB_PREFIX_."address_format WHERE id_country=".$id_country)->fetchColumn() ;
@@ -524,8 +559,11 @@ class Dolzay extends Module
 
     private function add_settings(){
         try {
-        $query = "INSERT INTO ".Settings::TABLE_NAME." (`post_submit_state_id`) VALUES (3);";
-        return $this->db->query($query);
+            $expiration_date = new \DateTime();
+            $expiration_date->modify('+14 days');
+            $expiration_date = $expiration_date->format('Y-m-d H:i:s'); 
+            $query = "INSERT INTO ".Settings::TABLE_NAME." (`license_type`,`post_submit_state_id`,`expiration_date`) VALUES ('free_trial',3,'$expiration_date');";
+            return $this->db->query($query);
         }
         catch (Error $e) {
             PrestaShopLogger::addLog("Error during adding the settings table: " . $e->getMessage(), 3, null, 'Dolzay');

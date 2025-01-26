@@ -19,7 +19,7 @@ class Notification {
     private static $employee_id ;
     private static $employee_permission_ids_str ;
     private static $employee_permission_ids_arr ;
-    
+    // START DEFINING get_create_table_sql
     public static function get_create_table_sql() {
         
         $notification_types_str = '"'.implode('","', array_slice(self::NOTIFICATION_TYPES, 1)).'"' ;
@@ -39,6 +39,8 @@ class Notification {
             FOREIGN KEY (`deletable_once_viewed_by_the_employee_with_the_id`) REFERENCES `'._DB_PREFIX_. \EmployeeCore::$definition['table'] . '` (`id_employee`) ON DELETE CASCADE
         );' ;
     }
+    // START DEFINING get_create_table_sql
+
     public const DROP_TABLE_SQL = 'DROP TABLE IF EXISTS `'.self::TABLE_NAME . '`;';
 
 
@@ -149,6 +151,10 @@ class Notification {
     public static function get_notifications($notif_type, $page_nb, $batch_size) {
 
         $notifications = [];
+
+        if (empty(self::$employee_permission_ids_arr)){
+            return $notifications;
+        }
         
         // GET THE COUNT OF ALL NOTIFICATIONS 
         //$notifications['all_notifs_cnt'] = $this->get_all_notifications_count($employee_id);

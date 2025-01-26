@@ -8,13 +8,17 @@ class Config {
         "Settings",
         "ApiCredentials",
         "WebsiteCredentials",
-        "Carrier"
+        "Carrier",
+        "Permission",
+        "EmployeePermission"
     );
 
     public static $drop_app_entities_order = array(
         "Settings",
         "Carrier",
         "WebsiteCredentials",
-        "ApiCredentials"
+        "ApiCredentials",
+        "EmployeePermission",
+        "Permission"
     );
 }

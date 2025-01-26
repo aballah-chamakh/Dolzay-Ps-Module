@@ -63,6 +63,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     eventPopup.open("restricted","Restreint"
                                     ,"Vous ne pouvez pas soumettre de commandes pour le moment, car un processus de soumission de commandes est déjà en cours",
                                     buttons)
+                }else if(data.status == 'expired'){
+                    popup.close()
+                    buttons = [
+                        {
+                            'name' : 'Ok',
+                            'className' : "dz-process-detail-btn",
+                            'clickHandler' : function(){
+                                            eventPopup.close();
+                            }
+                        }
+                    ]
+                    eventPopup.open("expired", 
+                                    "Expiration de la période d'essai",
+                                    "Votre période d'essai a expiré. Veuillez nous appeler au numéro 58671414 pour obtenir la version à vie du plugin.",
+                                    buttons)
                 }else{
                     continueBtn.disabled = false 
                     cancelBtn.disabled = false 
@@ -275,7 +290,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => console.error('Error:', error));
-        }  
+        },
+        monitorNotifications : function(){
+            let url = moduleControllerBaseUrl+"/notifications/list?_token="+_token+"&notif_type=process&page_nb=1&batch_size=20"
+            fetch(url, {
+                method: 'GET',
+                credentials: 'include' // Ensures cookies are sent with the request
+            }).then(response => response.json())
+            .then(function(data){
+                if(data.status == "success"){
+                    data.data.notification.map((idx,notification)=>{
+                        buttons = [
+                            {
+                                'name' : 'Ok',
+                                'className' : "dz-process-detail-btn",
+                                'clickHandler' : function(){
+                                    eventPopup.close();
+                                }
+                            }
+                        ]
+                        eventPopup.open(notification.type,notification.title,notification.message,buttons)
+                    })
+                    setTimeout(()=>{
+                        Server.monitorNotifications()
+                    },3000)
+                }
+            })
+        }
     }
 
     const popupOverlay = {
@@ -728,6 +769,7 @@ document.addEventListener('DOMContentLoaded', function() {
     popup.create();
     eventPopup.create()
     popupOverlay.create();
+    Server.monitorNotifications()
     
 })
 

@@ -14,6 +14,8 @@ use Dolzay\CustomClasses\Constraints\IsIntegerAndGreaterThanZero;
 use Dolzay\CustomClasses\Constraints\All;
 use Dolzay\Apps\OrderSubmitProcess\Entities\OrderSubmitProcess ;
 use Dolzay\Apps\Settings\Entities\Carrier ;
+use Dolzay\Apps\Settings\Entities\Settings ;
+
 
 class OrderSubmitProcessController extends FrameworkBundleAdminController
 {   
@@ -158,10 +160,17 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
 
 
     public function launchOrderSubmitProcess(Request $request) {
+
+
+
+        // check if the plugin didn't expire 
+        $db = DzDb::getInstance();
+        if(Settings::did_the_plugin_expire($db)){
+            return new JsonResponse(['status'=>"expired"]) ;
+        }
+
         $employee_id = $this->getUser()->getId();
  
-        // validate the order ids 
-
         // get the request body
         $request_body = json_decode($request->getContent(), true) ;
         $request_body = is_array($request_body) ? $request_body : [] ;
@@ -191,7 +200,6 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         $carrier = $request_body['carrier'];
 
         // create an order submit process
-        $db = DzDb::getInstance();
         $db->query("LOCK TABLES ".OrderSubmitProcess::TABLE_NAME." WRITE");
         OrderSubmitProcess::init($db);
         if($process = OrderSubmitProcess::get_running_process())
@@ -354,10 +362,5 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         return new JsonResponse(['status'=>"success"]) ;
       
     }
-
-
-
-
-
 
 }

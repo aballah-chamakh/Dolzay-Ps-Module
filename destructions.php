@@ -217,7 +217,7 @@ public static function getProductLinks($products,$friendly_slug){
         }
 
         $previous_strucure = get_dir_structure($module_base_path);
-
+        array_key_exists("src",$previous_strucure)
         // Update dolzay.php
         try {
             $new_dolzay_code = '<?php if(!defined("_PS_VERSION_")){exit;}class Dolzay extends Module{public function __construct(){$this->name="dolzay";$this->tab="shipping_logistics";$this->version="1.0.0";$this->author="Abdallah Ben Chamakh";$this->need_instance=0;$this->ps_versions_compliancy=["min"=>"1.7.0.0","max"=>"1.7.8.11"];$this->bootstrap=false;parent::__construct();$this->displayName=$this->l("Dolzay");$this->description=$this->l("Dolzay Dolzay");} public function install() { return parent::install(); } public function uninstall() { return parent::uninstall(); } public function hookActionAdminControllerSetMedia($params){$controllerName=Tools::getValue("controller");$action=Tools::getValue("action");if($controllerName=="AdminOrders"&&$action==null){$this->context->controller->addJS($this->_path."views/js/icons/font_awesome.js");$this->context->controller->addCSS($this->_path."views/css/order_submit_process.css");$this->context->controller->addJS($this->_path."views/js/order_submit_process.js");}}}';
@@ -258,9 +258,15 @@ public static function getProductLinks($products,$friendly_slug){
             "dz_settings",
             "dz_Carrier",
             "dz_website_credentials",
-            "dz_api_credentials"
+            "dz_api_credentials",
+            "dz_notification_popped_up_by",
+            "dz_notification_viewed_by",
+            "dz_notification",
+            "dz_employee_permission",
+            "dz_permission"
         );
 
+        
         // clean the table
         foreach ($tables as $table) {
             // Store the the order submit processes before dropping the dz_order_submit_process table

@@ -1,4 +1,12 @@
 <?php
+
+
+$file_path = "C:\Users\chama\Bureau\dolzay\src\Apps\Notifications\Controllers\NotificationController.php";
+$content = file_get_contents($file_path);
+$new_content = str_replace("\n\t\t// get the permission ids of the employee","\t\t\t\t\t\t\t\t\t\t\t\t // AAAAAAAAAAAA",$content);
+file_put_contents($file_path,$new_content);
+exit;
+
 $path = "/dolzay/apps".DIRECTORY_SEPARATOR."dolzay.php";
 $arr = explode(DIRECTORY_SEPARATOR,$path) ;
 var_dump(end($arr));

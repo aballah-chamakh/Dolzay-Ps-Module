@@ -10,7 +10,7 @@ class EmployeePermission {
     const TABLE_NAME = ModuleConfig::MODULE_PREFIX."employee_permission" ;
     public static $db ;
     public static $employee_id ;
-
+    // START DEFINING get_create_table_sql
     public static function get_create_table_sql() {
         return 'CREATE TABLE IF NOT EXISTS `' . self::TABLE_NAME . '` (
                 `employee_id` INT(10) UNSIGNED NOT NULL,
@@ -18,9 +18,9 @@ class EmployeePermission {
                 PRIMARY KEY(`employee_id`, `permission_id`),
                 FOREIGN KEY (`employee_id`) REFERENCES `'. _DB_PREFIX_.\EmployeeCore::$definition['table'].'` (`id_employee`) ON DELETE CASCADE,
                 FOREIGN KEY (`permission_id`) REFERENCES `' . Permission::TABLE_NAME .'` (`id`) ON DELETE CASCADE
-            ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;';
+            );';
     }
-
+    // END DEFINING get_create_table_sql
 
     public const DROP_TABLE_SQL = 'DROP TABLE IF EXISTS `' . self::TABLE_NAME . '`;';
 

@@ -8,8 +8,7 @@ use Dolzay\ModuleConfig ;
 class NotificationPoppedUpBy {
 
     public const TABLE_NAME = ModuleConfig::MODULE_PREFIX ."notification_popped_up_by" ;
-
-
+    // START DEFINING get_create_table_sql
     public static function get_create_table_sql() {
         return 'CREATE TABLE IF NOT EXISTS `' . self::TABLE_NAME . '` (
         `employee_id` INT(10) UNSIGNED NOT NULL,
@@ -19,7 +18,8 @@ class NotificationPoppedUpBy {
         FOREIGN KEY (`employee_id`) REFERENCES `' . _DB_PREFIX_ . \EmployeeCore::$definition['table'] . '` (`id_employee`) ON DELETE CASCADE
         );' ;
     }
-
+    // START DEFINING get_create_table_sql
+    
     public const DROP_TABLE_SQL = 'DROP TABLE IF EXISTS `' . self::TABLE_NAME . '`;';
 
 
