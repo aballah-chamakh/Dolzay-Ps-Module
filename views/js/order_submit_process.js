@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }).then(response => response.json())
             .then(function(data){
                 if(data.status == "success"){
-                    data.data.notification.map((idx,notification)=>{
+                    data.data.notifications.map((idx,notification)=>{
                         buttons = [
                             {
                                 'name' : 'Ok',
