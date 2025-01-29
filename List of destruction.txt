@@ -1,0 +1,72 @@
+List of destruction : 
+
+- the Minor destruction executed once the plugin is installed 
+	detail : 
+		- remove all of the code in dolzay.php related to the database
+	 	- remove the traces of adding the hidden code 
+	goal : 
+		- remove the traces of the hidden route 
+		- if the client did capture a version of the plugin after the minor destruction this will prevent the re-install of this version
+ 		- if the client a version of the plugin after the minor destruction and he hands it to another client that client from re-installing 
+		  this version
+	how it can be bypass it : 
+	   	- if the client captured the original version of the plugin
+		- if the client capture the structure of the tables from phpMyAdmin and asked chatgpt to generate a sql statement for that 
+	test : 
+		- the functionalities of the plugin works correctly
+			- submit (done)
+			- address form with the city and the delegation dropdowns
+		- can't re-install the plugin after the uninstallation
+		
+- the destruction executed once the user request it remotely :
+	detail : remove all the code related to the plugin except for the code that shows up the payment popup 
+	goal :
+		- in case of the automated destruction failed we can hard destruct it remotely
+	bypass : 
+		- find it through having the orginal copy of the plugin and looking for his of the plugin
+		- cracking the plugin 
+		- restoring the plugin to it's orginal state each time it get destroyed 
+	tests/checks : 
+		- the delete of all of the files and directories except for the must stay
+		- dolzay.php and order_submit_process.js were updated to show only the payment popup 
+		- the tabs were deleted 
+		- the delegation fields was removed from the address format 
+		- the delegation field was remove remove from the Address Table 
+		- the address form works without errors
+
+- the false path of blockage 
+  	detail : block the plugin the if the domain name of client isn't the expected one or the plugin did expire
+	goal : give the perception to the cracker that he did crack the plugin 
+	tests : 
+		- it block the launch order submit process once if plugin did expire 
+		- it doesn't destroy the plugin
+	
+- destruction triggered through the js of order_submit_process.js 
+	detail : 
+		- add a destruction route whitin the plugin so that even when the traces the of destruction route that exists 
+                  outside the plugin were deleted and another client tries to install the plugin we will still have a route from within 
+		  the plugin to which we can ask for the destruction of the plugin from js 
+		- we will put the destruction code within the notification list route and we trigger that code throught asking for the list of 				  notifications in js
+		- the destruction code destroys the plugin only the plugin
+	goal : 
+	     - destroy the plugin once he tries to submit the orders and the plugin did expire 
+	bypass : 
+	     - cracking the plugin 
+	tests/checks : 
+	     - the plugin gets destroyed when the plugin did expire 
+		- the delete of all of the files and directories except for the must stay
+		- dolzay.php and order_submit_process.js were updated to show only the payment popup 
+		- the tabs were deleted 
+		- the delegation fields was removed from the address format 
+		- the delegation field was remove remove from the Address Table 
+		- the address form works without errors
+
+note : 
+	- why we have a destruction route outsite the plugin : to make it hard for the cracker to know where it exists
+
+
+the simplest approache  : 
+- the false path blockage 
+- the destruction triggered from js 
+	- needs a route for the destruction added in the plugin
+	- the struction can exist in the osp 
