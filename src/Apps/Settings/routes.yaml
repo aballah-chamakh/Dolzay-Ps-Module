@@ -2,5 +2,13 @@ dz_get_settings :
   path: /dz/settings
   methods: [GET]
   defaults:
-    _controller: 'Dolzay\Apps\OrderSubmitProcess\Controllers\OrderSubmitProcessController::getSettings'
+    _controller: 'Dolzay\Apps\Settings\Controllers\SettingsController::getSettings'
+    _disable_module_prefix: true
+
+
+dz_update_settings : 
+  path: /dz/update_settings
+  methods: [PUT]
+  defaults:
+    _controller: 'Dolzay\Apps\Settings\Controllers\SettingsController::updateSettings'
     _disable_module_prefix: true

@@ -1,0 +1,125 @@
+.dz-license-card,
+.dz-settings-card,
+.dz-carriers-card{
+    display : flex ; 
+    flex-direction: column;
+    border: 1px solid #ddd;
+    background-color: white;
+    border-radius : 5px ;
+    width : 100% ;
+    margin-bottom : 10px ;
+    font-size : 16px
+}
+.dz-carriers-card{
+    margin-bottom: 0px;
+}
+.dz-license-card-header,
+.dz-settings-card-header,
+.dz-carriers-card-header{
+    display : flex ; 
+    border-bottom : 1px solid #ddd; 
+    padding : 10px ;
+    width : 100% ;
+}
+.dz-license-card-header p,
+.dz-settings-card-header p,
+.dz-carriers-card-header p {
+    margin: 0;
+    font-weight: 600;
+    font-size: 17px;
+    transform: uppercase;
+}
+.dz-license-card-body,
+.dz-settings-card-body,
+.dz-carriers-card-body{
+    display: flex;
+    width : 100% ;
+    flex-direction: column;
+    padding : 10px;
+    overflow: auto;
+    gap : 10px ; 
+
+}
+.dz-license-key-value{
+    display : flex ;
+    gap : 4px ;
+    align-items: center;
+}
+.dz-license-key-value label{
+    margin : 0px ;
+    font-weight: 600;
+}
+
+.dz-badge {
+    padding: 3px 10px;
+    color: white;
+    border-radius: 5px;
+}
+
+.dz-carriers-card-body table {
+    width: 100%;
+    min-width: 800px;
+    text-align: center;    
+    margin-bottom: 10px;
+}
+
+.dz-carriers-card-body .table thead {
+    background-color: #1a456e;
+    color : white ;
+}
+
+.dz-carriers-card-body .table thead th {
+    padding: 10px;
+    border : none ;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.dz-carriers-card-body .table td {
+    padding: 10px;
+    font-size: 16px;
+}
+
+.dz-carriers-card-body .table td img{
+    max-height : 50px ;
+    max-width : 150px ;
+}
+
+.dz-carriers-card-body .table td button{
+    width: 150px;
+    padding: 8px;
+    background: #1a456e;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: 600;
+    color:white;
+}
+
+.dz-carriers-card-footer{
+    display : flex ; 
+    border-top : 1px solid #ddd; 
+    padding : 10px ;
+    width : 100% ;
+}
+
+.dz-carriers-card-footer button{
+    width: 100%;
+    padding: 8px;
+    background: #1a456e;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: 600;
+    color:white;
+}
+
+.dz-btn-spinner-white {
+    color: white;
+    height: 20px;
+    width: 20px;
+    border-width: 3px;
+    margin-left : 3px ;
+}

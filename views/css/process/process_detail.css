@@ -38,6 +38,11 @@
     align-items: center;
 }
 
+.dz-process-key-value label{
+    margin : 0px ;
+    font-weight: 600;
+}
+
 .dz-badge {
     padding: 6px 10px;
     color: white;
@@ -53,10 +58,7 @@
     margin-bottom : 5px !important ;
 }
 
-.dz-process-key-value label{
-    margin : 0px ;
-    font-weight: 600;
-}
+
 
 .dz-progress-placeholder {
     height : 20px ;
