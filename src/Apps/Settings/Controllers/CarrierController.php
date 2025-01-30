@@ -32,7 +32,7 @@ class CarrierController extends FrameworkBundleAdminController
         
 
         // get the carrier
-        $stmt = $db->prepare("SELECT id, name, logo, website_credentials_id, api_credentials_id FROM " . Carrier::TABLE_NAME . " WHERE id = :carrier_id LIMIT 1");
+        $stmt = $db->prepare("SELECT  name, logo, website_credentials_id, api_credentials_id FROM " . Carrier::TABLE_NAME . " WHERE id = :carrier_id LIMIT 1");
         $stmt->bindParam(':carrier_id', $carrier_id, \PDO::PARAM_INT);
         $stmt->execute();
         $carrier = $stmt->fetch();
@@ -46,10 +46,9 @@ class CarrierController extends FrameworkBundleAdminController
                 $website_credentials = $stmt->fetch();
                 unset($carrier['website_credentials_id']) ;
                 $carrier['website_credentials'] = $website_credentials;
-            }else{
-                unset($carrier['website_credentials_id']) ;
             }
-
+            unset($carrier['website_credentials_id']) ;
+            
             // get the the api credentials if they exist 
             if ($carrier['api_credentials_id']) {
                 $stmt = $db->prepare("SELECT user_id, token, is_user_id_required FROM " . ApiCredentials::TABLE_NAME . " WHERE id = :api_credentials_id LIMIT 1");
@@ -58,9 +57,8 @@ class CarrierController extends FrameworkBundleAdminController
                 $api_credentials = $stmt->fetch();
                 unset($carrier['api_credentials_id']);
                 $carrier['api_credentials'] = $api_credentials;
-            }else{
-                unset($carrier['api_credentials_id']) ;
             }
+            unset($carrier['api_credentials_id']) ;
 
             $db->commit();
             // return the the carrier with his credentials

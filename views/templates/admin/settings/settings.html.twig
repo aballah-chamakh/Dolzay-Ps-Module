@@ -50,7 +50,7 @@
                                     <td>{{loop.index}}</td>
                                     <td><img src={{carrier.logo}} /></td>
                                     <td>{{carrier.name}}</td>
-                                    <td><button  onClick="openCarrierUpdatePopup({{carrier.name}})" >modifier</button></td>
+                                    <td><button  onClick="popup.open('{{carrier.name}}')" >modifier</button></td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -89,6 +89,7 @@
                 popupFooterEl : null,
                 popupOverlayEl : null,
 
+
                 create : function(carrier_name){
                     this.popupEl = document.createElement("div")
                     this.popupEl.id = "dz-popup";
@@ -101,24 +102,23 @@
                     
                     this.popupBodyEl = document.createElement('div') ;
                     this.popupBodyEl.className = "dz-popup-body";
-
+                    this.popupBodyEl.innerHTML = `
+                        <div class="spinner-border dz-spinner" role="status" >
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                    `
                     this.popupEl.append(this.popupBodyEl)
 
                     document.body.append(this.popupEl)
+
+                    this.loadCarrierDetail(carrier_name)
                 },
-                addFooter :function(){
+                addFooter :function(carrier_name){
                     this.popupFooterEl = document.createElement('div') ;
                     this.popupFooterEl.className = "dz-popup-footer";
-                    this.popupFooterEl.innerHTML = "
-                            
-                    "
-                    this.popupEl.append(this.popupFooterEl)
-                }
-                open : function() {
-                    setTimeout(() => {
-                        this.popupEl.classList.add('dz-show');
-                        popupOverlay.show()
-                    }, 10);
+                    this.popupFooterEl.innerHTML = `<button onclick='updateCarrier(${carrier_name})'>Modifier</button>`
+                },
+
                 },
                 close : function(){
                     setTimeout(() => {
@@ -126,18 +126,53 @@
                         popupOverlay.hide();
                     }, 300);
                 },
-                addButtons : function(buttons){
-                    
-                    buttons.forEach((button) => {
-                        const buttonEl = document.createElement('button');
-                        buttonEl.textContent = button.name ;
-                        buttonEl.className = button.className ;
-                        buttonEl.addEventListener('click',button.clickHandler);
-                        this.popupFooterEl.appendChild(buttonEl);
-                    });  
+                generateCarrierForm : function(carrier){
+                    carrierForm = ""
+                    if(carrier['api_credentials']){
+                        if(carrier['is_user_id_required']){
+                            carrierForm += `<div class="form-group">
+                                                <label>identifiant </label>
+                                                <input class="form-control" name="user_id" />
+                                            </div>`
+                        }
+                        carrierForm += `
+                            <div class="form-group">
+                                <label>clé d'api</label>
+                                <input class="form-control" name="token" />
+                            </div>
+                        `
+                    }
+
+                    if(carrier['website_credentials']){
+                        carrierForm +=`
+                                            <div class="form-group">
+                                                <label>e-mail </label>
+                                                <input class="form-control" name="email" />
+                                            </div>
+                                            <div class="form-group">
+                                                <label>mot de passe</label>
+                                                <input class="form-control" name="password" />
+                                            </div>
+                                        `
+                        
+                    }
+                    return carrierForm ;
                 },
                 loadCarrierDetail : function(carrier_name){
-
+                    fetch(moduleControllerBaseUrl+"/carrier/"+carrier_name+"?_token="+_token, {
+                        method: 'GET',
+                        credentials: 'include', // Ensures cookies are sent with the request
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    }).then(response=>response.json())
+                      .then(data=>{
+                            if(data.status == "success"){
+                                let carrierForm = this.generateCarrierForm(data.carrier)
+                                this.popupBodyEl.innerHTML = carrierForm 
+                                this.addFooter(carrier_name)
+                            }
+                        })
                 }
             }
 
@@ -169,5 +204,8 @@
                     }
                   })
             }
+
+            popupOverlay.create()
+            popup.create()
         </script>
 {% endblock %}

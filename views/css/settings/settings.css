@@ -123,3 +123,67 @@
     border-width: 3px;
     margin-left : 3px ;
 }
+
+.dz-popup {
+    display : none ;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    background-color: #ffffff;
+    border-radius: 10px;
+    width: 600px;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 2001; /* Ensures it's above the overlay */
+    
+}
+
+.dz-popup.dz-show {
+    display : flex ;
+    flex-direction: column;
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.dz-popup-header {
+    padding: 15px 10px;
+    font-size : 16px;
+    background: #1a456e;
+    color: white;
+    border-radius : 10px 10px 0px 0px ;
+}
+.dz-popup-body{
+    padding: 10px;
+    display : flex ;
+    flex-direction: column;
+    justify-content : center ;
+    align-items: center;
+}
+.dz-popup-footer {
+    width : 100% ;
+    padding: 15px 20px;
+    display: flex;
+    justify-content : space-between ;
+    background-color: #f5f5f5;
+    border-top: 1px solid #e0e0e0;
+    border-radius : 0px 0px 10px 10px ;
+}
+
+.dz-popup-footer button{
+    width : 100% ;
+    border: 0px;
+    background-color: #1a456e;
+    border-radius: 5px;
+    font-size : 16px;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.dz-spinner {
+    color: #1a456e;
+    height: 50px;
+    width: 50px;
+    border-width: 6px;
+}
