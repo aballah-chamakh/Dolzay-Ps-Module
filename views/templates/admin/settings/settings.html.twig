@@ -50,7 +50,7 @@
                                     <td>{{loop.index}}</td>
                                     <td><img src={{carrier.logo}} /></td>
                                     <td>{{carrier.name}}</td>
-                                    <td><button  onClick="popup.open('{{carrier.name}}')" >modifier</button></td>
+                                    <td><button onClick="popup.open('{{carrier.name}}')" >modifier</button></td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -66,21 +66,20 @@
             const urlParams = new URLSearchParams(window.location.search);
             const _token = urlParams.get('_token');
 
-            const eventPopupOverlay = {
-                eventPopupOverlayEl : null,
+            const popupOverlay = {
+                popupOverlayEl : null,
                 create : function(){
-                    this.eventPopupOverlayEl = document.createElement('div');
-                    this.eventPopupOverlayEl.className = "dz-event-popup-overlay";
-                    document.body.appendChild(this.eventPopupOverlayEl);
+                    this.popupOverlayEl = document.createElement('div');
+                    this.popupOverlayEl.className = "dz-popup-overlay";
+                    document.body.appendChild(this.popupOverlayEl);
                 },
                 show : function(){
-                    this.eventPopupOverlayEl.classList.add('dz-show')
+                    this.popupOverlayEl.classList.add('dz-show')
                 },
                 hide : function(){
-                    this.eventPopupOverlayEl.classList.remove('dz-show')
+                    this.popupOverlayEl.classList.remove('dz-show')
                 }
             }
-
 
             const popup = {
                 popupEl : null,
@@ -90,35 +89,45 @@
                 popupOverlayEl : null,
 
 
-                create : function(carrier_name){
+                create : function(){
                     this.popupEl = document.createElement("div")
                     this.popupEl.id = "dz-popup";
                     this.popupEl.className = "dz-popup";
                     
                     this.popupHeaderEl = document.createElement('div') ;
                     this.popupHeaderEl.className = "dz-popup-header";
-                    this.popupHeaderEl.innerHTML = "Le transporteur "+carrier_name
+                    
                     this.popupEl.append(this.popupHeaderEl)
                     
                     this.popupBodyEl = document.createElement('div') ;
                     this.popupBodyEl.className = "dz-popup-body";
+                    this.popupEl.append(this.popupBodyEl)
+
+                    this.popupFooterEl = document.createElement('div') ;
+                    this.popupFooterEl.className = "dz-popup-footer";
+                    this.popupEl.append(this.popupFooterEl)
+
+                    document.body.append(this.popupEl)
+                },
+                addFooter :function(carrier_name){
+                    this.popupFooterEl.style.display = 'flex' ;
+                    this.popupFooterEl.innerHTML = `<button onclick="updateCarrier('${carrier_name}')">Modifier</button>`
+                },
+                open : function(carrier_name){
+                    this.popupHeaderEl.innerHTML = "<p>Le transporteur "+carrier_name+"</p>"
                     this.popupBodyEl.innerHTML = `
                         <div class="spinner-border dz-spinner" role="status" >
                             <span class="sr-only">Loading...</span>
                         </div>
                     `
-                    this.popupEl.append(this.popupBodyEl)
-
-                    document.body.append(this.popupEl)
-
+                    if(this.popupFooterEl){
+                        this.popupFooterEl.style.display = "none" ; 
+                    }
                     this.loadCarrierDetail(carrier_name)
-                },
-                addFooter :function(carrier_name){
-                    this.popupFooterEl = document.createElement('div') ;
-                    this.popupFooterEl.className = "dz-popup-footer";
-                    this.popupFooterEl.innerHTML = `<button onclick='updateCarrier(${carrier_name})'>Modifier</button>`
-                },
-
+                    setTimeout(() => {
+                        this.popupEl.classList.add('dz-show');
+                        popupOverlay.show()
+                    }, 10);
                 },
                 close : function(){
                     setTimeout(() => {
@@ -128,33 +137,46 @@
                 },
                 generateCarrierForm : function(carrier){
                     carrierForm = ""
-                    if(carrier['api_credentials']){
-                        if(carrier['is_user_id_required']){
+                    if(carrier.api_credentials){
+                        if(carrier.api_credentials.is_user_id_required){
                             carrierForm += `<div class="form-group">
-                                                <label>identifiant </label>
-                                                <input class="form-control" name="user_id" />
+                                                <label>Identifiant </label>
+                                                <input class="form-control" name="dz__api_credentials__user_id" value="${carrier.api_credentials.user_id}" placeholder="Identifiant" onfocus="handleCarrierFormFieldChange(this)" />
                                             </div>`
                         }
                         carrierForm += `
                             <div class="form-group">
-                                <label>clé d'api</label>
-                                <input class="form-control" name="token" />
+                                <label>Clé d'api</label>
+                                <input type="password" class="form-control" name="dz__api_credentials__token" value="${carrier.api_credentials.token}" placeholder="Clé d'api" onfocus="handleCarrierFormFieldChange(this)" />
+                                <div class="dz-checkbox-container">
+                                    <label >
+                                        <input type="checkbox"  />
+                                        <span onclick="togglePasswordFied('dz_token')" class="dz-checkmark"></span>
+                                    </label>
+                                    <small>afficher le mot de passe</small>
+                                </div>
                             </div>
                         `
                     }
 
-                    if(carrier['website_credentials']){
+                    if(carrier.website_credentials){
                         carrierForm +=`
                                             <div class="form-group">
-                                                <label>e-mail </label>
-                                                <input class="form-control" name="email" />
+                                                <label>E-mail</label>
+                                                <input class="form-control" name="dz__website_credentials__email" value="${carrier.website_credentials.email}" placeholder="E-mail" onfocus="handleCarrierFormFieldChange(this)" />
                                             </div>
                                             <div class="form-group">
-                                                <label>mot de passe</label>
-                                                <input class="form-control" name="password" />
+                                                <label>Mot de passe</label>
+                                                <input class="form-control" type="password" name="dz__website_credentials__password" value="${carrier.website_credentials.password}" placeholder="Mot de passe" onfocus="handleCarrierFormFieldChange(this)"  />
+                                                <div class="dz-checkbox-container">
+                                                    <label>
+                                                        <input type="checkbox"  >
+                                                        <span class="dz-checkmark" onclick="togglePasswordFied('dz_password')"></span>
+                                                    </label>
+                                                    <small>afficher le mot de passe</small>
+                                                </div>
                                             </div>
                                         `
-                        
                     }
                     return carrierForm ;
                 },
@@ -170,13 +192,95 @@
                             if(data.status == "success"){
                                 let carrierForm = this.generateCarrierForm(data.carrier)
                                 this.popupBodyEl.innerHTML = carrierForm 
+                                this.popupHeaderEl.innerHTML += "<i class='material-icons dz-close-popup-icon'  onclick='popup.close()'>close</i>"
                                 this.addFooter(carrier_name)
                             }
                         })
                 }
             }
 
+            function togglePasswordFied(field_name){
+                let passwordField = document.querySelector(`input[name='${field_name}']`)
+                if (passwordField.type == "password"){
+                    passwordField.type = "text"
+                }else{
+                    passwordField.type = "password"
+                }
+            }
 
+            function handleCarrierFormFieldChange(field){
+                if(field.style.borderColor ==  "red"){
+                    field.style.borderColor =  "#bbcdd2" ;
+                    field.nextElementSibling.remove()
+                }
+            }
+
+
+            function addFieldErrorMessageAndStyle(carrierFormInput,error_message){
+                    carrierFormInput.style.borderColor = "red" ;
+                    let errorMsg = document.createElement("small");
+                    errorMsg.style.color = "red";
+                    errorMsg.innerText = error_message
+                    carrierFormInput.insertAdjacentElement("afterend", errorMsg);
+            }
+
+            function validateCarrierForm(carrier_name){
+                let isFormValid = true ;
+                let formData = {"website_credentials":{},"api_credentials":{}} ;
+                const regexEmail = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+                let carrierFormInputs = document.querySelectorAll('.dz-popup-body .form-control');
+            
+                console.log(carrierFormInputs)
+                carrierFormInputs.forEach((carrierFormInput)=>{
+                    console.log("carrier value : "+carrierFormInput.value)
+                    if(carrierFormInput.style.borderColor != "red" ){
+                        if(carrierFormInput.value == ""){
+                            addFieldErrorMessageAndStyle(carrierFormInput,"Ce champ est obligatoire.")    
+                            isFormValid = false                    
+                        }else  if(carrierFormInput.name == "dz__website_credentials__email" && !regexEmail.test(carrierFormInput.value)){
+                            addFieldErrorMessageAndStyle(carrierFormInput,"Cet email n'est pas valide")
+                            isFormValid = false
+                        }
+                        let [prefix,credential_type,field] = carrierFormInput.name.split("__")
+                        formData[credential_type][field] = carrierFormInput.value
+                    }else{
+                        isFormValid = false
+                    }
+                })
+                return [isFormValid,formData] ;
+            }
+
+            function disableOrEnablePopup(action){
+                let carrierFormInputs = document.querySelectorAll('.dz-popup-body .form-control');
+                carrierFormInputs.forEach((carrierFormInput)=>{
+                    carrierFormInput.disabled = action == "disable" ? true : false ;
+                })
+                document.querySelector(".dz-popup-footer button").disabled = true
+                document.querySelector(".dz-close-popup-icon").style.pointerEvents = action == "disable" ? "none" : "auto" ;
+            }
+
+            function updateCarrier(carrier_name){
+                let [isCarrierFormValid,carrierFormData] = validateCarrierForm()
+                console.log(carrierFormData)
+                if(isCarrierFormValid){
+                    disableOrEnablePopup("disable")
+                    fetch(moduleControllerBaseUrl+"/carrier/"+carrier_name+"?_token="+_token, {
+                        method: 'PUT',
+                        credentials: 'include', // Ensures cookies are sent with the request
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body : JSON.stringify(carrierFormData)
+                    }).then(response=>response.json())
+                      .then(data=>{
+                            if(data.status == "success"){
+                                alert("done")
+                            }
+                    })
+
+                }
+
+            }
 
             function saveSettings(saveButton){
                 saveButton.disabled = true
@@ -204,8 +308,7 @@
                     }
                   })
             }
-
-            popupOverlay.create()
             popup.create()
+            popupOverlay.create()
         </script>
 {% endblock %}

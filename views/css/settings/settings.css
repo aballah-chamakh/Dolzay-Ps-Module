@@ -124,6 +124,25 @@
     margin-left : 3px ;
 }
 
+
+.dz-popup-overlay {
+    display : none ;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent gray background */
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 2000; /* Below the popup */
+}
+
+.dz-popup-overlay.dz-show {
+    display : block ;
+    opacity: 1;
+}
+
 .dz-popup {
     display : none ;
     position: fixed;
@@ -147,31 +166,53 @@
 }
 
 .dz-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     padding: 15px 10px;
     font-size : 16px;
     background: #1a456e;
     color: white;
     border-radius : 10px 10px 0px 0px ;
 }
+
+.dz-popup-header p{
+    margin : 0px ;
+}
+
+.dz-popup-header i{
+    cursor : pointer ;
+}
+
 .dz-popup-body{
-    padding: 10px;
+    padding: 10px 10px 5px 10px ;
     display : flex ;
     flex-direction: column;
-    justify-content : center ;
     align-items: center;
 }
+.dz-popup-body .form-group{
+    width :100% ;
+    margin-bottom : 10px;
+}
+
+.dz-popup-body .form-group label{
+    font-weight: 600;
+}
+
 .dz-popup-footer {
     width : 100% ;
-    padding: 15px 20px;
-    display: flex;
+    padding: 10px ;
+    display: none;
     justify-content : space-between ;
     background-color: #f5f5f5;
     border-top: 1px solid #e0e0e0;
     border-radius : 0px 0px 10px 10px ;
 }
 
+
 .dz-popup-footer button{
     width : 100% ;
+    padding : 5px ;
     border: 0px;
     background-color: #1a456e;
     border-radius: 5px;
@@ -182,8 +223,57 @@
 }
 
 .dz-spinner {
+    margin : 20px auto ;
     color: #1a456e;
     height: 50px;
     width: 50px;
     border-width: 6px;
+}
+
+
+.dz-checkbox-container{
+    display : flex ;
+    margin-top : 5px ;
+    gap : 4px ;
+}
+.dz-checkbox-container label {
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+    background-color: white;
+    border-radius: 4px;
+    margin-bottom : 0px ;
+}
+.dz-checkbox-container label input  {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.dz-checkbox-container label .dz-checkmark{
+    height: 20px;
+    width: 20px;
+    border: 1px solid #bbcdd2;
+    border-radius: 4px;
+    display: block;
+    position: relative;
+    transition: background-color 0.2s;
+}
+
+.dz-checkbox-container label .dz-checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+    left: 5.5px;
+    top: 1px;
+    width: 7.5px;
+    height: 13px;
+    border: solid #1a456e;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+.dz-checkbox-container label input:checked ~ .dz-checkmark:after {
+    display: block;
 }

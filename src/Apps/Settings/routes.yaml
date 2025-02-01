@@ -12,3 +12,18 @@ dz_update_settings :
   defaults:
     _controller: 'Dolzay\Apps\Settings\Controllers\SettingsController::updateSettings'
     _disable_module_prefix: true
+
+
+dz_carrier_details:
+  path: /dz/carrier/{carrier_name}
+  methods: [GET]
+  defaults:
+    _controller: 'Dolzay\Apps\Settings\Controllers\CarrierController::getCarrierDetail'
+    _disable_module_prefix: true
+
+dz_update_carrier:
+  path: /dz/carrier/{carrier_name}
+  methods: [PUT]
+  defaults:
+    _controller: 'Dolzay\Apps\Settings\Controllers\CarrierController::updateCarrier'
+    _disable_module_prefix: true

@@ -14,8 +14,8 @@ class WebsiteCredentials {
     public static function get_create_table_sql() {
         return 'CREATE TABLE IF NOT EXISTS `' . self::TABLE_NAME . '` (
                 `id` INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                `email` VARCHAR(255)  NULL UNIQUE,
-                `password` VARCHAR(255)  NULL
+                `email` VARCHAR(255)  DEFAULT "" UNIQUE,
+                `password` VARCHAR(255)  DEFAULT ""
             ) ;';
     }
     // END DEFINING get_create_table_sql

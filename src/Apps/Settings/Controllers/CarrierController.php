@@ -1,14 +1,14 @@
 <?php
 
-namespace Dolzay\Apps\Notifications\Controllers;
+namespace Dolzay\Apps\Settings\Controllers;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use PrestaShopBundle\Controller\Admin\FrameworkBundleAdminController;
 use Dolzay\CustomClasses\Db\DzDb ;  
 use Dolzay\Apps\Settings\Entities\Carrier ;
-use Dolzay\Apps\Settings\Entities\ApiCredentails ;
-use Dolzay\Apps\Settings\Entities\WebsiteCredentails ;
+use Dolzay\Apps\Settings\Entities\ApiCredentials ; 
+use Dolzay\Apps\Settings\Entities\WebsiteCredentials ;
 
 
 
@@ -19,11 +19,12 @@ class CarrierController extends FrameworkBundleAdminController
 
 
 
-    public function getCarrierDetail(int $carrier_id,Request $request)
+    public function getCarrierDetail(string $carrier_name,Request $request)
     { 
         // Check if the user is a super admin (id_profile = 1)
         $employee = $this->getUser();
-        if (!$employee->id_profile === 1) {
+        $employee =  new \Employee($employee->getId());
+        if ($employee->id_profile != 1) {
             return new JsonResponse(['status'=>'unauthorized'],JsonResponse::HTTP_UNAUTHORIZED) ;
         }
 
@@ -32,8 +33,8 @@ class CarrierController extends FrameworkBundleAdminController
         
 
         // get the carrier
-        $stmt = $db->prepare("SELECT  name, logo, website_credentials_id, api_credentials_id FROM " . Carrier::TABLE_NAME . " WHERE id = :carrier_id LIMIT 1");
-        $stmt->bindParam(':carrier_id', $carrier_id, \PDO::PARAM_INT);
+        $stmt = $db->prepare("SELECT  name, logo, website_credentials_id, api_credentials_id FROM " . Carrier::TABLE_NAME . " WHERE name = :carrier_name LIMIT 1");
+        $stmt->bindParam(':carrier_name', $carrier_name);
         $stmt->execute();
         $carrier = $stmt->fetch();
 
@@ -62,29 +63,34 @@ class CarrierController extends FrameworkBundleAdminController
 
             $db->commit();
             // return the the carrier with his credentials
-            return new JsonResponse(['carrier' => $carrier],Response::HTTP_NOT_FOUND);
+            return new JsonResponse(['status'=>"success",'carrier' => $carrier]);
         }
 
         // return not found
-        return new JsonResponse(['status' => 'not_found'],Response::HTTP_NOT_FOUND) ;
+        return new JsonResponse(['status' => 'not_found'],JsonResponse::HTTP_NOT_FOUND) ;
 
     }
 
-    public function updateCarrier(int $carrier_id,Request $request)
+    public function updateCarrier(string $carrier_name,Request $request)
     {
         // Check if the user is a super admin (id_profile = 1)
         $employee = $this->getUser();
-        if (!$employee->id_profile === 1) {
+        $employee =  new \Employee($employee->getId());
+        if ($employee->id_profile != 1) {
             return new JsonResponse(['status'=>'unauthorized'],JsonResponse::HTTP_UNAUTHORIZED) ;
         }
 
-        // get the updates
         $website_credentials = $request->get('website_credentials');
         $api_credentials = $request->get('api_credentials');
+        $carrierForm = [
+            'email'=>
+        ]
+        // get the updates
+        $db = DzDb::getInstance();
 
         // get the carrier
-        $stmt = $db->prepare("SELECT website_credentials_id, api_credentials_id FROM " . Carrier::TABLE_NAME . " WHERE id = :carrier_id LIMIT 1");
-        $stmt->bindParam(':carrier_id',\PDO::PARAM_INT);
+        $stmt = $db->prepare("SELECT website_credentials_id, api_credentials_id FROM " . Carrier::TABLE_NAME . " WHERE name = :carrier_name LIMIT 1");
+        $stmt->bindParam(':carrier_name');
         $stmt->execute();
         $carrier = $stmt->fetch();
 

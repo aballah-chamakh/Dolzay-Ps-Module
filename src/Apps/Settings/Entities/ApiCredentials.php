@@ -12,8 +12,8 @@ class ApiCredentials {
     public static function get_create_table_sql() {
         return 'CREATE TABLE IF NOT EXISTS `' . self::TABLE_NAME . '` (
                 `id` INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                `user_id` VARCHAR(255)  NULL,
-                `token` VARCHAR(255)  NULL,
+                `user_id` VARCHAR(255)  DEFAULT "",
+                `token` VARCHAR(255)  DEFAULT "",
                 `is_user_id_required` BOOLEAN DEFAULT FALSE
             ); ';
     }
