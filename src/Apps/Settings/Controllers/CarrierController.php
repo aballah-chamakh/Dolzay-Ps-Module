@@ -82,20 +82,21 @@ class CarrierController extends FrameworkBundleAdminController
 
         $website_credentials = $request->get('website_credentials');
         $api_credentials = $request->get('api_credentials');
-        $carrierForm = [
-            'email'=>
-        ]
+        $request_body = json_decode($request->getContent(), true) ;
+        $request_body = is_array($request_body) ? $request_body : [] ;
+
         // get the updates
         $db = DzDb::getInstance();
+        $db->beginTransaction();
 
         // get the carrier
         $stmt = $db->prepare("SELECT website_credentials_id, api_credentials_id FROM " . Carrier::TABLE_NAME . " WHERE name = :carrier_name LIMIT 1");
-        $stmt->bindParam(':carrier_name');
-        $stmt->execute();
+        $stmt->execute(["carrier_name"=>$carrier_name]);
         $carrier = $stmt->fetch();
 
         // handle the update of the website credentials
-        if($website_credentials){
+        if(array_key_exists("website_credentials",$request_body)){
+            $website_credentials = $request_body["website_credentials"] ;
             $stmt = $db->prepare("UPDATE ".WebsiteCredentials::TABLE_NAME." SET email= :email, password= :password WHERE id= :website_credentials_id");
             $stmt->execute(['email'=>$website_credentials['email'],
                             'password'=>$website_credentials['password'],
@@ -103,13 +104,14 @@ class CarrierController extends FrameworkBundleAdminController
         }
 
         // handle the update of the api credentials
-        if($api_credentials){
+        if(array_key_exists("api_credentials",$request_body)){
+            $api_credentials = $request_body["api_credentials"] ;
             $stmt = $db->prepare("UPDATE ".ApiCredentials::TABLE_NAME." SET user_id= :user_id, token= :token WHERE id= :api_credentials_id");
-            $stmt->execute(['user_id'=>$api_credentials['user_id'],
+            $stmt->execute(['user_id'=>(array_key_exists('user_id', $api_credentials)) ? $api_credentials['user_id'] : "" ,
                             'token'=>$api_credentials['token'],
                             'api_credentials_id'=>$carrier['api_credentials_id']]);
         }
-        
-        return JsonResponse(['status'=>'success']) ;
+        $db->commit();
+        return new JsonResponse(['status'=>'success']) ;
     }
 }

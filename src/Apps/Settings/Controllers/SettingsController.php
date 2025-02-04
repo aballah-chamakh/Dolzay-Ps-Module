@@ -18,6 +18,11 @@ class SettingsController extends FrameworkBundleAdminController
 
     public function getSettings(Request $request)
     { 
+        $employee = $this->getUser();
+        $employee =  new \Employee($employee->getId());
+        if ($employee->id_profile != 1) {
+            return new JsonResponse(['status'=>'unauthorized'],JsonResponse::HTTP_UNAUTHORIZED) ;
+        }
 
         $db = DzDb::getInstance();
         $db->beginTransaction();
@@ -52,6 +57,12 @@ class SettingsController extends FrameworkBundleAdminController
 
     public function updateSettings(Request $request)
     {
+        $employee = $this->getUser();
+        $employee =  new \Employee($employee->getId());
+        if ($employee->id_profile != 1) {
+            return new JsonResponse(['status'=>'unauthorized'],JsonResponse::HTTP_UNAUTHORIZED) ;
+        }
+
         $db = DzDb::getInstance();
         $db->beginTransaction();
 

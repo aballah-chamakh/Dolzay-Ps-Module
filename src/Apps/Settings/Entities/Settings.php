@@ -10,6 +10,7 @@ class Settings {
     const TABLE_NAME = ModuleConfig::MODULE_PREFIX."settings" ;
     public static $db ;
     public static $employee_id ;
+    
     // START DEFINING get_create_table_sql
     public static function get_create_table_sql() {
 

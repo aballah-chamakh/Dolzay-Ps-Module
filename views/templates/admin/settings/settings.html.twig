@@ -50,7 +50,7 @@
                                     <td>{{loop.index}}</td>
                                     <td><img src={{carrier.logo}} /></td>
                                     <td>{{carrier.name}}</td>
-                                    <td><button onClick="popup.open('{{carrier.name}}')" >modifier</button></td>
+                                    <td><button onClick="popup.open('{{carrier.name}}','{{carrier.logo}}')" >modifier</button></td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -113,7 +113,7 @@
                     this.popupFooterEl.style.display = 'flex' ;
                     this.popupFooterEl.innerHTML = `<button onclick="updateCarrier('${carrier_name}')">Modifier</button>`
                 },
-                open : function(carrier_name){
+                open : function(carrier_name,carrier_logo){
                     this.popupHeaderEl.innerHTML = "<p>Le transporteur "+carrier_name+"</p>"
                     this.popupBodyEl.innerHTML = `
                         <div class="spinner-border dz-spinner" role="status" >
@@ -123,7 +123,7 @@
                     if(this.popupFooterEl){
                         this.popupFooterEl.style.display = "none" ; 
                     }
-                    this.loadCarrierDetail(carrier_name)
+                    this.loadCarrierDetail(carrier_name,carrier_logo)
                     setTimeout(() => {
                         this.popupEl.classList.add('dz-show');
                         popupOverlay.show()
@@ -151,9 +151,9 @@
                                 <div class="dz-checkbox-container">
                                     <label >
                                         <input type="checkbox"  />
-                                        <span onclick="togglePasswordFied('dz_token')" class="dz-checkmark"></span>
+                                        <span onclick="togglePasswordFied('dz__api_credentials__token')" class="dz-checkmark"></span>
                                     </label>
-                                    <small>afficher le mot de passe</small>
+                                    <small>afficher le clé d'api</small>
                                 </div>
                             </div>
                         `
@@ -171,7 +171,7 @@
                                                 <div class="dz-checkbox-container">
                                                     <label>
                                                         <input type="checkbox"  >
-                                                        <span class="dz-checkmark" onclick="togglePasswordFied('dz_password')"></span>
+                                                        <span class="dz-checkmark" onclick="togglePasswordFied('dz__website_credentials__password')"></span>
                                                     </label>
                                                     <small>afficher le mot de passe</small>
                                                 </div>
@@ -180,7 +180,7 @@
                     }
                     return carrierForm ;
                 },
-                loadCarrierDetail : function(carrier_name){
+                loadCarrierDetail : function(carrier_name,carrier_logo){
                     fetch(moduleControllerBaseUrl+"/carrier/"+carrier_name+"?_token="+_token, {
                         method: 'GET',
                         credentials: 'include', // Ensures cookies are sent with the request
@@ -191,7 +191,7 @@
                       .then(data=>{
                             if(data.status == "success"){
                                 let carrierForm = this.generateCarrierForm(data.carrier)
-                                this.popupBodyEl.innerHTML = carrierForm 
+                                this.popupBodyEl.innerHTML = `<img src="${carrier_logo}" />`+carrierForm 
                                 this.popupHeaderEl.innerHTML += "<i class='material-icons dz-close-popup-icon'  onclick='popup.close()'>close</i>"
                                 this.addFooter(carrier_name)
                             }
@@ -255,11 +255,16 @@
                 carrierFormInputs.forEach((carrierFormInput)=>{
                     carrierFormInput.disabled = action == "disable" ? true : false ;
                 })
-                document.querySelector(".dz-popup-footer button").disabled = true
+                document.querySelector(".dz-popup-footer button").disabled =  action == "disable" ? true : false ;
                 document.querySelector(".dz-close-popup-icon").style.pointerEvents = action == "disable" ? "none" : "auto" ;
             }
 
             function updateCarrier(carrier_name){
+                let updateCarrierBtn = popup.popupFooterEl.firstElementChild ;
+                updateCarrierBtn.innerHTML += `<div class="spinner-border dz-btn-spinner-white" role="status" >
+                    <span class="sr-only">Loading...</span>
+                 </div>
+                `
                 let [isCarrierFormValid,carrierFormData] = validateCarrierForm()
                 console.log(carrierFormData)
                 if(isCarrierFormValid){
@@ -274,7 +279,8 @@
                     }).then(response=>response.json())
                       .then(data=>{
                             if(data.status == "success"){
-                                alert("done")
+                                updateCarrierBtn.lastElementChild.remove()
+                                disableOrEnablePopup("enable")
                             }
                     })
 

@@ -31,6 +31,9 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         exec($command);
     }
 
+
+
+
     public function validateData($data, $constraints)
     {
         $validator = Validation::createValidator();
@@ -53,6 +56,10 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         }
     }
 
+
+    public function getExistingRunningProcess(Request $request){
+        OrderSubmitProcess::init($db);
+    }
 
     public function OrderSubmitProcessList(Request $request){
         $query_parameter = [
@@ -160,8 +167,6 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
 
 
     public function launchOrderSubmitProcess(Request $request) {
-
-
 
         // check if the plugin didn't expire 
         $db = DzDb::getInstance();

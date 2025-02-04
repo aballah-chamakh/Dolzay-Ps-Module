@@ -28,7 +28,7 @@
     width : 100% ;
     flex-direction: column;
     padding : 10px  10px 0px 10px;
-    overflow: auto;
+    overflow-x: auto;
 }
 
 .dz-process-key-value{

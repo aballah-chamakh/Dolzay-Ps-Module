@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const moduleMediaBaseUrl = window.location.href.split('/dz_admin/index.php')[0]+"/modules/dolzay/uploads";
     const urlParams = new URLSearchParams(window.location.search);
     const _token = urlParams.get('_token');
-    const dz_carriers = ["Afex"] ;
+    //const dz_carriers = ["Afex"] ;
     let selectedCarrier = "" ;
 
     const eventPopupTypesData = {
@@ -17,14 +17,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     function create_the_order_submit_btn(){
-        const order_table_header = document.querySelectorAll("#order_grid .col-sm .row .col-sm .row")[0];
+
+        const bottom_bar = document.createElement("div")
+        bottom_bar.className = "dz-bottom-bar"
+
+
         const order_submit_btn = document.createElement('button')
         order_submit_btn.id="dz-order-submit-btn" ;
-        order_submit_btn.innerText = "Soumttre les commandes"
-        order_table_header.appendChild(order_submit_btn)
+        order_submit_btn.innerText = "Soumettre les commandes"
+
         order_submit_btn.addEventListener('click', ()=>{
             selectCarrierStep.render()       
         });
+
+        document.querySelector("#order_grid_panel").style.marginBottom = "60px"
+        bottom_bar.appendChild(order_submit_btn)
+        document.body.appendChild(bottom_bar)
     }
 
     const Server = {
@@ -53,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     buttons = [
                         {
                             'name' : 'Détail',
-                            'className' : "dz-process-detail-btn",
+                            'className' : "dz-event-popup-btn",
                             'clickHandler' : function(){
                                             console.log(`go to the detail page of the process with the id : ${process.id}`)
                             }
@@ -68,7 +76,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     buttons = [
                         {
                             'name' : 'Ok',
-                            'className' : "dz-process-detail-btn",
+                            'className' : "dz-event-popup-btn",
                             'clickHandler' : function(){
                                             eventPopup.close();
                             }
@@ -112,15 +120,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         buttons = [
                             {
                                 'name' : 'Ok',
-                                'className' : "dz-process-detail-btn",
+                                'className' : "dz-event-popup-btn",
                                 'clickHandler' : function(){
                                     eventPopup.close()
                                 }
                             }
                         ]
-                        let message = ""
-
-                        message = `Ce processus a été annulé, car il n'a aucune commande valide à soumettre.`
+                        let message = `Ce processus a été annulé, car il n'a aucune commande valide à soumettre.`
                         
                         eventPopup.open("info","Information",message,buttons)
                     }else{
@@ -132,7 +138,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     buttons = [
                         {
                             'name' : 'Détail',
-                            'className' : "dz-process-detail-btn",
+                            'className' : "dz-event-popup-btn",
                             'clickHandler' : function(){
                                             console.log(`go to the detail page of the process with the id : ${data.process_id}`)
                             }
@@ -171,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     buttons = [
                         {
                             'name' : 'Détail',
-                            'className' : "dz-process-detail-btn",
+                            'className' : "dz-event-popup-btn",
                             'clickHandler' : function(){
                                             console.log(`go to the detail page of the process with the id : ${process_id}`)
                             }
@@ -242,7 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         buttons = [
                             {
                                 'name' : 'Ok',
-                                'className' : "dz-process-detail-btn",
+                                'className' : "dz-event-popup-btn",
                                 'clickHandler' : function(){
                                                 eventPopup.close();
                                 }
@@ -257,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         buttons = [
                             {
                                 'name' : 'Ok',
-                                'className' : "dz-process-detail-btn",
+                                'className' : "dz-event-popup-btn",
                                 'clickHandler' : function(){
                                                 eventPopup.close();
                                 }
@@ -275,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         buttons = [
                             {
                                 'name' : 'Détail',
-                                'className' : "dz-process-detail-btn",
+                                'className' : "dz-event-popup-btn",
                                 'clickHandler' : function(){
                                     console.log(`go to the process with the id : ${process_id}`)
                                 }
@@ -303,7 +309,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         buttons = [
                             {
                                 'name' : 'Ok',
-                                'className' : "dz-process-detail-btn",
+                                'className' : "dz-event-popup-btn",
                                 'clickHandler' : function(){
                                     eventPopup.close();
                                 }
@@ -472,26 +478,33 @@ document.addEventListener('DOMContentLoaded', function() {
             popup.popupHeaderEl.innerText = "Selectionner un transporteur"
             popup.popupBodyEl.innerHTML = ""
             popup.popupFooterEl.innerHTML = ""
+
+            // create the selectCarrierStep container 
+
+            const selectCarrierStepContainer = document.createElement("div")
+            selectCarrierStepContainer.className = "dz-select-carrier-container"
     
             // create the carrier icon  
             const carrierIcon = document.createElement('img');
             carrierIcon.className = "dz-carrier-icon" 
             carrierIcon.src = moduleMediaBaseUrl+"/carrier_icon.png";
-            popup.popupBodyEl.appendChild(carrierIcon);
+            selectCarrierStepContainer.appendChild(carrierIcon);
     
             // create the carrier select 
             const select = document.createElement('select');
             select.className = "dz-carrier-select"
             for(let i=0 ;i<dz_carriers.length;i++){
                 let option = document.createElement('option') ;
-                option.value = dz_carriers[i] ;
-                option.innerText = dz_carriers[i] ;
+                option.value = dz_carriers[i].name ;
+                option.innerText = dz_carriers[i].name ;
                 if(i == 0){
                     option.selected = true ;
                 }
                 select.appendChild(option);
             }
-            popup.popupBodyEl.appendChild(select);
+            selectCarrierStepContainer.appendChild(select);
+
+            popup.popupBodyEl.appendChild(selectCarrierStepContainer);
             const buttons = [
                 {
                     'name' : 'Annuler',
@@ -518,7 +531,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // disable the button then add to it a spinner
             continueBtn.disabled = true 
             let cancelBtn = document.querySelector(".dz-cancel-btn")
-            cancelBtn.disabled = false 
+            cancelBtn.disabled = true 
             continueBtn.innerHTML += `              
                 <div class="spinner-border dz-btn-spinner-white" role="status" >
                     <span class="sr-only">Loading...</span>
@@ -531,6 +544,8 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         cancel : function(cancelBtn){
             cancelBtn.disabled = true 
+            let continueBtn = document.querySelector(".dz-continue-btn")
+            continueBtn.disabled = true 
             popup.close();
         }
     }
@@ -543,6 +558,9 @@ document.addEventListener('DOMContentLoaded', function() {
             popup.popupFooterEl.innerHTML = ''
             popup.popupFooterEl.style.display = 'flex'
 
+            const alreadySubmittedAndInvalidOrdersStepContainer = document.createElement("div")
+            alreadySubmittedAndInvalidOrdersStepContainer.className = "already-submitted-and-invalid-orders-step-container"
+            
             // add the already submitted orders
             if(process.meta_data.hasOwnProperty('already_submitted_orders')){
                 let already_submitted_orders = process.meta_data.already_submitted_orders
@@ -564,7 +582,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     `;
                 }
     
-                popup.popupBodyEl.innerHTML += `
+                alreadySubmittedAndInvalidOrdersStepContainer.innerHTML += `
                 <div class="dz-meta-data-container">
                     <div class="dz-meta-data-header">Les commandes déjà soumises</div>
                     <table class="table dz-meta-data-table">
@@ -597,10 +615,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     let order_link = this.getOrderLink(orders_with_invalid_fields[i].order_id)
                     
                     // get invalid fields 
-                    let invalid_fields  = ""
+                    let invalid_fields  = "<div class='dz-invalid-field-badge-container'/>"
                     for(let ii=0;ii<orders_with_invalid_fields[i].invalid_fields.length;ii++){
-                        invalid_fields +=  `<span class='badge badge-secondary'>${orders_with_invalid_fields[i].invalid_fields[ii]}</span>`
+                        invalid_fields +=  `<span class='dz-invalid-field-badge'>${orders_with_invalid_fields[i].invalid_fields[ii]}</span>`
                     }
+                    invalid_fields += "</div>"
                     
                     table_rows += `
                         <tr>
@@ -617,7 +636,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     `;
                 }
     
-                popup.popupBodyEl.innerHTML += `
+                alreadySubmittedAndInvalidOrdersStepContainer.innerHTML += `
                 <div class="dz-meta-data-container">
                     <div class="dz-meta-data-header">Les commandes avec des champs invalides</div>
                     <table class="table dz-meta-data-table">
@@ -641,18 +660,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>`
 
                 // add click handlers for the checkboxes of invalid orders
-                let headInvalidOrderCheckbox = popup.popupBodyEl.querySelector(".dz-head-invalid-order-checkbox");
+                let headInvalidOrderCheckbox = alreadySubmittedAndInvalidOrdersStepContainer.querySelector(".dz-head-invalid-order-checkbox");
                 headInvalidOrderCheckbox.addEventListener('click',function(e){alreadySubmittedAndInvalidOrdersStep.handleHeadCheckbox(e)})
             }
+
 
             // add click handlers for the checkboxes of submitted orders
             // note : i have to attach these click event listener after the content of popupBodyEl is fully set 
             // because the listeners added in the first .innerHTML+= will be deleted in the second .innerHTML+= because 
             // the nodes of the first dom update they will be recreated in the second dom update since .innerHTML value is just a string and not nodes  
-            let headSubmittedOrderCheckbox = popup.popupBodyEl.querySelector(".dz-head-submitted-order-checkbox");
+            let headSubmittedOrderCheckbox = alreadySubmittedAndInvalidOrdersStepContainer.querySelector(".dz-head-submitted-order-checkbox");
             if(headSubmittedOrderCheckbox){
                 headSubmittedOrderCheckbox.addEventListener('click',function(e){alreadySubmittedAndInvalidOrdersStep.handleHeadCheckbox(e)})
             }
+
+            popup.popupBodyEl.appendChild(alreadySubmittedAndInvalidOrdersStepContainer)
+
 
             // add the cancel and the continue buttons 
             const buttons = [
@@ -689,6 +712,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // disable the button then add to it a spinner
             cancelBtn.disabled=true
             let continueBtn = document.querySelector(".dz-continue-btn")
+            continueBtn.disabled = true 
             cancelBtn.innerHTML += `              
                 <div class="spinner-border dz-btn-spinner-blue" role="status" >
                     <span class="sr-only">Loading...</span>
@@ -727,16 +751,19 @@ document.addEventListener('DOMContentLoaded', function() {
         render : function(process){
             popup.popupHeaderEl.innerText = "Progrès de la soumission des commandes"        
             popup.popupBodyEl.innerHTML = `
-                <div class="spinner-border dz-spinner" role="status" >
-                <span class="sr-only">Loading...</span>
+                <div class="progress-of-submitting-orders-step" >
+                    <div class="spinner-border dz-spinner" role="status" >
+                    <span class="sr-only">Loading...</span>
+                    </div>
+                    <p style="position:relative"><span class="dz-submitted-orders-cnt">0</span>/<span class="orders-to-submit-cnt">${process.items_to_process_cnt}</span> commandes ont été soumises à <span class="dz-carrier">${selectedCarrier}</span></p>
                 </div>
-                <p style="position:relative"><span class="dz-submitted-orders-cnt">0</span>/<span class="orders-to-submit-cnt">${process.items_to_process_cnt}</span> commandes ont été soumises à <span class="dz-carrier">${selectedCarrier}</span></p>`
+                `
             popup.popupFooterEl.innerHTML = ''
 
             // add the cancel and the continue buttons 
             const buttons = [
                 {
-                    'name' : 'Terminer',
+                    'name' : 'Arrêter',
                     'className' : "dz-terminate-btn",
                     'clickHandler' : function (){progressOfSubmittingOrdersStep.terminate(this,process.id)}
                 }
@@ -765,16 +792,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
     }
 
+
     create_the_order_submit_btn();
     popup.create();
     eventPopup.create()
     popupOverlay.create();
     Server.monitorNotifications()
+
     
 })
 
 /*
 TRASH CODE : 
+
+    function create_the_order_submit_btn(){
+
+        const order_table_header = document.querySelectorAll("#order_grid .col-sm .row .col-sm .row")[0];
+        const order_submit_btn = document.createElement('button')
+        order_submit_btn.id="dz-order-submit-btn" ;
+        order_submit_btn.innerText = "Soumttre les commandes"
+        order_table_header.appendChild(order_submit_btn)
+
+
+
+        order_submit_btn.addEventListener('click', ()=>{
+            selectCarrierStep.render()       
+        });
+    }
 
         checkForARunningProcess : function(recursive){
             fetch(
@@ -806,7 +850,7 @@ TRASH CODE :
                         buttons = [
                             {
                                 'name' : 'Détail',
-                                'className' : "dz-process-detail-btn",
+                                'className' : "dz-event-popup-btn",
                                 'clickHandler' : function(){
                                     console.log("go to the detail page of the process with the id : "+process['id'])
                                 }
