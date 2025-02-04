@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.appendChild(bottom_bar)
     }
 
+
     const Server = {
         launchOsp : function(orderIds,carrier,continueBtn,cancelBtn){
             fetch(moduleControllerBaseUrl+"/order_submit_process?_token="+_token, {
@@ -322,7 +323,35 @@ document.addEventListener('DOMContentLoaded', function() {
                     },3000)
                 }
             })
+        },
+        isThereAProcessRunning : function(){
+            fetch(moduleControllerBaseUrl+"/is_there_a_process_running?_token="+_token, {
+                method: 'GET',
+                credentials: 'include', // Ensures cookies are sent with the request
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(function (data){
+                if(data.status == "success"){
+                    let process = data.process
+                    if (process){
+                        if(process.status == "Initié"){
+                            if (process.meta_data.orders_with_invalid_fields || process.meta_data.already_submitted_orders){
+                                alreadySubmittedAndInvalidOrdersStep.render(process)
+                            }else{
+                                existingOspStep.render()
+                                setTimeout(()=>{Server.isThereAProcessRunning()},2000)
+                            }
+                        }else{
+                            progressOfSubmittingOrdersStep.render(process)
+                        }
+                    }
+                }
+            })
         }
+
     }
 
     const popupOverlay = {
@@ -462,6 +491,22 @@ document.addEventListener('DOMContentLoaded', function() {
             popup.popupBodyEl.innerHTML = ""
             popup.popupFooterEl.innerHTML = ""
         }
+    }
+
+    const existingOspStep = {
+        render : function(){
+            popup.popupHeaderEl.innerText = "Un processus de soumission des commandes en cours."        
+            popup.popupBodyEl.innerHTML = `
+                <div class="progress-of-submitting-orders-step" >
+                    <div class="spinner-border dz-spinner" role="status" >
+                    <span class="sr-only">Loading...</span>
+                    </div>
+                    <p>Un processus de soumission de commandes en cours. Veuillez patienter quelques secondes pour afficher son statu</p>
+                </div>
+            `
+            popup.popupFooterEl.innerHTML = ''
+            popup.open()
+        } 
     }
 
     const selectCarrierStep = {
@@ -755,7 +800,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="spinner-border dz-spinner" role="status" >
                     <span class="sr-only">Loading...</span>
                     </div>
-                    <p style="position:relative"><span class="dz-submitted-orders-cnt">0</span>/<span class="orders-to-submit-cnt">${process.items_to_process_cnt}</span> commandes ont été soumises à <span class="dz-carrier">${selectedCarrier}</span></p>
+                    <p style="position:relative"><span class="dz-submitted-orders-cnt">${process.processed_items_cnt ? process.processed_items_cnt : 0}</span>/<span class="orders-to-submit-cnt">${process.items_to_process_cnt}</span> commandes ont été soumises à <span class="dz-carrier">${process.carrier ? process.carrier : selectedCarrier}</span></p>
                 </div>
                 `
             popup.popupFooterEl.innerHTML = ''
@@ -786,12 +831,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span class="sr-only">Loading...</span>
                 </div>
             `
-
             Server.terminateOsp(process_id,terminateBtn)
         }
 
     }
-
 
     create_the_order_submit_btn();
     popup.create();

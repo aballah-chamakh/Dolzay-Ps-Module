@@ -57,11 +57,13 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
     }
 
 
-    public function getExistingRunningProcess(Request $request){
+    public function isThereAProcessRunning(Request $request){
         OrderSubmitProcess::init($db);
+        $process = OrderSubmitProcess::is_there_a_running_process(true); // true for the arg include_meta_data
+        return new JsonResponse(['status'=>"success",'process'=> ($process) ? $process : false]) ;
     }
 
-    public function OrderSubmitProcessList(Request $request){
+    public function orderSubmitProcessList(Request $request){
         $query_parameter = [
             "status" => $request->query->get('status'),
             "carrier" => $request->query->get('carrier'),
@@ -109,7 +111,7 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         ]);
     }
 
-    public function OrderSubmitProcessDetail($process_id,Request $request){
+    public function orderSubmitProcessDetail($process_id,Request $request){
         $is_json = $request->query->get('is_json');
         $query_parameter = [
             "order_id" => $request->query->get('order_id'),
@@ -207,7 +209,7 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         // create an order submit process
         $db->query("LOCK TABLES ".OrderSubmitProcess::TABLE_NAME." WRITE");
         OrderSubmitProcess::init($db);
-        if($process = OrderSubmitProcess::get_running_process())
+        if($process = OrderSubmitProcess::is_there_a_running_process())
         {
             $db->query("UNLOCK TABLES");
             return new JsonResponse(['status'=>'conflict','process'=>$process],JsonResponse::HTTP_CONFLICT);

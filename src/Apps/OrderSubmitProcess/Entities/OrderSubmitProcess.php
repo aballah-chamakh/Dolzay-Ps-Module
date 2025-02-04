@@ -123,8 +123,12 @@ class OrderSubmitProcess {
         return $process ;
     }
 
-    public static function get_running_process(){
-        $query = "SELECT id FROM ".self::TABLE_NAME." WHERE status IN ('Initié','Actif')" ;
+    public static function is_there_a_running_process($include_meta_data=false){
+        $query = "SELECT id " ;
+        if($include_meta_data){
+            $query .=  "meta_data,processed_items_cnt,items_to_process_cnt,carrier " ;
+        }
+        $query .= "FROM ".self::TABLE_NAME." WHERE status IN ('Initié','Actif')" ;
         $stmt = self::$db->query($query) ;
         $process = $stmt->fetch();
         return $process === false ? null : $process;
@@ -136,12 +140,6 @@ class OrderSubmitProcess {
         return (int)self::$db->lastInsertId();
     }
 
-    public static function is_there_a_running_process(){
-        $query = "SELECT id FROM ".self::TABLE_NAME." WHERE status IN ('Initié','Actif');" ;
-        $stmt = self::$db->query($query);
-        $order_submit_process = $stmt->fetch();
-        return ($order_submit_process) ? $order_submit_process['id'] : false ;
-    }
     
     public static function set_and_get_the_metadata_of_the_order_submit_process($order_submit_process_id,$order_ids){
         
