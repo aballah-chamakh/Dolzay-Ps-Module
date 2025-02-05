@@ -93,7 +93,7 @@ class AfexCarrier extends BaseCarrier {
                     // check if the obs was terinated by the user 
                     $obsStatus = self::getObsStatus();
                     if($obsStatus == "Pre-terminé par l'utilisateur"){
-                        $orderSubmitProcessUpdate[] = "status='Terminé'" ;
+                        $orderSubmitProcessUpdate[] = "status='Terminé par l'utilisateur'" ;
                         self::updateOrderSubmitProcess($orderSubmitProcessUpdates);
                         self::$db->commit();
                         break ;

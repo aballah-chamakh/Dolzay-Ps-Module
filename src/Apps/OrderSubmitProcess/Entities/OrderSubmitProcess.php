@@ -124,13 +124,16 @@ class OrderSubmitProcess {
     }
 
     public static function is_there_a_running_process($include_meta_data=false){
-        $query = "SELECT id " ;
+        $query = "SELECT id" ;
         if($include_meta_data){
-            $query .=  "meta_data,processed_items_cnt,items_to_process_cnt,carrier " ;
+            $query .=  ",meta_data,status,processed_items_cnt,items_to_process_cnt,carrier" ;
         }
-        $query .= "FROM ".self::TABLE_NAME." WHERE status IN ('Initié','Actif')" ;
+        $query .= " FROM ".self::TABLE_NAME." WHERE status IN ('Initié','Actif','Pre-terminé par l\'utilisateur')" ;
         $stmt = self::$db->query($query) ;
         $process = $stmt->fetch();
+        if($process && $process['meta_data']){
+            $process['meta_data'] = json_decode($process['meta_data'],true);
+        }
         return $process === false ? null : $process;
     }
 
@@ -181,22 +184,19 @@ class OrderSubmitProcess {
         }
 
         // construct the meta_data
-        $order_submit_process_metadata = [] ;
-           
-        $order_submit_process_metadata['valid_order_ids'] = $valid_order_ids ;
-        
-        if ($orders_with_invalid_fields){
-            $order_submit_process_metadata['orders_with_invalid_fields'] = $orders_with_invalid_fields ;
-        }
-
-        if($already_submitted_orders){
-            $order_submit_process_metadata['already_submitted_orders'] = $already_submitted_orders ;
-        }
+        $order_submit_process_metadata = ['valid_order_ids'=>$valid_order_ids,
+                                          'orders_with_invalid_fields'=>$orders_with_invalid_fields,
+                                          'already_submitted_orders'=>$already_submitted_orders] ;
 
         // set the meta data of the order submit process 
         $query = "UPDATE ".OrderSubmitProcess::TABLE_NAME." SET meta_data='".json_encode($order_submit_process_metadata,JSON_UNESCAPED_UNICODE)."'" ;
         if($valid_order_ids){
             $query .=  ",items_to_process_cnt=".count($order_submit_process_metadata['valid_order_ids']) ;
+        }
+        
+        // activate the osp if there is no orders_with_invalid_fields and no already_submitted_orders
+        if(!$orders_with_invalid_fields && !$already_submitted_orders){
+            $query .= ",status='Actif'" ;
         }
 
         $query .= " WHERE id=".$order_submit_process_id ;

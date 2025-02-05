@@ -21,13 +21,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const bottom_bar = document.createElement("div")
         bottom_bar.className = "dz-bottom-bar"
 
-
         const order_submit_btn = document.createElement('button')
         order_submit_btn.id="dz-order-submit-btn" ;
         order_submit_btn.innerText = "Soumettre les commandes"
 
         order_submit_btn.addEventListener('click', ()=>{
-            selectCarrierStep.render()       
+            order_submit_btn.disabled = true 
+            order_submit_btn.innerHTML += `              
+                <div class="spinner-border dz-btn-spinner-white" role="status" >
+                    <span class="sr-only">Loading...</span>
+                </div>
+            `
+            Server.handleExistingRunningProcess(order_submit_btn)     
         });
 
         document.querySelector("#order_grid_panel").style.marginBottom = "60px"
@@ -205,6 +210,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         },
         terminateOsp : function(process_id,terminateBtn){
+            // note : the monitoring is the one reponsible for confirming the termination of the process or informing
+            // the user about a conflict 
             let url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/terminate?_token="+_token
             console.log("url : "+url)
             fetch(url, {
@@ -218,7 +225,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }else if(data.status == "conflict"){
                     console.log(`the process did stop by this status : ${data.process_status}`)
                 }
-                terminateBtn.disabled = false
             })
             .catch(error =>{ 
                 console.error('Error:', error)
@@ -258,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
                         let message = `${process.processed_items_cnt}/${process.items_to_process_cnt} commandes ont été soumises avec succès à ${process.carrier}.`
                         eventPopup.open("success","Succés",message,buttons)
-                    }else if(process.status == "Terminé par utilisateur"){
+                    }else if(process.status == "Terminé par l'utilisateur"){
                         popup.close()
 
                         buttons = [
@@ -324,7 +330,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
         },
-        isThereAProcessRunning : function(){
+        handleExistingRunningProcess : function(order_submit_btn){
+            console.log("order_submit_btn : ")
+            console.log(order_submit_btn)
             fetch(moduleControllerBaseUrl+"/is_there_a_process_running?_token="+_token, {
                 method: 'GET',
                 credentials: 'include', // Ensures cookies are sent with the request
@@ -338,15 +346,33 @@ document.addEventListener('DOMContentLoaded', function() {
                     let process = data.process
                     if (process){
                         if(process.status == "Initié"){
-                            if (process.meta_data.orders_with_invalid_fields || process.meta_data.already_submitted_orders){
-                                alreadySubmittedAndInvalidOrdersStep.render(process)
+                            if (process.meta_data ){
+                                // show the existingRunningOsp interface and after 3s show the alreadySubmittedAndInvalidOrdersStep interface
+                                // in order to inform the user that there is an existing process running
+                                existingRunningOspStep.render()
+                                setTimeout(()=>{
+                                    alreadySubmittedAndInvalidOrdersStep.render(process)
+                                },3000)
                             }else{
-                                existingOspStep.render()
-                                setTimeout(()=>{Server.isThereAProcessRunning()},2000)
+                                existingRunningOspStep.render()
+                                setTimeout(()=>{Server.handleExistingRunningProcess(order_submit_btn)},3000)
                             }
                         }else{
-                            progressOfSubmittingOrdersStep.render(process)
+                            // show the existingRunningOsp interface and after 3s show the progressOfSubmittingOrdersStep interface
+                            // in order to inform the user that there is an existing process running
+                            existingRunningOspStep.render()
+                            setTimeout(()=>{
+                                progressOfSubmittingOrdersStep.render(process)
+                            },3000)
                         }
+                    }else{
+                        selectCarrierStep.render()
+                    }
+
+                    // reset the order submit btn
+                    if(order_submit_btn.disabled){
+                        order_submit_btn.disabled = false
+                        order_submit_btn.innerHTML = "Soumettre les commandes"
                     }
                 }
             })
@@ -439,7 +465,6 @@ document.addEventListener('DOMContentLoaded', function() {
         popupHeaderEl : null,
         popupBodyEl : null,
         popupFooterEl : null,
-        popupOverlayEl : null,
 
         create : function(){
             this.popupEl = document.createElement("div")
@@ -493,7 +518,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    const existingOspStep = {
+    const existingRunningOspStep = {
         render : function(){
             popup.popupHeaderEl.innerText = "Un processus de soumission des commandes en cours."        
             popup.popupBodyEl.innerHTML = `
@@ -836,7 +861,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     }
 
-    create_the_order_submit_btn();
+    
+    create_the_order_submit_btn()
     popup.create();
     eventPopup.create()
     popupOverlay.create();

@@ -58,6 +58,7 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
 
 
     public function isThereAProcessRunning(Request $request){
+        $db = DzDb::getInstance();
         OrderSubmitProcess::init($db);
         $process = OrderSubmitProcess::is_there_a_running_process(true); // true for the arg include_meta_data
         return new JsonResponse(['status'=>"success",'process'=> ($process) ? $process : false]) ;
@@ -172,6 +173,7 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
 
         // check if the plugin didn't expire 
         $db = DzDb::getInstance();
+        $db->beginTransaction() ;
         if(Settings::did_the_plugin_expire($db)){
             return new JsonResponse(['status'=>"expired"]) ;
         }
@@ -216,12 +218,13 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         } 
         $order_submit_process_id = OrderSubmitProcess::insert($carrier); 
         $db->query("UNLOCK TABLES");
+        sleep(300);
 
         // get already submitted orders and orders with invalid field if they exist
         // then set them in the metadata of the order submit process
+        // note : if there is no invalid orders we activate the osp here
         $order_submit_process_metadata = OrderSubmitProcess::set_and_get_the_metadata_of_the_order_submit_process($order_submit_process_id,$order_ids) ;        
-        
-
+        $db->commit();
         $response = ["status"=>"success","process"=>["id"=>$order_submit_process_id]] ; 
         
         if($order_submit_process_metadata){
@@ -231,6 +234,7 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
 
         // launch the order submit process 
         $this->launchObsScript($order_submit_process_id,$carrier,$employee_id) ;
+        $db->commit();
         return new JsonResponse($response) ;
     }
 
