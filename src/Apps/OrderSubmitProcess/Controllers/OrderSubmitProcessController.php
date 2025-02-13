@@ -20,15 +20,21 @@ use Dolzay\Apps\Settings\Entities\Settings ;
 class OrderSubmitProcessController extends FrameworkBundleAdminController
 {   
     private const BATCH_SIZES = [2,5,3,4,20] ;
-    public function launchObsScript($order_submit_process_id,$carrier,$employee_id){
+    public function launchObsScript($order_submit_process_id, $carrier, $employee_id) {
         // Path to the PHP script
-        $script_path = dirname(__DIR__,1) .'/order_submit_process.php';
-        $logFilePath = _PS_MODULE_DIR_."dolzay/uploads/log/log.txt" ;
-        // Run the script in the background on Windows
-        //$output = [];
-        $returnVar = 0;
-        $command = "start /B php $script_path  $order_submit_process_id $carrier $employee_id > $logFilePath 2>&1";
-        exec($command);
+        $script_path = dirname(__DIR__, 1) . '/order_submit_process.php';
+        $logFilePath = _PS_MODULE_DIR_ . "dolzay/uploads/log/log.txt";
+    
+        // Determine the operating system
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            // Windows command
+            $command = "start /B php $script_path $order_submit_process_id $carrier $employee_id > $logFilePath 2>&1";
+            pclose(popen($command, 'r'));
+        } else {
+            // Linux/Unix command
+            $command = "php $script_path $order_submit_process_id $carrier $employee_id > $logFilePath 2>&1 &";
+            exec($command);
+        }
     }
 
 
@@ -52,18 +58,19 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
             return new JsonResponse([
                 "status" => "error",
                 "data" => ["validation_errors" => $ValidationErrors]]              
-                , Response::HTTP_BAD_REQUEST);
+                , JsonResponse::HTTP_BAD_REQUEST, ['json_options' => JSON_UNESCAPED_UNICODE]);
         }
     }
 
-
+    // ACID FRIENDLY
     public function isThereAProcessRunning(Request $request){
         $db = DzDb::getInstance();
         OrderSubmitProcess::init($db);
         $process = OrderSubmitProcess::is_there_a_running_process(true); // true for the arg include_meta_data
-        return new JsonResponse(['status'=>"success",'process'=> ($process) ? $process : false]) ;
+        return new JsonResponse(['status'=>"success",'process'=> ($process) ? $process : false],['json_options' => JSON_UNESCAPED_UNICODE]);
     }
 
+    // ACID FRIENDLY
     public function orderSubmitProcessList(Request $request){
         $query_parameter = [
             "status" => $request->query->get('status'),
@@ -80,7 +87,7 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         $order_submit_processes = OrderSubmitProcess::get_order_submit_process_list($query_parameter);
         
         if($query_parameter['is_json']){
-            return new JsonResponse(['status'=>'success','order_submit_processes'=>$order_submit_processes]);
+            return new JsonResponse(['status'=>'success','order_submit_processes'=>$order_submit_processes],200, ['json_options' => JSON_UNESCAPED_UNICODE]);
         }
 
         Carrier::init($db);
@@ -112,6 +119,7 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         ]);
     }
 
+    // ACID FRIENDLY
     public function orderSubmitProcessDetail($process_id,Request $request){
         $is_json = $request->query->get('is_json');
         $query_parameter = [
@@ -131,9 +139,9 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         // handle the api request 
         if($is_json){
             if($order_submit_process_detail){
-                return new JsonResponse(['status'=>"success",'order_submit_process'=>$order_submit_process_detail]) ;
+                return new JsonResponse(['status'=>"success",'order_submit_process'=>$order_submit_process_detail],200, ['json_options' => JSON_UNESCAPED_UNICODE]);
             }else{
-                return new JsonResponse(['status'=>'not_found'],JsonResponse::HTTP_NOT_FOUND) ;
+                return new JsonResponse(['status'=>'not_found'],JsonResponse::HTTP_NOT_FOUND, ['json_options' => JSON_UNESCAPED_UNICODE]);
             }
         }
         
@@ -168,14 +176,14 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
     }
 
 
-
+    // ACID FREINDLY
     public function launchOrderSubmitProcess(Request $request) {
 
         // check if the plugin didn't expire 
         $db = DzDb::getInstance();
-        $db->beginTransaction() ;
+        
         if(Settings::did_the_plugin_expire($db)){
-            return new JsonResponse(['status'=>"expired"]) ;
+            return new JsonResponse(['status'=>"expired"],403, ['json_options' => JSON_UNESCAPED_UNICODE]);
         }
 
         $employee_id = $this->getUser()->getId();
@@ -207,37 +215,39 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
 
         $order_ids = $request_body['order_ids'] ;
         $carrier = $request_body['carrier'];
-
+        
         // create an order submit process
         $db->query("LOCK TABLES ".OrderSubmitProcess::TABLE_NAME." WRITE");
+        //$db->beginTransaction() ; // i started the transaction after the lock because the lock ends the transation he is in
         OrderSubmitProcess::init($db);
-        if($process = OrderSubmitProcess::is_there_a_running_process())
+        if($process = OrderSubmitProcess::is_there_a_running_process(true))
         {
             $db->query("UNLOCK TABLES");
-            return new JsonResponse(['status'=>'conflict','process'=>$process],JsonResponse::HTTP_CONFLICT);
+            return new JsonResponse(['status'=>'conflict','process'=>$process],JsonResponse::HTTP_CONFLICT,['json_options' => JSON_UNESCAPED_UNICODE]);
         } 
+
         $order_submit_process_id = OrderSubmitProcess::insert($carrier); 
         $db->query("UNLOCK TABLES");
         sleep(300);
-
+        
         // get already submitted orders and orders with invalid field if they exist
         // then set them in the metadata of the order submit process
         // note : if there is no invalid orders we activate the osp here
         $order_submit_process_metadata = OrderSubmitProcess::set_and_get_the_metadata_of_the_order_submit_process($order_submit_process_id,$order_ids) ;        
-        $db->commit();
+
         $response = ["status"=>"success","process"=>["id"=>$order_submit_process_id]] ; 
         
         if($order_submit_process_metadata){
             $response['process']['meta_data'] = $order_submit_process_metadata ;
-            return new JsonResponse($response) ;
+            return new JsonResponse($response,200, ['json_options' => JSON_UNESCAPED_UNICODE]);
         }
 
         // launch the order submit process 
         $this->launchObsScript($order_submit_process_id,$carrier,$employee_id) ;
-        $db->commit();
-        return new JsonResponse($response) ;
+        return new JsonResponse($response,200, ['json_options' => JSON_UNESCAPED_UNICODE]);
     }
 
+    // ACID FREINDLY
     // this route can be called after the user selected the order to re-submit 
     // and the fixed the invalid values 
     public function continueOrderSubmitProcess($process_id,Request $request){
@@ -281,28 +291,28 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         // handle the process was not fount
         if (!$process){
             $db->commit();
-            return new JsonResponse(['status'=>'not_found'],JsonResponse::HTTP_NOT_FOUND) ;
+            return new JsonResponse(['status'=>'not_found'],JsonResponse::HTTP_NOT_FOUND, ['json_options' => JSON_UNESCAPED_UNICODE]);
         }
 
-        // handle the process isn't not still initiated
+        // handle the process isn't still initiated
         if ($process['status'] != "Initié"){
             $db->commit();
-            return new JsonResponse(['status'=>"conflict",'process_status'=>$process['status']],JsonResponse::HTTP_CONFLICT);
+            return new JsonResponse(['status'=>"conflict",'process'=>$process],JsonResponse::HTTP_CONFLICT, ['json_options' => JSON_UNESCAPED_UNICODE]);
         }
 
         // the orders to resubmit, check if the invalid orders were fixed and activate the process
-        $items_to_process_cnt = OrderSubmitProcess::add_orders_to_resubmit_and_activate_the_process($process,$order_to_resubmit_ids);
-        if ($items_to_process_cnt == 0){
-            OrderSubmitProcess::cancel($process['id'],"Annulé automatiquement");
-            $db->commit() ;
-        }else{
-            $db->commit() ;
+        [$items_to_process_cnt,$osp_status] = OrderSubmitProcess::add_orders_to_resubmit_and_activate_the_process($process,$order_to_resubmit_ids);
+        $db->commit() ;
+        if ($items_to_process_cnt != 0){
             $this->launchObsScript($process['id'],$process['carrier'],$employee_id) ;
         }
+        $process['items_to_process_cnt'] = $items_to_process_cnt ;
+        $process['status'] = $osp_status ;
         // launch the order submit process 
-        return new JsonResponse(['status'=>'success','items_to_process_cnt' => $items_to_process_cnt], 200);                
+        return new JsonResponse(['status'=>'success','process' => $process], 200, ['json_options' => JSON_UNESCAPED_UNICODE]);         
     }
 
+    // ACID FREINDLY
     // this route can be called if the user wants to cancel an initiated process 
     public function cancelOrderSubmitProcess($process_id){
         
@@ -317,21 +327,22 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         // handle the process was not found
         if (!$process){
             $db->commit();
-            return new JsonResponse(['status'=>'not_found'],JsonResponse::HTTP_NOT_FOUND) ;
+            return new JsonResponse(['status'=>'not_found'],JsonResponse::HTTP_NOT_FOUND, ['json_options' => JSON_UNESCAPED_UNICODE]);
         }
 
         // handle the process isn't still initiated
         if ($process['status'] != "Initié"){
             $db->commit();
-            return new JsonResponse(['status'=>"conflict",'process_status'=>$process['status']],JsonResponse::HTTP_CONFLICT);
+            return new JsonResponse(['status'=>"conflict",'process'=>$process],JsonResponse::HTTP_CONFLICT, ['json_options' => JSON_UNESCAPED_UNICODE]);
         }
 
         OrderSubmitProcess::cancel($process['id'],"Annulé par l'utilisateur");
         $db->commit() ;
-        return new JsonResponse(['status'=>"success"]) ;
+        return new JsonResponse(['status'=>"success"],200, ['json_options' => JSON_UNESCAPED_UNICODE]);
 
     }
 
+    // ACID FREINDLY
     public function monitorOrderSubmitProcess($process_id){
         $db = DzDb::getInstance() ;
         OrderSubmitProcess::init($db);
@@ -339,13 +350,14 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
 
         // handle the process was not found
         if (!$process_status){
-            return new JsonResponse(['status'=>'not_found'],JsonResponse::HTTP_NOT_FOUND) ;
+            return new JsonResponse(['status'=>'not_found'],JsonResponse::HTTP_NOT_FOUND, ['json_options' => JSON_UNESCAPED_UNICODE]);
         }
 
-        return new JsonResponse(['status'=>'success',"process"=>$process_status]);
+        return new JsonResponse(['status'=>'success',"process"=>$process_status],200, ['json_options' => JSON_UNESCAPED_UNICODE]);
 
     }
 
+    // ACID FREINDLY
     public function terminateOrderSubmitProcess($process_id){
         // check if the process exists otherwise return 404 
         $db = DzDb::getInstance() ;
@@ -358,19 +370,19 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         // handle the process was not found
         if (!$process){
             $db->commit();
-            return new JsonResponse(['status'=>'not_found'],JsonResponse::HTTP_NOT_FOUND) ;
+            return new JsonResponse(['status'=>'not_found'],JsonResponse::HTTP_NOT_FOUND, ['json_options' => JSON_UNESCAPED_UNICODE]);
         }
 
         // terminate the process only if it's active to no override other end status
         if ($process['status'] != "Actif"){
             //return new JsonResponse(['status'=>"conflict",'process_status'=>$process['status']]) ;
-            return new JsonResponse(['status'=>"success"]) ;
+            return new JsonResponse(['status'=>"success"],200, ['json_options' => JSON_UNESCAPED_UNICODE]);
         }
 
         // interrupt the order submit process
         OrderSubmitProcess::terminate($process_id);
         $db->commit();  
-        return new JsonResponse(['status'=>"success"]) ;
+        return new JsonResponse(['status'=>"success"],200, ['json_options' => JSON_UNESCAPED_UNICODE]);
       
     }
 

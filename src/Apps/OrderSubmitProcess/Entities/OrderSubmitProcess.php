@@ -74,9 +74,10 @@ class OrderSubmitProcess {
 
     private static $db;
 
-    public static function init($db) {
+    public static function init($db){
         self::$db = $db;
     }
+
     // START DEFINING get_create_table_sql
     public static function get_create_table_sql() {
 
@@ -97,13 +98,13 @@ class OrderSubmitProcess {
              FOREIGN KEY (`carrier`) REFERENCES `'.Carrier::TABLE_NAME.'` (`name`) ON DELETE CASCADE
         );';
     }
-    // END DEFINING get_create_table_sql
     
+    // END DEFINING get_create_table_sql
     public const DROP_TABLE_SQL = 'DROP TABLE IF EXISTS `'.self::TABLE_NAME.'`;';
 
     
     public static function get_process(int $process_id, bool $lock_it=false){
-        $query = "SELECT id,carrier,status,meta_data FROM ".self::TABLE_NAME." WHERE id=".$process_id ;
+        $query = "SELECT id,carrier,status,meta_data,processed_items_cnt,items_to_process_cnt FROM ".self::TABLE_NAME." WHERE id=".$process_id ;
         if($lock_it){
             $query .= " FOR UPDATE" ;
         }
@@ -217,7 +218,7 @@ class OrderSubmitProcess {
         }
 
         // check if there is an old invalid order that got fixed then add them to the valid_order_ids
-        if (isset($meta_data['orders_with_invalid_fields'])){
+        if ($meta_data['orders_with_invalid_fields']){
             $orders_with_invalid_fields_ids = array_map(fn($order) => $order['order_id'],$meta_data['orders_with_invalid_fields']); 
             
             $query = "SELECT id_order,submitted,city,delegation,phone FROM ". _DB_PREFIX_.\OrderCore::$definition['table']." AS Ord INNER JOIN 
@@ -247,11 +248,11 @@ class OrderSubmitProcess {
         // unset other meta data other than valid_order_ids
         $new_meta_data = ['valid_order_ids'=>$meta_data['valid_order_ids']];
         $items_to_process_cnt = count($new_meta_data['valid_order_ids']);
-        // persist the new meta data and activate the process the process 
-        self::$db->query("UPDATE ".self::TABLE_NAME." SET status='Actif',meta_data='".json_encode($meta_data,JSON_UNESCAPED_UNICODE)."',items_to_process_cnt=$items_to_process_cnt WHERE id=".$process['id']) ;
-        return $items_to_process_cnt ;
+        // persist the new meta data and activate or cancel the process if  items_to_process_cnt == 0
+        $newOspStatus = ($items_to_process_cnt == 0) ? "Annulé automatiquement" : "Actif" ;
+        self::$db->query("UPDATE ".self::TABLE_NAME." SET status='".$newOspStatus."',meta_data='".json_encode($meta_data,JSON_UNESCAPED_UNICODE)."',items_to_process_cnt=$items_to_process_cnt WHERE id=".$process['id']) ;
+        return [$items_to_process_cnt,$newOspStatus] ;
     }
-
 
     public static function cancel($process_id,$cancel_status){
         $cancel_status = str_replace("'", "\'", $cancel_status);
@@ -302,6 +303,7 @@ class OrderSubmitProcess {
     }
 
     public static function get_order_submit_process_detail($process_id,$query_parameter){
+        
         $query = "SELECT carrier,status,started_at,ended_at,processed_items_cnt,items_to_process_cnt,error,meta_data" ;
         $query .= " FROM ".self::TABLE_NAME." WHERE id=".$process_id ;
 
@@ -312,7 +314,7 @@ class OrderSubmitProcess {
         // add the orders_to_submit to order_submit_process_detail
         $order_submit_process_detail["error"] = json_decode($order_submit_process_detail["error"],true);
         $order_submit_process_detail['meta_data'] = json_decode($order_submit_process_detail['meta_data'],true);
-        $order_ids = $order_submit_process_detail["meta_data"]['valid_order_ids'] ;
+        $order_ids = ($order_submit_process_detail["meta_data"]) ? $order_submit_process_detail["meta_data"]['valid_order_ids'] : [];
         $orders_to_submit = [];
         if(count($order_ids)){
             $values = ['limit'=>$query_parameter['batch_size'],'offset'=>($query_parameter['page_nb'] - 1) * $query_parameter['batch_size']] ;
@@ -329,7 +331,6 @@ class OrderSubmitProcess {
             if($query_parameter['client']){
                 $query .= " AND CONCAT(firstname, ' ', lastname) LIKE :client" ; 
                 $values['client'] = "%".$query_parameter['client']."%";
- 
             }
             $query .= " LIMIT :limit OFFSET :offset ;" ;
             $stmt = self::$db->prepare($query);

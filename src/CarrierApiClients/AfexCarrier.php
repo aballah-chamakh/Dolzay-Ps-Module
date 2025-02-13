@@ -12,12 +12,12 @@ class AfexCarrier extends BaseCarrier {
         $carrier = self::$db->query("SELECT token FROM "._MODULE_PREFIX_."carrier AS car INNER JOIN "._MODULE_PREFIX_."api_credentials AS crd ON car.api_credentials_id=crd.id WHERE car.name = '".self::name."'")->fetch();
         return $carrier['token'];
     }
-
+ 
 
     public static function submit_orders(){
         $post_submit_status_id = AfexCarrier::get_post_submit_status_id() ;
         $orders = AfexCarrier::get_the_orders_to_submit();
-
+        $orders_cnt = count($orders);
         $token = self::get_api_key();
 
         // Initialize cURL session
@@ -35,7 +35,7 @@ class AfexCarrier extends BaseCarrier {
         
 
         foreach($orders as $index => $order){
-
+            sleep(5);
             // prepare the goods 
             $goods = self::get_cart_products_str($order['cart_products']);
 
@@ -70,7 +70,7 @@ class AfexCarrier extends BaseCarrier {
             $response = json_decode($response, true);
             if ($status_code == 200){
                 $index = $index + 1 ;
-                echo "=============== ORDER WITH THE ID : $order_id IS DONE =============== \n" ;
+                echo "=============== ORDER WITH THE ID : $order_id IS DONE (index : $index ,orders_cnt : $orders_cnt) =============== \n" ;
                 
                 
                 self::$db->beginTransaction();
@@ -88,12 +88,13 @@ class AfexCarrier extends BaseCarrier {
                 $orderSubmitProcessUpdates = ["processed_items_cnt=$index"] ;
                 // check if it's the last order to submit
                 if ($index == $orders_cnt){
-                    $orderSubmitProcessUpdate[] = "status='Terminé'" ;
+                    $orderSubmitProcessUpdates[] = "status='Terminé'" ;
                 }else{
                     // check if the obs was terinated by the user 
                     $obsStatus = self::getObsStatus();
-                    if($obsStatus == "Pre-terminé par l'utilisateur"){
-                        $orderSubmitProcessUpdate[] = "status='Terminé par l'utilisateur'" ;
+                    echo "CURRENT OSP STATUS : $obsStatus" ;
+                    if($obsStatus == "Pre-terminé par l'utilisateur"){ 
+                        $orderSubmitProcessUpdates[] = "status='Terminé par l\\'utilisateur'" ; 
                         self::updateOrderSubmitProcess($orderSubmitProcessUpdates);
                         self::$db->commit();
                         break ;
@@ -107,9 +108,9 @@ class AfexCarrier extends BaseCarrier {
                 echo "=============== ORDER WITH THE ID : $order_id GOT 422 STATUS CODE =============== \n" ;
                 
                 // set the error
-                $message = "Une erreur de code 422 s'est produite lors de la soumission de la 1ʳᵉ commande portant l'ID : $order_id. Veuillez appeler le support de Dolzay au " . SUPPORT_PHONE . " afin qu'ils résolvent votre problème.";
+                $message = "Une erreur de code 422 s'est produite lors de la soumission de la 1ʳᵉ commande portant l'ID : $order_id. Veuillez appeler le support de Dolzay au " . _SUPPORT_PHONE_ . " afin qu'ils résolvent votre problème.";
                 if($index > 0){
-                    $message = "Après la soumission de $index/$order_cnt, une erreur de code 422 s'est produite lors de la soumission de la commande portant l'ID : $order_id. Veuillez appeler le support de Dolzay au " . SUPPORT_PHONE . " afin qu'ils résolvent votre problème.";
+                    $message = "Après la soumission de $index/$orders_cnt, une erreur de code 422 s'est produite lors de la soumission de la commande portant l'ID : $order_id. Veuillez appeler le support de Dolzay au " . _SUPPORT_PHONE_ . " afin qu'ils résolvent votre problème.";
                 }
 
                 $error = json_encode([
@@ -134,7 +135,7 @@ class AfexCarrier extends BaseCarrier {
                 // set for the order submit process the status and the error data 
                 $message = "Le token d'Afex est invalide. Veuillez le mettre à jour avec un token valide." ;
                 if($index > 0){
-                    $message = "Après la soumission de $index/$order_cnt, le token d'Afex est devenu invalide. Veuillez le mettre à jour avec un token valide." ;
+                    $message = "Après la soumission de $index/$orders_cnt, le token d'Afex est devenu invalide. Veuillez le mettre à jour avec un token valide." ;
                 }
                 
                 $error = json_encode([
@@ -152,9 +153,9 @@ class AfexCarrier extends BaseCarrier {
                 echo "=============== ORDER WITH THE ID : $order_id GOT AN UNEXPECTED ERROR =============== \n" ;
                 // set for the order submit process the status and the error data 
                 
-                $message = "Une erreur de code $status_code s'est produite lors de la soumission de la 1ʳᵉ commande portant l'ID : $order_id. Veuillez appeler le support de Dolzay au " . SUPPORT_PHONE . " afin qu'ils résolvent votre problème.";
+                $message = "Une erreur de code $status_code s'est produite lors de la soumission de la 1ʳᵉ commande portant l'ID : $order_id. Veuillez appeler le support de Dolzay au " . _SUPPORT_PHONE_ . " afin qu'ils résolvent votre problème.";
                 if($index > 0){
-                    $message = "Après la soumission de $index/$order_cnt, une erreur de code $status_code s'est produite lors de la soumission de la commande portant l'ID : $order_id. Veuillez appeler le support de Dolzay au " . SUPPORT_PHONE . " afin qu'ils résolvent votre problème.";
+                    $message = "Après la soumission de $index/$orders_cnt, une erreur de code $status_code s'est produite lors de la soumission de la commande portant l'ID : $order_id. Veuillez appeler le support de Dolzay au " . _SUPPORT_PHONE_ . " afin qu'ils résolvent votre problème.";
                 }
 
                 $error = json_encode([

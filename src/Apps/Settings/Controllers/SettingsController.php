@@ -14,8 +14,6 @@ use Dolzay\Apps\Settings\Entities\Carrier ;
 class SettingsController extends FrameworkBundleAdminController
 {
 
-
-
     public function getSettings(Request $request)
     { 
         $employee = $this->getUser();
@@ -73,7 +71,7 @@ class SettingsController extends FrameworkBundleAdminController
         $stmt = $db->prepare("UPDATE ".Settings::TABLE_NAME." SET post_submit_state_id = :post_submit_state_id");
         $stmt->bindParam(':post_submit_state_id', $order_post_submit_state_id, \PDO::PARAM_INT);
         $stmt->execute();
-
+        $db->commit();
         return new JsonResponse(['status'=>"success",'message' => 'Settings updated successfully']);
     }
 }

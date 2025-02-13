@@ -76,19 +76,22 @@ class BaseCarrier {
 
     public static function updateOrderSubmitProcess($updates){
         $query = "UPDATE "._MODULE_PREFIX_."order_submit_process SET ".implode(", ", $updates)." WHERE id=".self::$process_id ;
+        echo "query : $query \n" ;
         self::$db->query($query);
     }
 
     protected static function getObsStatus(){
         $query = "SELECT status FROM "._MODULE_PREFIX_."order_submit_process  WHERE id=".self::$process_id ;
-        $status = self::$db->query($query)->fetch()['status'];
+        return self::$db->query($query)->fetch()['status'];
     }
 
     protected static function addOrderStatusHistory($order_id,$post_submit_status_id){
+        $query = "INSERT INTO "._DB_PREFIX_."order_history (id_employee,id_order,id_order_state) VALUES (:employee_id,:order_id,:order_state_id);";
+        $stmt = self::$db->prepare($query);
         $stmt->execute([
             'employee_id'=>self::$employee_id,
             'order_id'=>$order_id,
-            'state_id'=>$post_submit_status_id
+            'order_state_id'=>$post_submit_status_id
         ]);
     }
     //error='{"message":"Le token d'Afex est invalide. Veuillez le mettre \u00e0 jour avec un token valide.","status_code":401}'"

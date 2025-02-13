@@ -282,7 +282,11 @@
                                 updateCarrierBtn.lastElementChild.remove()
                                 disableOrEnablePopup("enable")
                             }
-                    })
+                       })
+                        .catch((err)=>{
+                                    updateCarrierBtn.lastElementChild.remove()
+                                    disableOrEnablePopup("enable")
+                        })
 
                 }
 
@@ -312,6 +316,10 @@
                         saveButton.disabled = false 
                         order_post_submit_state_select.prop('disabled',false)
                     }
+                  }).catch((err)=>{
+                        saveButton.innerHTML = "Enregistrer" ;
+                        saveButton.disabled = false 
+                        order_post_submit_state_select.prop('disabled',false)
                   })
             }
             popup.create()
