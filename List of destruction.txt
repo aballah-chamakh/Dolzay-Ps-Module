@@ -6,10 +6,9 @@ List of destruction :
 	 	- remove the traces of adding the hidden code 
 	goal : 
 		- remove the traces of the hidden route 
-		- if the client did capture a version of the plugin after the minor destruction this will prevent the re-install of this version
- 		- if the client a version of the plugin after the minor destruction and he hands it to another client that client from re-installing 
-		  this version
-	how it can be bypass it : 
+		- if the client did capture a version of the plugin after the minor destruction this will prevent the re-install of this version 
+          which will make the client unabled to re-install the plugin after the destruction also he can't hand it to other clients 
+	how it can be bypassed : 
 	   	- if the client captured the original version of the plugin
 		- if the client capture the structure of the tables from phpMyAdmin and asked chatgpt to generate a sql statement for that 
 	test : 

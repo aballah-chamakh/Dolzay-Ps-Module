@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if(data.status == "success"){
                     let process  = data.process 
-                    if (process.meta_data && (process.meta_data['orders_with_invalid_fields'] || process.meta_data['already_submitted_orders'])){
+                    if (process.meta_data && (process.meta_data['orders_with_invalid_fields'].length || process.meta_data['already_submitted_orders'].length)){
                         alreadySubmittedAndInvalidOrdersStep.render(process)
                     }else{
                         process['items_to_process_cnt'] = orderIds.length
@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }else if(data.status == 'conflict'){ // handle the case of an exsint osp running
                     let process = data.process
                     if(process.status == "Initié"){
-                        if (process.meta_data && (process.meta_data['orders_with_invalid_fields'] || process.meta_data['already_submitted_orders'])){
+                        if (process.meta_data && (process.meta_data['orders_with_invalid_fields'].length || process.meta_data['already_submitted_orders'].length)){
                             // show the existingRunningOsp interface and after 3s show the alreadySubmittedAndInvalidOrdersStep interface
                             // in order to inform the user that there is an existing process running
                             existingRunningOspStep.render()
@@ -153,7 +153,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                 'name' : 'Détail',
                                 'className' : "dz-event-popup-btn",
                                 'clickHandler' : function(){
-                                                console.log(`go to the detail page of the process with the id : ${data.process_id}`)
+                                    let process_detail_url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/?_token="+_token
+                                    window.open(process_detail_url,"_blank")
+                                    eventPopup.close();
                                 }
                             }
                         ]
@@ -200,7 +202,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                 'name' : 'Détail',
                                 'className' : "dz-event-popup-btn",
                                 'clickHandler' : function(){
-                                                console.log(`go to the detail page of the process with the id : ${process_id}`)
+                                    let process_detail_url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/?_token="+_token
+                                    window.open(process_detail_url,"_blank")
+                                    eventPopup.close();
                                 }
                             }
                         ]
@@ -307,7 +311,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                 'name' : 'Détail',
                                 'className' : "dz-event-popup-btn",
                                 'clickHandler' : function(){
-                                    console.log(`go to the process with the id : ${process_id}`)
+                                    let process_detail_url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/?_token="+_token
+                                    window.open(process_detail_url,"_blank")
+                                    eventPopup.close();
                                 }
                             }
                         ]
@@ -344,47 +350,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     setTimeout(()=>{
                         Server.monitorNotifications()
                     },3000)
-                }
-            })
-        },
-        handleExistingRunningProcess : function(){
-
-            fetch(moduleControllerBaseUrl+"/is_there_a_process_running?_token="+_token, {
-                method: 'GET',
-                credentials: 'include', // Ensures cookies are sent with the request
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            })
-            .then(response => response.json())
-            .then(function (data){
-                if(data.status == "success"){
-                    let process = data.process
-                    if (process){
-                        if(process.status == "Initié"){
-                            if (process.meta_data && (process.meta_data['orders_with_invalid_fields'] || process.meta_data['already_submitted_orders'])){
-                                // show the existingRunningOsp interface and after 3s show the alreadySubmittedAndInvalidOrdersStep interface
-                                // in order to inform the user that there is an existing process running
-                                existingRunningOspStep.render()
-                                setTimeout(()=>{
-                                    alreadySubmittedAndInvalidOrdersStep.render(process)
-                                },3000)
-                            }else{
-                                existingRunningOspStep.render()
-                                setTimeout(()=>{Server.handleExistingRunningProcess()},3000)
-                            }
-                        }else{
-                            // show the existingRunningOsp interface and after 3s show the progressOfSubmittingOrdersStep interface
-                            // in order to inform the user that there is an existing process running
-                            existingRunningOspStep.render()
-                            setTimeout(()=>{
-                                progressOfSubmittingOrdersStep.render(process)
-                            },3000)
-                        }
-                    }else{
-                        selectCarrierStep.render()
-                    }
-
                 }
             })
         }

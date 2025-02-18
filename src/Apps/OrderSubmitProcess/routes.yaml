@@ -1,4 +1,17 @@
 
+dz_test_one : 
+  path: /dz/test_one
+  methods: [GET]
+  defaults:
+    _controller: 'Dolzay\Apps\OrderSubmitProcess\Controllers\OrderSubmitProcessController::testOne'
+    _disable_module_prefix: true
+
+dz_test_two : 
+  path: /dz/test_two
+  methods: [GET]
+  defaults:
+    _controller: 'Dolzay\Apps\OrderSubmitProcess\Controllers\OrderSubmitProcessController::testTwo'
+    _disable_module_prefix: true
 
 dz_order_submit_process_list : 
   path: /dz/order_submit_processes

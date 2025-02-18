@@ -68,6 +68,10 @@
     font-size: 80px;
 }
 
+.dz-event-popup-body p {
+    margin-bottom : 0px ;
+}
+
 .dz-event-popup-body img {
     width : 120px ;
 }

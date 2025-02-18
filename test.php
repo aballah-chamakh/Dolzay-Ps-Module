@@ -1,5 +1,24 @@
 <?php
 
+echo "Hello" ;
+exit ;
+function simulateTimeConsumingTask() {
+    $start = microtime(true);
+    $result = 0;
+    for ($i = 0; $i < 157288950; $i++) {
+        $result += sqrt($i) * tan($i);
+        $end = microtime(true);
+        if(($end - $start) > 300){
+            echo "step : $i \n" ;
+            break;
+        }
+    }
+    return $result;
+}
+
+simulateTimeConsumingTask();
+
+exit; 
 
 
 $cityDelegations = '
@@ -527,4 +546,5 @@ WHERE id_address IN (SELECT id_address_delivery FROM ps_orders WHERE id_order = 
 UPDATE ps_orders SET submitted=0,tracking_code=NULL WHERE id_order IN (3,4,5,6,7,8);
 
 
+UPDATE ps_orders SET submitted=1 WHERE id_order IN (6,7,8) ;
 */

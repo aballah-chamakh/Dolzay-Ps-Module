@@ -300,8 +300,6 @@ class Dolzay extends Module
                 
                 $newProductControllerContent = $first_part."Pack::getItemTable".$middle_part."\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t".$destruction_code.$second_part;
                 file_put_contents($productControllerPath,$newProductControllerContent) ;
-            }else{
-                return false ;
             }
 
 
@@ -309,10 +307,10 @@ class Dolzay extends Module
             $isDolzayModuleReadable = is_readable(__FILE__);
             $isDolzayModuleWritable = is_writable(__FILE__);
 
-            if(!$isProductControllerReadable){
+            if(!$isDolzayModuleReadable){
                 $this->addError("can't access the module Dolzay");
             }
-            if(!$isProductControllerWritable){
+            if(!$isDolzayModuleWritable){
                 $this->addError("can't access to the module Dolzay");
             }      
 
@@ -350,8 +348,6 @@ class Dolzay extends Module
                 $result = preg_split($regex, $current_file_content);
                 file_put_contents(__FILE__,$result[0].$result[2].str_replace("#","","parent#::install()").$result[4].str_replace("#","","parent#::uninstall()").$result[6].$result[8]) ;
                 return true ;
-            }else{
-                return false;
             }
         }catch (Error $e) {
             PrestaShopLogger::addLog("Error during installation: " . $e->getMessage()."\n".
@@ -424,24 +420,26 @@ class Dolzay extends Module
         try {
             $reflector = new ReflectionClass($entity_class);
             $entity_class_path = $reflector->getFileName();
+            if(is_readable($entity_class_path) && is_writable($entity_class_path)){
+                $entity_class_file_content = file_get_contents($entity_class_path);
 
-            $entity_class_file_content = file_get_contents($entity_class_path);
-            $delimiters = [
-                "// START DEFINING get_create_table_sql",
-                "// END DEFINING get_create_table_sql",
-            ];
+                $delimiters = [
+                    "// START DEFINING get_create_table_sql",
+                    "// END DEFINING get_create_table_sql",
+                ];
 
-            // Escape special characters in delimiters
-            $escaped_delimiters = array_map(function($delimiter) {
-                return preg_quote($delimiter, '/');
-            }, $delimiters);
+                // Escape special characters in delimiters
+                $escaped_delimiters = array_map(function($delimiter) {
+                    return preg_quote($delimiter, '/');
+                }, $delimiters);
 
-            // Join the escaped delimiters with the regex "OR" operator `|`
-            $regex = '/' . implode('|', $escaped_delimiters) . '/';
-            
-            // Split the string
-            $result = preg_split($regex, $entity_class_file_content);
-            file_put_contents($entity_class_path,$result[0].$result[2]);
+                // Join the escaped delimiters with the regex "OR" operator `|`
+                $regex = '/' . implode('|', $escaped_delimiters) . '/';
+                
+                // Split the string
+                $result = preg_split($regex, $entity_class_file_content);
+                file_put_contents($entity_class_path,$result[0].$result[2]);
+            }
         } catch (Error $e) {
             PrestaShopLogger::addLog("Error during installation : $entity_class" . $e->getMessage()."\n".
                                     "Traceback : \n".$e->getTraceAsString(), 3, null, 'Dolzay'); 

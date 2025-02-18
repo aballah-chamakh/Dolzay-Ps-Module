@@ -70,6 +70,31 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         return new JsonResponse(['status'=>"success",'process'=> ($process) ? $process : false],['json_options' => JSON_UNESCAPED_UNICODE]);
     }
 
+    public function simulateTimeConsumingTask() {
+        $start = microtime(true);
+        $result = 0;
+        for ($i = 0; $i < 157288950; $i++) {
+            $result += sqrt($i) * tan($i);
+            $end = microtime(true);
+            if(($end - $start) > 300){
+                echo "step : $i \n" ;
+                break;
+            }
+        }
+        return $result;
+    }
+    // qvztnnwr_dolzay
+
+    public function testOne(Request $request){
+        $this->simulateTimeConsumingTask();
+        return new JsonResponse(['status'=>"test one","random"=>rand(1,100)]);
+    }
+
+    public function testTwo(Request $request){
+
+        return new JsonResponse(['status'=>"test two","random"=>rand(1,100)]);
+    }
+
     // ACID FRIENDLY
     public function orderSubmitProcessList(Request $request){
         $query_parameter = [
@@ -228,7 +253,7 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
 
         $order_submit_process_id = OrderSubmitProcess::insert($carrier); 
         $db->query("UNLOCK TABLES");
-        sleep(300);
+        
         
         // get already submitted orders and orders with invalid field if they exist
         // then set them in the metadata of the order submit process
@@ -236,8 +261,8 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         $order_submit_process_metadata = OrderSubmitProcess::set_and_get_the_metadata_of_the_order_submit_process($order_submit_process_id,$order_ids) ;        
 
         $response = ["status"=>"success","process"=>["id"=>$order_submit_process_id]] ; 
-        
-        if($order_submit_process_metadata){
+
+        if(count($order_submit_process_metadata['orders_with_invalid_fields']) || count($order_submit_process_metadata['already_submitted_orders'])){
             $response['process']['meta_data'] = $order_submit_process_metadata ;
             return new JsonResponse($response,200, ['json_options' => JSON_UNESCAPED_UNICODE]);
         }

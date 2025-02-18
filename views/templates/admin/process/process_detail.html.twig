@@ -46,7 +46,7 @@
                             <div class="dz-error-message-container">
                                 <span class="dz-error-message">
                                     {{ process.error.message }}
-                                    {% if process.error.detail %}
+                                    {% if 'detail' in process.error|keys %}
                                         <span class="dz-more-detail" onClick="toggleProcessErrorDetail()">détail</span>
                                         <pre class="dz-error-message-detail">{{process.error.detail|json_encode(constant('JSON_PRETTY_PRINT'))}}</pre>
                                     {% endif %}
