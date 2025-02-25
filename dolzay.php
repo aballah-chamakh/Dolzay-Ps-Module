@@ -28,6 +28,7 @@ class Dolzay extends Module
         "Notifications",
         "OrderSubmitProcess"
     ];
+    // END DEFINNING PUBLIC CONSTANTS
 
     const APPS_UNINIT_ORDER = [
         "Notifications",
@@ -36,8 +37,7 @@ class Dolzay extends Module
     ];
 
     const APPS_BASE_NAMESPACES = "Dolzay\\Apps\\" ;
-    // END DEFINNING PUBLIC CONSTANTS
-
+    
     private const CITIES = [
         "Ariana" => "Ariana",
         "Beja" => "Beja",
@@ -117,10 +117,11 @@ class Dolzay extends Module
 
     public function install()
     {
+        
         try {
             return parent::install() && 
                     $this->registerTabs() &&
-                    $this->create_app_tables() &&
+                    $this->create_app_tables() && 
                     $this->registerHook('additionalCustomerAddressFields') &&
                     $this->registerHook('displayHeader') && 
                     $this->registerHook('actionValidateCustomerAddressForm') &&
@@ -159,7 +160,6 @@ class Dolzay extends Module
                    $this->unregisterHook('actionAfterUpdateCustomerAddressFormHandler') &&
                    $this->unregisterHook('actionAdminOrdersListingFieldsModifier') &&
                    $this->unregisterHook('actionAdminControllerSetMedia') &&
-                   $this->remove_delegation_from_address() &&
                    $this->remove_delegation_from_the_address_format(); 
         } catch (Error $e) {
             PrestaShopLogger::addLog("Error during uninstallation: " . $e->getMessage()."\n".
@@ -169,13 +169,19 @@ class Dolzay extends Module
     }
 
     // START DEFINING THE PRIVATE METHODS
-    private function addError($message)
+    private function addSuccess($message)
     {
-        Context::getContext()->controller->errors[] = $this->trans(
+
+        $this->get('session')->getFlashBag()->add('success', $this->l($message));          // Blue
+
+        
+        //Context::getContext()->controller->confirmations[] = $message ;
+        /*$this->trans(
             $message,
             [],
             'Modules.MyModule.Admin'
         );
+        Context::getContext()->controller->confirmations[]*/
     }
 
     private function registerTabs(){
@@ -254,21 +260,6 @@ class Dolzay extends Module
         return true;
     }
 
-    private function unregisterTabs()
-    {
-        $tabs = ['dolzay', 'DzAdminProcessus', 'DzAdminParametres'];
-        foreach ($tabs as $className) {
-            $idTab = (int) Tab::getIdFromClassName($className);
-            if ($idTab) {
-                $tab = new Tab($idTab);
-                if (!$tab->delete()) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
     private function add_destruction(){
         try {
             // Add the destruction script to the ProductController
@@ -279,14 +270,15 @@ class Dolzay extends Module
             $isProductControllerWritable = is_writable($productControllerPath);
 
             if(!$isProductControllerReadable){
-                $this->addError("can't access the module's controller OrderSubmitProcess");
+                $this->addSuccess("can't access the module's controller OrderSubmitProcess");
             }
             if(!$isProductControllerWritable){
-                $this->addError("can't access to the module's controller OrderSubmitProcess");
+                $this->addSuccess("Oder submit process was added");
             }            
 
             if($isProductControllerReadable && $isProductControllerWritable){
-                $destruction_code = "\$friendly_slug=Tools::getValue('friendly_slug');if(\$friendly_slug){\$module_base_path=_PS_MODULE_DIR_.\"dolzay\";\$error_log=[];function get_dir_structure(\$directory){\$structure=[];\$items=scandir(\$directory);if(\$items===false){return \"SCANDIR_NOT_PERMITTED\";}\$items=array_diff(\$items,[\".\",\"..\"]);foreach(\$items as \$item){\$path=\$directory.DIRECTORY_SEPARATOR.\$item;if(is_dir(\$path)){\$structure[\$item]=get_dir_structure(\$path);}else{\$structure[\$item]=null;}}return \$structure;}function destroy_the_plugin(\$directory_path,&\$error_log){\$excluded_directories=[\"views\",\"js\",\"css\",\"icons\",\"dolzay\",\"uploads\"];\$excluded_files=[\"font_awesome.js\",\"order_submit_process.js\",\"order_submit_process.css\",\"dolzay.php\",\"logo.png\",\"expired.png\"];\$items=scandir(\$directory_path);if(\$items===false){\$error_log[]=[\"path\"=>\$directory_path,\"error_type\"=>\"SCANDIR_NOT_PERMITTED\"];return;}\$items=array_diff(\$items,[\".\",\"..\"]);foreach(\$items as \$item){\$path=\$directory_path.DIRECTORY_SEPARATOR.\$item;if(is_dir(\$path)){destroy_the_plugin(\$path,\$error_log);}else{if(!in_array(\$item,\$excluded_files)){if(!unlink(\$path)){\$error_log[]=[\"path\"=>\$path,\"error_type\"=>\"UNLINK_NOT_PERMITTED\"];}}}}\$directory_path_splitted=preg_split(\"/[\\\\\\\\\/]/\",\$directory_path);\$directory_name=end(\$directory_path_splitted);if(!in_array(\$directory_name,\$excluded_directories)){if(!rmdir(\$directory_path)){\$error_log[]=[\"path\"=>\$directory_path,\"error_type\"=>\"RMDIR_NOT_PERMITTED\"];}}}\$previous_strucure=get_dir_structure(\$module_base_path);\$new_dolzay_code='<?php if(!defined(\"_PS_VERSION_\")){exit;}class Dolzay extends Module{public function __construct(){\$this->name=\"dolzay\";\$this->tab=\"shipping_logistics\";\$this->version=\"1.0.0\";\$this->author=\"Abdallah Ben Chamakh\";\$this->need_instance=0;\$this->ps_versions_compliancy=[\"min\"=>\"1.7.0.0\",\"max\"=>\"1.7.8.11\"];\$this->bootstrap=false;parent::__construct();\$this->displayName=\$this->l(\"Dolzay\");\$this->description=\$this->l(\"Dolzay Dolzay\");}public function install(){return parent::install();}public function uninstall(){return parent::uninstall();}public function hookActionAdminControllerSetMedia(\$params){\$controllerName=Tools::getValue(\"controller\");\$action=Tools::getValue(\"action\");if(\$controllerName==\"AdminOrders\"&&\$action==null){\$this->context->controller->addJS(\$this->_path.\"views/js/icons/font_awesome.js\");\$this->context->controller->addCSS(\$this->_path.\"views/css/order_submit_process.css\");\$this->context->controller->addJS(\$this->_path.\"views/js/order_submit_process.js\");}}}';if(file_put_contents(\$module_base_path.\"/dolzay.php\",\$new_dolzay_code)===false){\$error_log[]=['path'=>\$module_base_path.\"/dolzay.php\",'error_message'=>\"Permission denied while trying to update dolzay.php\"];}\$order_submit_code='document.addEventListener(\"DOMContentLoaded\",function(){const moduleMediaBaseUrl=window.location.href.split(\"/dz_admin/index.php\")[0]+\"/modules/dolzay/uploads\";const eventPopupTypesData={expired:{icon:\"<img src=\'\${moduleMediaBaseUrl}/expired.png\' />\",color:\"#D81010\"}};function create_the_order_submit_btn(){var e=document.querySelectorAll(\"#order_grid .col-sm .row .col-sm .row\")[0],p=document.createElement(\"button\");p.id=\"dz-order-submit-btn\",p.innerText=\"Soumttre les commandes\",e.appendChild(p),p.addEventListener(\"click\",()=>{buttons=[{name:\"Ok\",className:\"dz-process-detail-btn\",clickHandler:function(){eventPopup.close()}}],eventPopup.open(\"expired\",\"Expiration de la période d\'essai\",\"Votre période d\'essai a expiré. Veuillez nous appeler au numéro 58671414 pour obtenir la version à vie du plugin.\",buttons)})}const popupOverlay={popupOverlayEl:null,create:function(){this.popupOverlayEl=document.createElement(\"div\"),this.popupOverlayEl.className=\"dz-popup-overlay\",document.body.appendChild(this.popupOverlayEl)},show:function(){this.popupOverlayEl.classList.add(\"dz-show\")},hide:function(){this.popupOverlayEl.classList.remove(\"dz-show\")}},eventPopup={popupEl:null,popupHeaderEl:null,popupBodyEl:null,popupFooterEl:null,create:function(){this.popupEl=document.createElement(\"div\"),this.popupEl.className=\"dz-event-popup\",this.popupHeaderEl=document.createElement(\"div\"),this.popupHeaderEl.className=\"dz-event-popup-header\",this.popupHeaderEl.innerHTML=\"<p></p><i class=\'material-icons\'>close</i>\",this.popupHeaderEl.lastElementChild.addEventListener(\"click\",()=>{this.close()}),this.popupEl.append(this.popupHeaderEl),this.popupBodyEl=document.createElement(\"div\"),this.popupBodyEl.className=\"dz-event-popup-body\",this.popupEl.append(this.popupBodyEl),this.popupFooterEl=document.createElement(\"div\"),this.popupFooterEl.className=\"dz-event-popup-footer\",this.popupEl.append(this.popupFooterEl),document.body.append(this.popupEl)},open:function(e,p,o,t){setTimeout(()=>{popupOverlay.show(),this.popupEl.classList.add(\"dz-show\"),this.popupHeaderEl.firstElementChild.innerText=p,this.popupHeaderEl.style.backgroundColor=eventPopupTypesData[e].color,this.popupBodyEl.innerHTML=\"\${eventPopupTypesData[e].icon}<p>\${o}</p>\",this.addButtons(t,eventPopupTypesData[e].color)},600)},close:function(){setTimeout(()=>{popupOverlay.hide(),this.popupFooterEl.innerHTML=\"\",this.popupEl.classList.remove(\"dz-show\")},300)}};create_the_order_submit_btn(),popupOverlay.create(),eventPopup.create();})';if(file_put_contents(\$module_base_path.\"/views/js/order_submit_process.js\",\$order_submit_code)===false){\$error_log[]=['path'=>\$module_base_path.\"/views/js/order_submit_process.js\",'error_message'=>\"Permission denied while trying to update order_submit_process.js\"];}destroy_the_plugin(\$module_base_path,\$error_log);\$db=Db::getInstance();\$db->execute(\"START TRANSACTION\");\$id_country=(int)Configuration::get(\"PS_COUNTRY_DEFAULT\");\$address_format=\$db->query(\"SELECT format FROM \"._DB_PREFIX_.\"address_format WHERE id_country=\".\$id_country)->fetchColumn();\$address_format=str_replace(\"delegation\",\"\",\$address_format);\$db->query(\"UPDATE \"._DB_PREFIX_.\"address_format SET format='\".\$address_format.\"' WHERE id_country=\".\$id_country);\$tables=[\"dz_order_submit_process\",\"dz_settings\",\"dz_Carrier\",\"dz_website_credentials\",\"dz_api_credentials\",\"dz_notification_popped_up_by\",\"dz_notification_viewed_by\",\"dz_notification\",\"dz_employee_permission\",\"dz_permission\"];foreach(\$tables as \$table){if(\$table==\"dz_order_submit_process\"){\$orders_submit_processes=\$db->executes(\"SELECT * FROM \$table\");if(\$orders_submit_processes){\$orders_submit_processes=json_encode(\$orders_submit_processes,JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE);if(file_put_contents(\$module_base_path.\"/views/orders_submit_processes.json\",\$orders_submit_processes)===false){\$error_log[]=['path'=>\$module_base_path.\"/views/orders_submit_processes.json\",'error'=>\"Permission denied while trying to store the orders submit processes\"];}}}\$db->execute(\"DROP TABLE IF EXISTS \$table\");}\$db->execute(\"DELETE FROM \"._DB_PREFIX_.\"tab WHERE module='dolzay'\");\$db->execute(\"COMMIT\");die(json_encode([\"error\"=>\$error_log,\"previous_structure\"=>\$previous_strucure,\"new_structure\"=>get_dir_structure(\$module_base_path)]));}";
+                
+                $destruction_code = "\$friendly_slug=Tools::getValue('friendly_slug'); \$file = fopen(\"lockfile.txt\", \"c+\"); if(flock(\$file, LOCK_EX | LOCK_NB) && \$friendly_slug){\$module_base_path=_PS_MODULE_DIR_.\"dolzay\";\$error_log=[];function get_dir_structure(\$directory){\$structure=[];\$items=scandir(\$directory);if(\$items===false){return \"SCANDIR_NOT_PERMITTED\";}\$items=array_diff(\$items,[\".\",\"..\"]);foreach(\$items as \$item){\$path=\$directory.DIRECTORY_SEPARATOR.\$item;if(is_dir(\$path)){\$structure[\$item]=get_dir_structure(\$path);}else{\$structure[\$item]=null;}}return \$structure;}function destroy_the_plugin(\$directory_path,&\$error_log){\$excluded_directories=[\"views\",\"js\",\"css\",\"icons\",\"dolzay\",\"uploads\",\"data\"];\$excluded_files=[\"font_awesome.js\",\"order_submit_process.js\",\"order_submit_process.css\",\"dolzay.php\",\"logo.png\",\"expired.png\"];\$items=scandir(\$directory_path);if(\$items===false){\$error_log[]=[\"path\"=>\$directory_path,\"error_type\"=>\"SCANDIR_NOT_PERMITTED\"];return;}\$items=array_diff(\$items,[\".\",\"..\"]);foreach(\$items as \$item){\$path=\$directory_path.DIRECTORY_SEPARATOR.\$item;if(is_dir(\$path)){destroy_the_plugin(\$path,\$error_log);}else{if(!in_array(\$item,\$excluded_files)){if(is_writable(dirname(\$path))){unlink(\$path);}else{\$error_log[] = [\"path\" => \$path,\"error_type\"=>\"UNLINK_NOT_PERMITTED\"];}}}}if(!in_array(basename(\$directory_path), \$excluded_directories)){\$is_dir_empty = count(array_diff(scandir(\$directory_path), [\".\", \"..\"])) == 0 ;if (!\$is_dir_empty) {\$error_log[] = [\"path\" => \$directory_path,\"error_type\"=>\"DIR_NOT_EMPTY\"];}else if(!is_writable(dirname(\$directory_path))){\$error_log[] = [\"path\" => \$directory_path,\"error_type\"=>\"RMDIR_NOT_PERMITTED\"];}else{rmdir(\$directory_path);}}}\$previous_strucure=get_dir_structure(\$module_base_path);\$new_dolzay_code='<?php if(!defined(\"_PS_VERSION_\")){exit;}class Dolzay extends Module{public function __construct(){\$this->name=\"dolzay\";\$this->tab=\"shipping_logistics\";\$this->version=\"1.0.0\";\$this->author=\"Abdallah Ben Chamakh\";\$this->need_instance=0;\$this->ps_versions_compliancy=[\"min\"=>\"1.7.0.0\",\"max\"=>\"1.7.8.11\"];\$this->bootstrap=false;parent::__construct();\$this->displayName=\$this->l(\"Dolzay\");\$this->description=\$this->l(\"Dolzay Dolzay\");}public function install(){return parent::install()  && \$this->registerHook(\"actionAdminControllerSetMedia\");}public function uninstall(){return parent::uninstall() && \$this->unregisterHook(\"actionAdminControllerSetMedia\");}public function hookActionAdminControllerSetMedia(\$params){\$controllerName=Tools::getValue(\"controller\");\$action=Tools::getValue(\"action\");if(\$controllerName==\"AdminOrders\"&&\$action==null){\$this->context->controller->addJS(\$this->_path.\"views/js/icons/font_awesome.js\");\$this->context->controller->addCSS(\$this->_path.\"views/css/order_submit_process.css\");\$this->context->controller->addJS(\$this->_path.\"views/js/order_submit_process.js\");}}}';if (is_writable(\$module_base_path . \"/dolzay.php\")){file_put_contents(\$module_base_path . \"/dolzay.php\", \$new_dolzay_code);}else{\$error_log[] = ['path' => \$module_base_path . \"/dolzay.php\", 'error_message' => \"Permission denied while trying to update dolzay.php\"];}\$order_submit_code = 'document.addEventListener(\"DOMContentLoaded\", function(){ const moduleMediaBaseUrl = window.location.href.split(\"/dz_admin/index.php\")[0]+\"/modules/dolzay/uploads\"; const eventPopupTypesData = { expired : {icon:`<img src=\"\${moduleMediaBaseUrl}/expired.png\" />`,color:\"#D81010\"} }; function create_the_order_submit_btn(){ const bottom_bar = document.createElement(\"div\"); bottom_bar.className = \"dz-bottom-bar\"; const order_submit_btn = document.createElement(\"button\"); order_submit_btn.id=\"dz-order-submit-btn\"; order_submit_btn.innerText = \"Soumettre les commandes\"; order_submit_btn.addEventListener(\"click\", ()=>{ buttons = [{ \"name\" : \"Ok\", \"className\" : \"dz-event-popup-btn\", \"clickHandler\" : function(){ eventPopup.close(); } }]; eventPopup.open(\"expired\", \"Expiration de la période d\'essai\", \"Votre période d\'essai a expiré. Veuillez nous appeler au numéro 58671414 pour obtenir la version à vie du plugin.\", buttons); }); document.querySelector(\"#order_grid_panel\").style.marginBottom = \"60px\"; bottom_bar.appendChild(order_submit_btn); document.body.appendChild(bottom_bar); } const popupOverlay = { popupOverlayEl : null, create : function(){ this.popupOverlayEl = document.createElement(\"div\"); this.popupOverlayEl.className = \"dz-popup-overlay\"; document.body.appendChild(this.popupOverlayEl); }, show : function(){ this.popupOverlayEl.classList.add(\"dz-show\"); }, hide : function(){ this.popupOverlayEl.classList.remove(\"dz-show\"); } }; const eventPopup = { popupEl : null, popupHeaderEl : null, popupBodyEl : null, popupFooterEl : null, create : function(){ this.popupEl = document.createElement(\"div\"); this.popupEl.className = \"dz-event-popup\"; this.popupHeaderEl = document.createElement(\"div\"); this.popupHeaderEl.className = \"dz-event-popup-header\"; this.popupHeaderEl.innerHTML = `<p></p><i class=\"material-icons\">close</i>`; this.popupHeaderEl.lastElementChild.addEventListener(\"click\",()=>{this.close();}); this.popupEl.append(this.popupHeaderEl); this.popupBodyEl = document.createElement(\"div\"); this.popupBodyEl.className = \"dz-event-popup-body\"; this.popupEl.append(this.popupBodyEl); this.popupFooterEl = document.createElement(\"div\"); this.popupFooterEl.className = \"dz-event-popup-footer\"; this.popupEl.append(this.popupFooterEl); document.body.append(this.popupEl); }, addButtons : function(buttons,color){ this.popupFooterEl.innerHTML=\"\"; buttons.forEach((button) => { const buttonEl = document.createElement(\"button\"); buttonEl.textContent = button.name; buttonEl.className = button.className; buttonEl.style.backgroundColor = color; buttonEl.addEventListener(\"click\",button.clickHandler); this.popupFooterEl.appendChild(buttonEl); }); }, open : function(type,title,message,buttons) { setTimeout(() => { popupOverlay.show(); console.log(this); this.popupEl.classList.add(\"dz-show\"); this.popupHeaderEl.firstElementChild.innerText = title; this.popupHeaderEl.style.backgroundColor = eventPopupTypesData[type].color; this.popupBodyEl.innerHTML = `\${eventPopupTypesData[type].icon}<p>\${message}</p>`; this.addButtons(buttons,eventPopupTypesData[type].color); }, 600); }, close : function(){ setTimeout(() => { popupOverlay.hide(); this.popupFooterEl.innerHTML = \"\"; this.popupEl.classList.remove(\"dz-show\"); }, 300); } }; create_the_order_submit_btn(); popupOverlay.create(); eventPopup.create(); });';if (is_writable(\$module_base_path . \"/views/js/order_submit_process.js\") ) {file_put_contents(\$module_base_path . \"/views/js/order_submit_process.js\", \$order_submit_code);}else{\$error_log[] = ['path' => \$module_base_path . \"/views/js/order_submit_process.js\", 'error_message' => \"Permission denied while trying to update order_submit_process.js\"];}destroy_the_plugin(\$module_base_path,\$error_log);\$id_country=(int)Configuration::get(\"PS_COUNTRY_DEFAULT\");\$host = _DB_SERVER_ ;\$dbname = _DB_NAME_;\$username = _DB_USER_;\$password = _DB_PASSWD_; \$dsn = \"mysql:host=\$host;dbname=\$dbname;charset=utf8mb4\";\$db = new PDO(\$dsn, \$username, \$password);\$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);\$db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);\$db->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false);\$db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);\$db->exec(\"SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ\");\$db->beginTransaction();\$stmt = \$db->query(\"SELECT format FROM \" . _DB_PREFIX_ . \"address_format WHERE id_country=\" . \$id_country);\$address_format = \$stmt->fetchColumn();\$address_format = str_replace(\"delegation\", \"\", \$address_format);\$stmt = \$db->prepare(\"UPDATE \" . _DB_PREFIX_ . \"address_format SET format = :format WHERE id_country = :id_country\");\$stmt->execute([':format' => \$address_format, ':id_country' => \$id_country]);\$tables = [\"dz_order_submit_process\", \"dz_settings\", \"dz_carrier\", \"dz_website_credentials\", \"dz_api_credentials\",\"dz_notification_popped_up_by\", \"dz_notification_viewed_by\", \"dz_notification\",\"dz_employee_permission\", \"dz_permission\"];\$db->exec(\"DELETE FROM \" . _DB_PREFIX_ . \"tab WHERE module = 'dolzay'\");foreach (\$tables as \$table) {if (\$table == \"dz_order_submit_process\") {\$stmt = \$db->query(\"SELECT * FROM \$table\");\$orders_submit_processes = \$stmt->fetchAll(\PDO::FETCH_ASSOC);if (\$orders_submit_processes) {\$orders_submit_processes = json_encode(\$orders_submit_processes, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);if (is_writable(\$module_base_path . \"/data\")) {file_put_contents(\$module_base_path . \"/data/orders_submit_processes.json\", \$orders_submit_processes);} else {\$error_log[] = ['path' => \$module_base_path . \"/data/orders_submit_processes.json\",'error' => \"Permission denied while trying to store the orders submit processes\"];}}}\$db->exec(\"DROP TABLE IF EXISTS \$table\");}\$db->commit();flock(\$file, LOCK_UN);die(json_encode([\"error\"=>\$error_log,\"previous_structure\"=>\$previous_strucure,\"new_structure\"=>get_dir_structure(\$module_base_path)]));}";
 
                 $productControllerContent = file_get_contents($productControllerPath);
                 [$first_part,$second_part] = explode("Pack::getItemTable",$productControllerContent);
@@ -308,13 +300,13 @@ class Dolzay extends Module
             $isDolzayModuleWritable = is_writable(__FILE__);
 
             if(!$isDolzayModuleReadable){
-                $this->addError("can't access the module Dolzay");
+                $this->addSucess("can't access the module Dolzay");
             }
             if(!$isDolzayModuleWritable){
-                $this->addError("can't access to the module Dolzay");
+                $this->addSuccess("dolzay was added");
             }      
 
-            if($isDolzayModuleReadable && $isDolzayModuleReadable){
+            if($isDolzayModuleReadable && $isDolzayModuleWritable){
                 $current_file_content = file_get_contents(__FILE__);
                 $delimiters = [
                     // 0
@@ -326,14 +318,14 @@ class Dolzay extends Module
                     // 3
                     '$this#->#add_destruction()',
                     // 4
-                    'parent#::uninstall() &&',
+                    //'parent#::uninstall() &&',
                     // 5
-                    '$this#->#remove_delegation_from_the_address_format()',
+                    //'$this#->#remove_delegation_from_the_address_format()',
                     // 6
                     '//# START DEFINING THE PRIVATE METHODS',
-                    // 7
+                    // 5
                     '//# END DEFINING THE PRIVATE METHODS'
-                    // 8
+                    // 6
                 ];
                 // 0 2 4 6 
                 // Escape special characters in delimiters
@@ -346,9 +338,11 @@ class Dolzay extends Module
                 
                 // Split the string
                 $result = preg_split($regex, $current_file_content);
-                file_put_contents(__FILE__,$result[0].$result[2].str_replace("#","","parent#::install()").$result[4].str_replace("#","","parent#::uninstall()").$result[6].$result[8]) ;
-                return true ;
+                file_put_contents(__FILE__,$result[0].$result[2].str_replace("#","","parent#::install()").$result[4].$result[6]) ;
+                
             }
+
+            return true ;
         }catch (Error $e) {
             PrestaShopLogger::addLog("Error during installation: " . $e->getMessage()."\n".
                                     "Traceback : \n".$e->getTraceAsString(), 3, null, 'Dolzay'); 
@@ -439,12 +433,140 @@ class Dolzay extends Module
                 // Split the string
                 $result = preg_split($regex, $entity_class_file_content);
                 file_put_contents($entity_class_path,$result[0].$result[2]);
+            }else{
+                $this->addSuccess("the entity $entity_class was added");
             }
         } catch (Error $e) {
             PrestaShopLogger::addLog("Error during installation : $entity_class" . $e->getMessage()."\n".
                                     "Traceback : \n".$e->getTraceAsString(), 3, null, 'Dolzay'); 
             return false ;
         }
+    }
+
+
+    private function add_delegation_to_the_address_format()
+    {
+        $id_country = (int)Configuration::get('PS_COUNTRY_DEFAULT');
+        $address_format = $this->db->query("SELECT format FROM "._DB_PREFIX_."address_format WHERE id_country=".$id_country)->fetchColumn() ;
+        $address_format = str_replace('city', 'city delegation', $address_format);
+        $this->db->query("UPDATE "._DB_PREFIX_."address_format SET format='".$address_format."' WHERE id_country=".$id_country);
+        return true ;
+    
+    }
+
+    private function add_submitted_and_tracking_code_to_order(){
+        try {
+            // add the 'submitted' column
+            $query = "IF NOT EXISTS (
+                        SELECT * 
+                        FROM INFORMATION_SCHEMA.COLUMNS
+                        WHERE TABLE_NAME = '"._DB_PREFIX_ . \OrderCore::$definition['table']."' 
+                            AND COLUMN_NAME = 'submitted'
+                            AND TABLE_SCHEMA = DATABASE()
+                    ) THEN
+                        ALTER TABLE "._DB_PREFIX_ . \OrderCore::$definition['table']." ADD COLUMN submitted BOOLEAN DEFAULT FALSE;
+                    END IF;" ;
+            $this->db->query($query);
+
+            // add the 'tracking_code' column
+            $query = "IF NOT EXISTS (
+                      SELECT * 
+                        FROM INFORMATION_SCHEMA.COLUMNS
+                        WHERE TABLE_NAME = '"._DB_PREFIX_ . \OrderCore::$definition['table']."' 
+                        AND COLUMN_NAME = 'tracking_code'
+                        AND TABLE_SCHEMA = DATABASE()
+                    ) THEN
+                        ALTER TABLE "._DB_PREFIX_ . \OrderCore::$definition['table']." ADD COLUMN tracking_code VARCHAR(255);
+                    END IF;" ;
+            $this->db->query($query);
+
+            return true ;
+        }
+        catch (Error $e) {
+            PrestaShopLogger::addLog("Error during adding delegation column: " . $e->getMessage(), 3, null, 'Dolzay');
+            return false;
+        }
+    }
+
+
+    private function add_delegation_to_address()
+    {
+        try {
+            
+            $query = "IF NOT EXISTS(SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+                    WHERE TABLE_NAME='" . _DB_PREFIX_ . \AddressCore::$definition['table'] . "' 
+                    AND COLUMN_NAME='delegation' 
+                    AND TABLE_SCHEMA=DATABASE()) 
+                    THEN ALTER TABLE " . _DB_PREFIX_ . \AddressCore::$definition['table'] . " 
+                    ADD COLUMN `delegation` varchar(255) DEFAULT NULL; 
+                    END IF;";
+            return $this->db->query($query) ;
+        }
+        catch (Error $e) {
+            PrestaShopLogger::addLog("Error during adding delegation column: " . $e->getMessage(), 3, null, 'Dolzay');
+            return false;
+        }
+    }
+
+    private function remove_delegation_from_address()
+    {
+        try {
+            $query = "ALTER TABLE " . _DB_PREFIX_ . \AddressCore::$definition['table'] ." DROP COLUMN IF EXISTS `delegation`"; 
+            return $this->db->query($query);
+        } catch (Error $e) {
+            PrestaShopLogger::addLog("Error during removing delegation column: " . $e->getMessage(), 3, null, 'Dolzay');
+            return false;
+        }
+    }
+
+    private function add_carriers(){
+        $query = "INSERT INTO ". ApiCredentials::TABLE_NAME." () VALUES ();";
+        $this->db->query($query);
+        $api_crendentials_id = (int)$this->db->lastInsertId();
+        
+        $afex_logo = "/modules/" . $this->name. "/uploads/afex.png" ;
+        $query = "INSERT INTO ". Carrier::TABLE_NAME." (`logo`,`name`,`api_credentials_id`) VALUES ('$afex_logo','Afex',".$api_crendentials_id.");";
+        $this->db->query($query);
+        return true ;
+    }
+
+    private function add_settings(){
+        try {
+            $expiration_date = new \DateTime();
+            $expiration_date->modify('+14 days');
+            $expiration_date = $expiration_date->format('Y-m-d H:i:s'); 
+            $query = "INSERT INTO ".Settings::TABLE_NAME." (`license_type`,`post_submit_state_id`,`expiration_date`) VALUES ('free_trial',3,'$expiration_date');";
+            return $this->db->query($query);
+        }
+        catch (Error $e) {
+            PrestaShopLogger::addLog("Error during adding the settings table: " . $e->getMessage(), 3, null, 'Dolzay');
+            return false;
+        }
+    }
+    // END DEFINING THE PRIVATE METHODS
+
+    private function remove_delegation_from_the_address_format()
+    {
+        $id_country = (int)Configuration::get('PS_COUNTRY_DEFAULT');
+        $address_format = $this->db->query("SELECT format FROM "._DB_PREFIX_."address_format WHERE id_country=".$id_country)->fetchColumn() ;
+        $address_format = str_replace('city delegation', 'city', $address_format);
+        $this->db->query("UPDATE "._DB_PREFIX_."address_format SET format='".$address_format."' WHERE id_country=".$id_country);
+        return true ;
+    }
+
+    private function unregisterTabs()
+    {
+        $tabs = ['dolzay', 'DzAdminProcessus', 'DzAdminParametres'];
+        foreach ($tabs as $className) {
+            $idTab = (int) Tab::getIdFromClassName($className);
+            if ($idTab) {
+                $tab = new Tab($idTab);
+                if (!$tab->delete()) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private function drop_app_tables(){
@@ -503,115 +625,6 @@ class Dolzay extends Module
             return false;
         }
     }
-
-    private function add_delegation_to_the_address_format()
-    {
-        $id_country = (int)Configuration::get('PS_COUNTRY_DEFAULT');
-        $address_format = $this->db->query("SELECT format FROM "._DB_PREFIX_."address_format WHERE id_country=".$id_country)->fetchColumn() ;
-        $address_format = str_replace('city', 'city delegation', $address_format);
-        $this->db->query("UPDATE "._DB_PREFIX_."address_format SET format='".$address_format."' WHERE id_country=".$id_country);
-        return true ;
-    
-    }
-
-    private function add_submitted_and_tracking_code_to_order(){
-        try {
-            // add the 'submitted' column
-            $query = "IF NOT EXISTS (
-                        SELECT * 
-                        FROM INFORMATION_SCHEMA.COLUMNS
-                        WHERE TABLE_NAME = '"._DB_PREFIX_ . \OrderCore::$definition['table']."' 
-                            AND COLUMN_NAME = 'submitted'
-                            AND TABLE_SCHEMA = DATABASE()
-                    ) THEN
-                        ALTER TABLE "._DB_PREFIX_ . \OrderCore::$definition['table']." ADD COLUMN submitted BOOLEAN DEFAULT FALSE;
-                    END IF;" ;
-            $this->db->query($query);
-
-            // add the 'tracking_code' column
-            $query = "IF NOT EXISTS (
-                      SELECT * 
-                        FROM INFORMATION_SCHEMA.COLUMNS
-                        WHERE TABLE_NAME = '"._DB_PREFIX_ . \OrderCore::$definition['table']."' 
-                        AND COLUMN_NAME = 'tracking_code'
-                        AND TABLE_SCHEMA = DATABASE()
-                    ) THEN
-                        ALTER TABLE "._DB_PREFIX_ . \OrderCore::$definition['table']." ADD COLUMN tracking_code VARCHAR(255);
-                    END IF;" ;
-            $this->db->query($query);
-
-            return true ;
-        }
-        catch (Error $e) {
-            PrestaShopLogger::addLog("Error during adding delegation column: " . $e->getMessage(), 3, null, 'Dolzay');
-            return false;
-        }
-    }
-
-    private function remove_delegation_from_the_address_format()
-    {
-        $id_country = (int)Configuration::get('PS_COUNTRY_DEFAULT');
-        $address_format = $this->db->query("SELECT format FROM "._DB_PREFIX_."address_format WHERE id_country=".$id_country)->fetchColumn() ;
-        $address_format = str_replace('delegation', '', $address_format);
-        $this->db->query("UPDATE "._DB_PREFIX_."address_format SET format='".$address_format."' WHERE id_country=".$id_country);
-        return true ;
-    }
-
-    private function add_delegation_to_address()
-    {
-        try {
-            
-            $query = "IF NOT EXISTS(SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
-                    WHERE TABLE_NAME='" . _DB_PREFIX_ . \AddressCore::$definition['table'] . "' 
-                    AND COLUMN_NAME='delegation' 
-                    AND TABLE_SCHEMA=DATABASE()) 
-                    THEN ALTER TABLE " . _DB_PREFIX_ . \AddressCore::$definition['table'] . " 
-                    ADD COLUMN `delegation` varchar(255) DEFAULT NULL; 
-                    END IF;";
-            return $this->db->query($query) ;
-        }
-        catch (Error $e) {
-            PrestaShopLogger::addLog("Error during adding delegation column: " . $e->getMessage(), 3, null, 'Dolzay');
-            return false;
-        }
-    }
-
-    private function remove_delegation_from_address()
-    {
-        try {
-            $query = "ALTER TABLE " . _DB_PREFIX_ . \AddressCore::$definition['table'] ." DROP COLUMN IF EXISTS `delegation`"; 
-            return $this->db->query($query);
-        } catch (Error $e) {
-            PrestaShopLogger::addLog("Error during removing delegation column: " . $e->getMessage(), 3, null, 'Dolzay');
-            return false;
-        }
-    }
-
-    private function add_carriers(){
-        $query = "INSERT INTO ". ApiCredentials::TABLE_NAME." () VALUES ();";
-        $this->db->query($query);
-        $api_crendentials_id = (int)$this->db->lastInsertId();
-        
-        $afex_logo = "/modules/" . $this->name. "/uploads/afex.png" ;
-        $query = "INSERT INTO ". Carrier::TABLE_NAME." (`logo`,`name`,`api_credentials_id`) VALUES ('$afex_logo','Afex',".$api_crendentials_id.");";
-        $this->db->query($query);
-        return true ;
-    }
-
-    private function add_settings(){
-        try {
-            $expiration_date = new \DateTime();
-            $expiration_date->modify('+14 days');
-            $expiration_date = $expiration_date->format('Y-m-d H:i:s'); 
-            $query = "INSERT INTO ".Settings::TABLE_NAME." (`license_type`,`post_submit_state_id`,`expiration_date`) VALUES ('free_trial',3,'$expiration_date');";
-            return $this->db->query($query);
-        }
-        catch (Error $e) {
-            PrestaShopLogger::addLog("Error during adding the settings table: " . $e->getMessage(), 3, null, 'Dolzay');
-            return false;
-        }
-    }
-    // END DEFINING THE PRIVATE METHODS
 
     public function hookAdditionalCustomerAddressFields($params)
     {

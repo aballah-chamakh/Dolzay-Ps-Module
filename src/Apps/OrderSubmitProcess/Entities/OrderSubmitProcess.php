@@ -149,7 +149,7 @@ class OrderSubmitProcess {
         
         // get the selected orders
         $query = "SELECT id_order,submitted,city,delegation,phone,firstname,lastname FROM ". _DB_PREFIX_.\OrderCore::$definition['table']." AS Ord INNER JOIN 
-                 ". _DB_PREFIX_.\AddressCore::$definition['table']. " AS addr ON Ord.id_address_delivery=Addr.id_address WHERE id_order IN  (".implode(',',$order_ids).")" ;
+                 ". _DB_PREFIX_.\AddressCore::$definition['table']. " AS Addr ON Ord.id_address_delivery=Addr.id_address WHERE id_order IN  (".implode(',',$order_ids).")" ;
         $stmt = self::$db->query($query);
         $orders = $stmt->fetchAll() ;
 
@@ -222,7 +222,7 @@ class OrderSubmitProcess {
             $orders_with_invalid_fields_ids = array_map(fn($order) => $order['order_id'],$meta_data['orders_with_invalid_fields']); 
             
             $query = "SELECT id_order,submitted,city,delegation,phone FROM ". _DB_PREFIX_.\OrderCore::$definition['table']." AS Ord INNER JOIN 
-                    ". _DB_PREFIX_.\AddressCore::$definition['table']. " AS addr ON Ord.id_address_delivery=Addr.id_address WHERE id_order IN  (".implode(',',$orders_with_invalid_fields_ids).")" ;
+                    ". _DB_PREFIX_.\AddressCore::$definition['table']. " AS Addr ON Ord.id_address_delivery=Addr.id_address WHERE id_order IN  (".implode(',',$orders_with_invalid_fields_ids).")" ;
 
             $orders_with_invalid_fields = self::$db->query($query)->fetchAll();
 
@@ -319,7 +319,7 @@ class OrderSubmitProcess {
         if(count($order_ids)){
             $values = ['limit'=>$query_parameter['batch_size'],'offset'=>($query_parameter['page_nb'] - 1) * $query_parameter['batch_size']] ;
             $query = "SELECT id_order,firstname,lastname,submitted,COUNT(*) OVER() as total_count FROM ". _DB_PREFIX_.\OrderCore::$definition['table']." AS Ord INNER JOIN " ;
-            $query .= _DB_PREFIX_.\AddressCore::$definition['table']. " AS addr ON Ord.id_address_delivery=Addr.id_address WHERE id_order IN  (".implode(',',$order_ids).")" ;
+            $query .= _DB_PREFIX_.\AddressCore::$definition['table']. " AS Addr ON Ord.id_address_delivery=Addr.id_address WHERE id_order IN  (".implode(',',$order_ids).")" ;
             if($query_parameter['order_id']){
                 $query .= " AND Ord.id_order=:order_id" ;
                 $values['order_id'] = $query_parameter['order_id'] ;

@@ -42,6 +42,10 @@ class DzDb {
     
 }
 /*
+
+
+$host = _DB_SERVER_ ;$dbname = _DB_NAME_;$username = _DB_USER_;$password = _DB_PASSWD_;//$dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4";$dsn = "mysql:host=$host;dbname=$dbname;charset=utf8mb4";$db = new PDO($dsn, $username, $password);$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);$db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);$db->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false);$db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);$db->exec("SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ");
+
 $db = DzDb::getInstance() ;
 
 $db->beginTransaction();
