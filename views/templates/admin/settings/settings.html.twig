@@ -260,14 +260,16 @@
             }
 
             function updateCarrier(carrier_name){
-                let updateCarrierBtn = popup.popupFooterEl.firstElementChild ;
-                updateCarrierBtn.innerHTML += `<div class="spinner-border dz-btn-spinner-white" role="status" >
-                    <span class="sr-only">Loading...</span>
-                 </div>
-                `
+
                 let [isCarrierFormValid,carrierFormData] = validateCarrierForm()
                 console.log(carrierFormData)
                 if(isCarrierFormValid){
+                    
+                    let updateCarrierBtn = popup.popupFooterEl.firstElementChild ;
+                    updateCarrierBtn.innerHTML += `<div class="spinner-border dz-btn-spinner-white" role="status" >
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    `
                     disableOrEnablePopup("disable")
                     fetch(moduleControllerBaseUrl+"/carrier/"+carrier_name+"?_token="+_token, {
                         method: 'PUT',

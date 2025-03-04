@@ -19,8 +19,8 @@
             <div class="dz-process-state-body">
                 <div class="dz-process-key-value"><label>Transporteur : </label><span>{{process.carrier}}</span></div>
                 <div class="dz-process-key-value"><label>État : </label> <span class="dz-badge dz-process-status" style="background-color:{{process.status_color}}">{{process.status}}</span></div>
-                <div class="dz-process-key-value"><label>Heure et Date de début : </label> <span class="dz-process-start-date" >{{process.started_at|date('d-m-Y H:i:s')}}</span></div>
-                <div class="dz-process-key-value"><label>Heure et Date de fin : </label> <span class="dz-process-end-date" >{{process.ended_at ? process.ended_at|date('d-m-Y H:i:s') : "____"}}</span></div>
+                <div class="dz-process-key-value"><label>Heure et Date de début : </label> <span class="dz-process-start-date" >{{process.started_at}}</span></div>
+                <div class="dz-process-key-value"><label>Heure et Date de fin : </label> <span class="dz-process-end-date" >{{process.ended_at ? process.ended_at : "____"}}</span></div>
             
                 {% if process.items_to_process_cnt %}
                     <div class="dz-process-key-value dz-vertical-direction">
@@ -603,6 +603,6 @@
         
 
 </script>
-<script type="text/javascript" src="{{ asset('../modules/dolzay/views/js/icons/font_awesome.js') }}"></script>
+<script type="text/javascript" src="{{ constant('_PS_MODULE_DIR_') ~ 'dolzay/uploads/dolzay-logo.png' }}"></script>
 
 {% endblock %}

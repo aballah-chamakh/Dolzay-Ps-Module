@@ -45,7 +45,6 @@ class CarrierController extends FrameworkBundleAdminController
                 $stmt->bindParam(':website_credentials_id', $carrier['website_credentials_id'], \PDO::PARAM_INT);
                 $stmt->execute();
                 $website_credentials = $stmt->fetch();
-                unset($carrier['website_credentials_id']) ;
                 $carrier['website_credentials'] = $website_credentials;
             }
             unset($carrier['website_credentials_id']) ;
@@ -56,7 +55,7 @@ class CarrierController extends FrameworkBundleAdminController
                 $stmt->bindParam(':api_credentials_id', $carrier['api_credentials_id'], \PDO::PARAM_INT);
                 $stmt->execute();
                 $api_credentials = $stmt->fetch();
-                unset($carrier['api_credentials_id']);
+                $api_credentials['is_user_id_required'] = (int)$api_credentials['is_user_id_required'] ;
                 $carrier['api_credentials'] = $api_credentials;
             }
             unset($carrier['api_credentials_id']) ;

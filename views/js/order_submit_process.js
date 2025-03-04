@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
 
     const moduleControllerBaseUrl = window.location.href.split('/index.php')[0]+"/dz";
-    const moduleMediaBaseUrl = window.location.href.split('/dz_admin/index.php')[0]+"/modules/dolzay/uploads";
+    const moduleMediaBaseUrl = window.location.origin+"/modules/dolzay/uploads";
     const urlParams = new URLSearchParams(window.location.search);
     const _token = urlParams.get('_token');
     //const dz_carriers = ["Afex"] ;
@@ -608,7 +608,7 @@ document.addEventListener('DOMContentLoaded', function() {
             alreadySubmittedAndInvalidOrdersStepContainer.className = "already-submitted-and-invalid-orders-step-container"
             
             // add the already submitted orders
-            if(process.meta_data['already_submitted_orders']){
+            if(process.meta_data['already_submitted_orders'] && process.meta_data['already_submitted_orders'].length){
                 let already_submitted_orders = process.meta_data.already_submitted_orders
                 let table_rows = ""            
                 for (let i = 0; i < already_submitted_orders.length; i++) {
@@ -653,7 +653,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             }
             // add the already submitted orders
-            if(process.meta_data['orders_with_invalid_fields']){
+            if(process.meta_data['orders_with_invalid_fields'] && process.meta_data['orders_with_invalid_fields'].length){
                 let orders_with_invalid_fields = process.meta_data.orders_with_invalid_fields
                 
                 let table_rows = ""            
@@ -848,65 +848,3 @@ document.addEventListener('DOMContentLoaded', function() {
     
 })
 
-/*
-TRASH CODE : 
-
-    function create_the_order_submit_btn(){
-
-        const order_table_header = document.querySelectorAll("#order_grid .col-sm .row .col-sm .row")[0];
-        const order_submit_btn = document.createElement('button')
-        order_submit_btn.id="dz-order-submit-btn" ;
-        order_submit_btn.innerText = "Soumttre les commandes"
-        order_table_header.appendChild(order_submit_btn)
-
-
-
-        order_submit_btn.addEventListener('click', ()=>{
-            selectCarrierStep.render()       
-        });
-    }
-
-        checkForARunningProcess : function(recursive){
-            fetch(
-                moduleControllerBaseUrl+"/order_submit_process/check_for_a_running_process?_token="+_token,{
-                    method : 'GET',
-                    credentials: 'include'
-                }
-            ).then(response => response.json())
-            .then(function (data){
-                if(data.status == 'success' && data.process ){
-                    let process = data.process ;
-                    if(process.status == "Initié"){
-                        if(!recursive){
-                            showTheLoaderOfCheckingAlreadySubmittedAnOrdersWithInvalidFields(false)
-                        }
-                        // re-check the status the osp after 2 seconds 
-                        setTimeout(()=>{Server.checkForARunningProcess(true)},2000)
-                    }else if(process.status == "Contient des commandes invalides"){
-                        
-                        alreadySubmittedAndInvalidOrdersStep.render(data.process)
-                    }
-                    else if (process.status == "Actif"){
-                        progressOfSubmittingOrdersStep.render(process)
-                    }
-    
-                    // handle the case of recursive=true and the process did end 
-                    if(recursive && ospFinalStatuses.includes(process['status'])){
-                        popup.close()
-                        buttons = [
-                            {
-                                'name' : 'Détail',
-                                'className' : "dz-event-popup-btn",
-                                'clickHandler' : function(){
-                                    console.log("go to the detail page of the process with the id : "+process['id'])
-                                }
-                            }
-                        ]
-                        let message = "Le processus s'est arrêté avec le statut :"+process['status']
-                        eventPopup.open("information","Information",message,buttons)
-                    }
-                }
-            })
-        } 
-
-*/

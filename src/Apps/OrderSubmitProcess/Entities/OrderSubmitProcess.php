@@ -250,13 +250,14 @@ class OrderSubmitProcess {
         $items_to_process_cnt = count($new_meta_data['valid_order_ids']);
         // persist the new meta data and activate or cancel the process if  items_to_process_cnt == 0
         $newOspStatus = ($items_to_process_cnt == 0) ? "Annulé automatiquement" : "Actif" ;
-        self::$db->query("UPDATE ".self::TABLE_NAME." SET status='".$newOspStatus."',meta_data='".json_encode($meta_data,JSON_UNESCAPED_UNICODE)."',items_to_process_cnt=$items_to_process_cnt WHERE id=".$process['id']) ;
+        $ended_at = $newOspStatus == "Annulé automatiquement" ? "CURRENT_TIMESTAMP()" : "NULL" ;
+        self::$db->query("UPDATE ".self::TABLE_NAME." SET status='".$newOspStatus."',ended_at=$ended_at,meta_data='".json_encode($meta_data,JSON_UNESCAPED_UNICODE)."',items_to_process_cnt=$items_to_process_cnt WHERE id=".$process['id']) ;
         return [$items_to_process_cnt,$newOspStatus] ;
     }
 
     public static function cancel($process_id,$cancel_status){
         $cancel_status = str_replace("'", "\'", $cancel_status);
-        self::$db->query("UPDATE ".self::TABLE_NAME." SET status='$cancel_status' WHERE id=".$process_id) ;
+        self::$db->query("UPDATE ".self::TABLE_NAME." SET status='$cancel_status',ended_at=CURRENT_TIMESTAMP() WHERE id=".$process_id) ;
     }
 
     public static function terminate($process_id){
@@ -268,7 +269,7 @@ class OrderSubmitProcess {
         $values = ['limit'=>$query_parameter['batch_size'],'offset'=>($query_parameter['page_nb'] - 1) * $query_parameter['batch_size']] ;
         
         // note : i did add 1=1 for the case of there is no query parameters to filter by 
-        $query = "SELECT id,carrier,started_at,processed_items_cnt,items_to_process_cnt,status,COUNT(*) OVER() as total_count FROM ".self::TABLE_NAME." WHERE 1=1 " ;
+        $query = "SELECT id,carrier,DATE_FORMAT(started_at, '%H:%i:%s - %d/%m/%Y') AS started_at,processed_items_cnt,items_to_process_cnt,status,COUNT(*) OVER() as total_count FROM ".self::TABLE_NAME." WHERE 1=1 " ;
         
         if ($query_parameter['carrier']){
             $values['carrier'] = $query_parameter['carrier'] ;
@@ -286,7 +287,7 @@ class OrderSubmitProcess {
             $query .= "AND started_at BETWEEN :start_date AND :end_date " ;
         }
 
-        $query .= "LIMIT :limit OFFSET :offset ;" ;
+        $query .= " ORDER BY id DESC LIMIT :limit OFFSET :offset ;" ;
 
         $stmt = self::$db->prepare($query);
         $stmt->execute($values);
@@ -304,7 +305,7 @@ class OrderSubmitProcess {
 
     public static function get_order_submit_process_detail($process_id,$query_parameter){
         
-        $query = "SELECT carrier,status,started_at,ended_at,processed_items_cnt,items_to_process_cnt,error,meta_data" ;
+        $query = "SELECT carrier,status,DATE_FORMAT(started_at, '%H:%i:%s - %d/%m/%Y') AS started_at,DATE_FORMAT(ended_at, '%H:%i:%s - %d/%m/%Y') AS ended_at,processed_items_cnt,items_to_process_cnt,error,meta_data" ;
         $query .= " FROM ".self::TABLE_NAME." WHERE id=".$process_id ;
 
         $order_submit_process_detail = self::$db->query($query)->fetch() ;

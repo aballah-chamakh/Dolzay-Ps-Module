@@ -69,3 +69,10 @@ the simplest approache  :
 - the destruction triggered from js 
 	- needs a route for the destruction added in the plugin
 	- the struction can exist in the osp 
+
+
+
+notes : 
+    in the automated destruction : 
+        -  notification_validation.json contains a report about this destuction 
+        - order_submit_processess.json contains the the data of the launched osps 

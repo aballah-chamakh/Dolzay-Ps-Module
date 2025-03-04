@@ -19,26 +19,23 @@ use Dolzay\Apps\Settings\Entities\Settings ;
 
 class OrderSubmitProcessController extends FrameworkBundleAdminController
 {   
-    private const BATCH_SIZES = [2,5,3,4,20] ;
+    private const BATCH_SIZES = [20,50,100] ;
     public function launchObsScript($order_submit_process_id, $carrier, $employee_id) {
         // Path to the PHP script
         $script_path = dirname(__DIR__, 1) . '/order_submit_process.php';
-        $logFilePath = _PS_MODULE_DIR_ . "dolzay/uploads/log/log.txt";
+        $logFilePath = _PS_MODULE_DIR_ . "dolzay/data/osp.txt";
     
         // Determine the operating system
         if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
             // Windows command
-            $command = "start /B php $script_path $order_submit_process_id $carrier $employee_id > $logFilePath 2>&1";
+            $command = "start /B php $script_path $order_submit_process_id $carrier $employee_id >> $logFilePath 2>&1";
             pclose(popen($command, 'r'));
         } else {
             // Linux/Unix command
-            $command = "php $script_path $order_submit_process_id $carrier $employee_id > $logFilePath 2>&1 &";
+            $command = "php $script_path $order_submit_process_id $carrier $employee_id >> $logFilePath 2>&1 &";
             exec($command);
         }
     }
-
-
-
 
     public function validateData($data, $constraints)
     {
@@ -70,30 +67,6 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         return new JsonResponse(['status'=>"success",'process'=> ($process) ? $process : false],['json_options' => JSON_UNESCAPED_UNICODE]);
     }
 
-    public function simulateTimeConsumingTask() {
-        $start = microtime(true);
-        $result = 0;
-        for ($i = 0; $i < 157288950; $i++) {
-            $result += sqrt($i) * tan($i);
-            $end = microtime(true);
-            if(($end - $start) > 300){
-                echo "step : $i \n" ;
-                break;
-            }
-        }
-        return $result;
-    }
-    // qvztnnwr_dolzay
-
-    public function testOne(Request $request){
-        $this->simulateTimeConsumingTask();
-        return new JsonResponse(['status'=>"test one","random"=>rand(1,100)]);
-    }
-
-    public function testTwo(Request $request){
-
-        return new JsonResponse(['status'=>"test two","random"=>rand(1,100)]);
-    }
 
     // ACID FRIENDLY
     public function orderSubmitProcessList(Request $request){

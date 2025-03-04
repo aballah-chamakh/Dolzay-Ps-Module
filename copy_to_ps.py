@@ -39,3 +39,4 @@ source_directory = 'C:/Users/chama/Bureau/dolzay'
 destination_directory = 'C:/xampp/htdocs/prestashop/modules/dolzay'
 
 copy_directory(source_directory, destination_directory)
+print("DONE !!!")

@@ -13,21 +13,31 @@ class BaseCarrier {
     }
 
     private static function connect_to_db(){
-        $host = _DB_SERVER_;
-        $dbname = _DB_NAME_;
-        $username = _DB_USER_;
-        $password = _DB_PASSWD_;
-    
-        $dsn = "mysql:host=$host;dbname=$dbname;charset=utf8mb4";
-    
-        $conn = new PDO($dsn, $username, $password);
+
+        if (PHP_OS_FAMILY === 'Linux') {
+            [$dbHost,$dbPort]=explode(":",_DB_SERVER_);
+        }else{
+            $dbHost = _DB_SERVER_;
+        }
+        $dbName = _DB_NAME_;
+        $dbUser = _DB_USER_;
+        $dbPassword = _DB_PASSWD_;
+
+        $dsn = "mysql:host=$dbHost;";
+        if (PHP_OS_FAMILY === 'Linux'){
+            $dsn .="port=$dbPort;";
+        }
+        $dsn .= "dbname=$dbName;charset=utf8mb4";
+
+        $conn = new PDO($dsn, $dbUser, $dbPassword);
         $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
         $conn->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false);
         $conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+        $conn->exec("SET NAMES utf8mb4 COLLATE utf8mb4_general_ci");
         $conn->exec("SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ");
-        
         return $conn;
+
     }
 
     protected static function get_post_submit_status_id(){
@@ -43,7 +53,7 @@ class BaseCarrier {
         $order_ids = json_decode($process['meta_data'],true)['valid_order_ids'] ;
 
         // get orders with their info 
-        $query = "SELECT id_order,total_paid,firstname,lastname,address1,city,delegation,phone FROM ". _DB_PREFIX_."orders AS Ord INNER JOIN ". _DB_PREFIX_."address AS addr ON Ord.id_address_delivery=Addr.id_address WHERE Ord.id_order IN  (".implode(',',$order_ids).")" ;
+        $query = "SELECT id_order,total_paid,firstname,lastname,address1,city,delegation,phone FROM ". _DB_PREFIX_."orders AS Ord INNER JOIN ". _DB_PREFIX_."address AS Addr ON Ord.id_address_delivery=Addr.id_address WHERE Ord.id_order IN  (".implode(',',$order_ids).")" ;
         $stmt = self::$db->query($query);
         $orders_to_submit= $stmt->fetchAll() ;
     
@@ -76,7 +86,6 @@ class BaseCarrier {
 
     public static function updateOrderSubmitProcess($updates){
         $query = "UPDATE "._MODULE_PREFIX_."order_submit_process SET ".implode(", ", $updates)." WHERE id=".self::$process_id ;
-        echo "query : $query \n" ;
         self::$db->query($query);
     }
 
@@ -86,7 +95,7 @@ class BaseCarrier {
     }
 
     protected static function addOrderStatusHistory($order_id,$post_submit_status_id){
-        $query = "INSERT INTO "._DB_PREFIX_."order_history (id_employee,id_order,id_order_state) VALUES (:employee_id,:order_id,:order_state_id);";
+        $query = "INSERT INTO "._DB_PREFIX_."order_history (id_employee,id_order,id_order_state,date_add) VALUES (:employee_id,:order_id,:order_state_id,NOW());";
         $stmt = self::$db->prepare($query);
         $stmt->execute([
             'employee_id'=>self::$employee_id,

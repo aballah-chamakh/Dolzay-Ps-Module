@@ -1,22 +1,10 @@
 <?php
 
-if (new \DateTime() > new \DateTime("2025-02-28 16:45:30")){
-    echo "Yes" ;
-}else {
-    echo "No" ;
+if (true){
+    $x =10  ;
 }
-
-exit ;
-$file = fopen("lockfile.txt", "c+"); // Open file
-
-if (flock($file, LOCK_EX | LOCK_NB)) {
-    echo "Lock acquired!\n";
-    sleep(30);
-    flock($file, LOCK_UN);
-} else {
-    echo "Another process is holding the lock.\n";
-}
-
+$o = $x ;
+echo $o ;
 /*
 function addIndexFile($dir) {
     // Skip . and .. directories

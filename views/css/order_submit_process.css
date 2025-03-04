@@ -283,6 +283,8 @@
     margin-bottom: 10px;
 }
 
+
+
 .dz-meta-data-table thead{
     background-color :#1f4f7a ;
     color : white ;
@@ -292,8 +294,12 @@
     vertical-align: middle;
     border: none;
     font-weight: 500;
+    background-color: #1f4f7a;
 }
 
+.dz-meta-data-table tbody th{
+    background-color: white;
+}
 .dz-meta-data-table tbody tr td .dz-invalid-field-badge-container{
     display: flex;
     justify-content: center;
@@ -391,158 +397,4 @@
 }
 
 
-
-
-/*
-
-DONE DONE
-
-buttons = [
-    {
-        'name' : 'Détail',
-        'className' : "dz-process-detail-btn",
-        'clickHandler' : function(){
-                        console.log(`go to the detail page of the process with the id : ${process.id}`)
-        }
-    }
-]
-eventPopup.open("restricted","Restreint"
-                ,"Vous ne pouvez pas soumettre de commandes pour le moment, car un processus de soumission de commandes est déjà en cours",
-                buttons)
-
-=============================================
-
-DONE DONE
-buttons = [
-    {
-        'name' : 'Ok',
-        'className' : "dz-process-detail-btn",
-        'clickHandler' : function(){
-                        eventPopup.close();
-        }
-    }
-]
-eventPopup.open("expired", 
-                "Expiration de la période d'essai",
-                "Votre période d'essai a expiré. Veuillez nous appeler au numéro 58671414 pour obtenir la version à vie du plugin.",
-                buttons)
-
-==============================================
-
-DONE DONE
-buttons = [
-    {
-        'name' : 'Ok',
-        'className' : "dz-process-detail-btn",
-        'clickHandler' : function(){
-            eventPopup.close()
-        }
-    }
-]
-
-message = `Ce processus a été annulé, car il n'a aucune commande valide à soumettre.`
-
-eventPopup.open("info","Information",message,buttons)
-
-=======================================
-
-DONE DONE
-
-buttons = [
-    {
-        'name' : 'Détail',
-        'className' : "dz-process-detail-btn",
-        'clickHandler' : function(){
-                        console.log(`go to the detail page of the process with the id : ${data.process_id}`)
-        }
-    }
-]
-let message = ""
-if (data.process_status == "Annulé par l'utilisateur"){
-    message = "Ce processus a été annulé par un autre utilisateur."
-}else{
-    message = `Ce processus a été poursuivi par un autre utilisateur, et son état actuel est : ${data.process_status}.`
-}
-eventPopup.open("info","Information",message,buttons)
-
-
-=============================================
-DONE DONE
-buttons = [
-    {
-        'name' : 'Détail',
-        'className' : "dz-process-detail-btn",
-        'clickHandler' : function(){
-                        console.log(`go to the detail page of the process with the id : ${process_id}`)
-        }
-    }
-]
-
-let message = ""
-if (data.process_status == "Annulé par l'utilisateur"){
-    message = "Ce processus a été annulé par un autre utilisateur."
-}else{
-    message = `Ce processus a été poursuivi par un autre utilisateur, et son état actuel est : ${data.process_status}.`
-}
-eventPopup.open("info","Information",message,buttons)
-
-
-====================================================
-
-DONE DONE
-buttons = [
-    {
-        'name' : 'Ok',
-        'className' : "dz-process-detail-btn",
-        'clickHandler' : function(){
-                        eventPopup.close();
-        }
-    }
-]
-
-let message = `${process.processed_items_cnt}/${process.items_to_process_cnt} commandes ont été soumises avec succès à ${process.carrier}.`
-eventPopup.open("success","Succés",message,buttons)
-
-
-===================================================
-
-DONE DONE
-
-buttons = [
-    {
-        'name' : 'Ok',
-        'className' : "dz-process-detail-btn",
-        'clickHandler' : function(){
-                        eventPopup.close();
-        }
-    }
-]
-
-let message = "Le processus de soumission des commandes a bien été arrêté"
-if(process.processed_items_cnt > 0){
-    message =`Le processus de soumission des commandes a bien été arrêté après la soumission de ${process.processed_items_cnt}/${process.items_to_process_cnt} commandes à ${process.carrier}.`
-}
-eventPopup.open("success","Succés",message,buttons)
-
-
-===================================================
-
-
-buttons = [
-    {
-        'name' : 'Détail',
-        'className' : "dz-process-detail-btn",
-        'clickHandler' : function(){
-            console.log(`go to the process with the id : ${process_id}`)
-        }
-    }
-]
-eventPopup.open("error","Erreur",process.error.message,buttons)
-
-
-=================================================
-
-
-
-*/
 

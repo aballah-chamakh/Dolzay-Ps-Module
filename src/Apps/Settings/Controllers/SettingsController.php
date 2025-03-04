@@ -64,7 +64,10 @@ class SettingsController extends FrameworkBundleAdminController
         $db = DzDb::getInstance();
         $db->beginTransaction();
 
-        $order_post_submit_state_id = $request->get('order_post_submit_state_id');
+        $request_body = json_decode($request->getContent(), true) ;
+        $request_body = is_array($request_body) ? $request_body : [] ;
+        
+        $order_post_submit_state_id = $request_body['order_post_submit_state_id'];
 
         // update the settings
         $db = DzDb::getInstance();

@@ -190,7 +190,7 @@
                         <tr>
                             <td>${process.id}</td>
                             <td>${process.started_at}</td>`
-                    if(process.items_to_process_cnt == null){
+                    if(!process.items_to_process_cnt){
                         row += `<td>___</td>`
                     }else{
                         row += `<td>${process.processed_items_cnt}/${process.items_to_process_cnt}</td>`

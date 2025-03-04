@@ -16,6 +16,9 @@ class AfexCarrier extends BaseCarrier {
 
     public static function submit_orders(){
         try {
+            $current_datetime = date("H:i:s d/m/Y");
+            echo "=======  THE OSP HOLDING THE ID : " . self::$process_id . " STARTED AT : $current_datetime WITH FOLLOWING ARGS : carrier : Afex , employee_id : " . self::$employee_id . "  =======\n\n";
+
             $post_submit_status_id = AfexCarrier::get_post_submit_status_id() ;
             $orders = AfexCarrier::get_the_orders_to_submit();
             $orders_cnt = count($orders);
@@ -35,7 +38,6 @@ class AfexCarrier extends BaseCarrier {
 
             
             foreach($orders as $index => $order){
-               
                 // prepare the goods 
                 $goods = self::get_cart_products_str($order['cart_products']);
 
@@ -70,7 +72,7 @@ class AfexCarrier extends BaseCarrier {
                 $response = json_decode($response, true);
                 if ($status_code == 200){
                     $index = $index + 1 ;
-                    echo "=============== ORDER WITH THE ID : $order_id IS DONE (index : $index ,orders_cnt : $orders_cnt) =============== \n" ;
+                    echo "THE ORDER WITH THE ID : $order_id WAS SUBMITTED | PROGRESS : $index / $orders_cnt  \n\n" ;
                     
                     self::$db->beginTransaction();
 
@@ -88,12 +90,13 @@ class AfexCarrier extends BaseCarrier {
                     // check if it's the last order to submit
                     if ($index == $orders_cnt){
                         $orderSubmitProcessUpdates[] = "status='Terminé'" ;
+                        $orderSubmitProcessUpdates[] = "ended_at=CURRENT_TIMESTAMP()" ;
                     }else{
                         // check if the obs was terinated by the user 
                         $obsStatus = self::getObsStatus();
-                        echo "CURRENT OSP STATUS : $obsStatus" ;
                         if($obsStatus == "Pre-terminé par l'utilisateur"){ 
                             $orderSubmitProcessUpdates[] = "status='Terminé par l\\'utilisateur'" ; 
+                            $orderSubmitProcessUpdates[] = "ended_at=CURRENT_TIMESTAMP()" ;
                             self::updateOrderSubmitProcess($orderSubmitProcessUpdates);
                             self::$db->commit();
                             break ;
@@ -104,7 +107,7 @@ class AfexCarrier extends BaseCarrier {
 
                 }else if ($status_code == 422){
                     // 422 means invalid data were sent
-                    echo "=============== ORDER WITH THE ID : $order_id GOT 422 STATUS CODE =============== \n" ;
+                    echo "THE ORDER WITH THE ID : $order_id GOT THE 422 STATUS CODE  \n\n" ;
                     
                     // set the error
                     $message = "Une erreur de code 422 s'est produite lors de la soumission de la 1ʳᵉ commande portant l'ID : $order_id. Veuillez appeler le support de Dolzay au " . _SUPPORT_PHONE_ . " afin qu'ils résolvent votre problème.";
@@ -124,12 +127,13 @@ class AfexCarrier extends BaseCarrier {
                     self::updateOrderSubmitProcess(
                                                     [
                                                         "status='Interrompu'",
-                                                        "error='$error'"
+                                                        "error='$error'",
+                                                        "ended_at=CURRENT_TIMESTAMP()" 
                                                     ]
                                                 );
                     break;
-                }else if ($status_code == 401){
-                    echo "=============== ORDER WITH THE ID : $order_id GOT 401 STATUS CODE =============== \n" ;
+                }else if ($status_code == 401 || !$token){
+                    echo "THE ORDER WITH THE ID : $order_id GOT 401 STATUS CODE \n\n" ;
 
                     // set for the order submit process the status and the error data 
                     $message = "Le token d'Afex est invalide. Veuillez le mettre à jour avec un token valide." ;
@@ -141,12 +145,13 @@ class AfexCarrier extends BaseCarrier {
                     // escape the single quotes
                     $error = str_replace("'", "\'", $error);
                     self::updateOrderSubmitProcess(["status='Interrompu'",
-                                                    "error='$error'"
+                                                    "error='$error'",
+                                                    "ended_at=CURRENT_TIMESTAMP()" 
                                                 ]);
                     break ;
                     
                 }else{
-                    echo "=============== ORDER WITH THE ID : $order_id GOT AN UNEXPECTED ERROR =============== \n" ;
+                    echo "THE ORDER WITH THE ID : $order_id GOT AN UNEXPECTED ERROR  \n\n" ;
                     // set for the order submit process the status and the error data 
                     
                     $message = "Une erreur de code $status_code s'est produite lors de la soumission de la 1ʳᵉ commande portant l'ID : $order_id. Veuillez appeler le support de Dolzay au " . _SUPPORT_PHONE_ . " afin qu'ils résolvent votre problème.";
@@ -165,16 +170,23 @@ class AfexCarrier extends BaseCarrier {
                     self::updateOrderSubmitProcess(
                         [
                             "status='Interrompu'",
-                            "error='$error'"
+                            "error='$error'",
+                            "ended_at=CURRENT_TIMESTAMP()" 
                         ]
                     );
                     break ;
                 }
             }
+
+            $current_datetime = date("H:i:s d/m/Y");
+            echo "=======  THE OSP HOLDING THE ID : " . self::$process_id . " ENDED AT : $current_datetime AFTER SUBMITTING $index/$orders_cnt =======\n\n\n\n";
+
             // Close cURL session
             curl_close($ch);   
-        }catch(Exception $e){
-            
+        }catch(Error $e){
+
+            echo "=======  THE OSP HOLDING THE ID : " . self::$process_id . " ENDED AT : $current_datetime AFTER SUBMITTING $index/$orders_cnt WITH AN EXCEPTION ======= \n\n\n\n";
+
             $error = json_encode([
                 'message' => $e->getMessage(),
                 'detail' => $e->getTraceAsString()
@@ -184,7 +196,8 @@ class AfexCarrier extends BaseCarrier {
             self::updateOrderSubmitProcess(
                 [
                     "status='Interrompu'",
-                    "error='$error'"
+                    "error='$error'",
+                    "ended_at=CURRENT_TIMESTAMP()" 
                 ]
             );
         }
