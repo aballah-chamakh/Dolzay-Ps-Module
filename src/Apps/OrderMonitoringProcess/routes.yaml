@@ -1,0 +1,16 @@
+dz_launch_order_monitoring_process:
+  path: /dz/order_monitoring_process
+  methods: [POST]
+  defaults:
+    _controller: 'Dolzay\Apps\OrderMonitoringProcess\Controllers\OrderMonitoringProcessController::launchOrderMonitoringProcess'
+    _disable_module_prefix: true
+
+dz_monitor_order_monitoring_process:
+  path: /dz/order_monitoring_process/{process_id}/monitor
+  methods: [GET]
+  requirements:
+    process_id: \d+
+  defaults:
+    _controller: 'Dolzay\Apps\OrderMonitoringProcess\Controllers\OrderMonitoringProcessController::monitorOrderMonitoringProcess'
+    _disable_module_prefix: true
+

@@ -1,7 +1,8 @@
 document.addEventListener('DOMContentLoaded', function() {
 
-    const moduleControllerBaseUrl = window.location.href.split('/index.php')[0]+"/dz";
-    const moduleMediaBaseUrl = window.location.origin+"/modules/dolzay/uploads";
+    //const moduleControllerBaseUrl = window.location.href.split('/index.php')[0]+"/dz";
+    const moduleControllerBaseUrl = "http://localhost/prestashop/dz_admin/dz" ;
+    const moduleMediaBaseUrl = window.location.origin+"/prestashop/modules/dolzay/uploads";
     const urlParams = new URLSearchParams(window.location.search);
     const _token = urlParams.get('_token');
     //const dz_carriers = ["Afex"] ;
@@ -16,24 +17,66 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
 
-    function create_the_order_submit_btn(){
+    function create_the_start_btn(){
 
         const bottom_bar = document.createElement("div")
         bottom_bar.className = "dz-bottom-bar"
+        const header_toolbar = document.querySelector(".header-toolbar")
+        bottom_bar.style.width = header_toolbar.offsetWidth+"px" ;
 
-        const order_submit_btn = document.createElement('button')
-        order_submit_btn.id="dz-order-submit-btn" ;
-        order_submit_btn.innerText = "Soumettre les commandes"
+        const start_btn = document.createElement('button')
+        start_btn.className="dz-start-btn" ;
+        start_btn.innerText = "Commencer" ;
 
-        order_submit_btn.addEventListener('click', ()=>{
-            order_submit_btn.disabled = true 
-            selectCarrierStep.render()
-            order_submit_btn.disabled = false 
+        const actionSelect = document.createElement('select')
+        actionSelect.name = "dz-action-select"
+        actionSelect.className = "dz-action-select"
+        
+        const options = [
+            { value: 'submit_orders', text: 'Soumettre les commandes' },
+            { value: 'monitor_orders', text: 'Suivre les commande' }
+        ];
+
+        // 3. Add options to the select
+        options.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.text;
+            actionSelect.appendChild(option);
+        });
+        //actionSelect.value = "submit_orders"
+        start_btn.addEventListener('click', ()=>{
+            start_btn.disabled = true 
+            
+            if(actionSelect.value == "submit_orders"){
+                selectCarrierStep.render()
+                start_btn.disabled = false 
+            }else{
+                start_btn.innerHTML += `              
+                <div class="spinner-border dz-btn-spinner-white" role="status" >
+                    <span class="sr-only">Loading...</span>
+                </div>
+                `
+                Server.launchOmp()
+            }
+            
+
         });
 
         document.querySelector("#order_grid_panel").style.marginBottom = "60px"
-        bottom_bar.appendChild(order_submit_btn)
+        bottom_bar.appendChild(actionSelect)
+        bottom_bar.appendChild(start_btn)
         document.body.appendChild(bottom_bar)
+
+
+        const resizeObserver = new ResizeObserver(entries => {
+            // Loop through each observed entry (you could have multiple)
+            entries.forEach(entry => {
+              // Check the width of the header_toolbar
+              bottom_bar.style.width = entry.contentRect.width+"px" ;
+            });
+        });
+        resizeObserver.observe(header_toolbar);
     }
 
 
@@ -321,6 +364,110 @@ document.addEventListener('DOMContentLoaded', function() {
                     }else{
                         setTimeout(function(){
                             Server.monitorOsp(process_id);
+                        },3000)
+                    }
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        },
+        launchOmp : function(){
+            const start_btn = document.querySelector(".dz-start-btn")
+
+            fetch(moduleControllerBaseUrl+"/order_monitoring_process?_token="+_token, {
+                method: 'POST',
+                credentials: 'include', // Ensures cookies are sent with the request
+            })
+            .then(response => response.json())
+            .then((data)=>{
+
+                    if(data.status == "success"){
+                        progressOfMonitoringOrders.render(data.process)
+                    }else if(data.status == "no_orders_to_monitor"){
+                        buttons = [
+                            {
+                                'name' : 'Ok',
+                                'className' : "dz-event-popup-btn",
+                                'clickHandler' : function(){
+                                    eventPopup.close();
+                                }
+                            }
+                        ]
+                        eventPopup.open("info", 
+                                        "Aucune commande à suivre",
+                                        "Il n'y a aucune commande à suivre pour le moment.",
+                                        buttons)
+                    }else if(data.status == "expired"){
+                        buttons = [
+                            {
+                                'name' : 'Ok',
+                                'className' : "dz-event-popup-btn",
+                                'clickHandler' : function(){
+                                                eventPopup.close();
+                                }
+                            }
+                        ]
+                        eventPopup.open("expired", 
+                                        "Expiration de la période d'essai",
+                                        "Votre période d'essai a expiré. Veuillez nous appeler au numéro 58671414 pour obtenir la version à vie du plugin.",
+                                        buttons)
+                    }
+                    start_btn.innerHTML="Commencer"
+                    start_btn.disabled = false 
+            }).catch((error) => {
+                start_btn.innerHTML="Commencer"
+                start_btn.disabled = false 
+                console.error('Error:', error)
+            });
+        },
+        monitorOmp : function(process_id){
+            let url = moduleControllerBaseUrl+"/order_monitoring_process/"+process_id+"/monitor?_token="+_token
+
+            fetch(url, {
+                method: 'GET',
+                credentials: 'include' // Ensures cookies are sent with the request
+            })
+            .then(response => response.json())
+            .then(function(data){
+
+                if(data.status == "success"){
+                    let process = data.process
+                    // update the interfece with the progress of the osp
+                    let monitoredOrdersCntEl = popup.popupBodyEl.querySelector(".dz-monitored-orders-cnt")
+                    monitoredOrdersCntEl.innerText = process.processed_items_cnt
+
+                    // handle final statuses
+                    if(process.status == "Terminé" ){
+                        popup.close()
+                        buttons = [
+                            {
+                                'name' : 'Ok',
+                                'className' : "dz-event-popup-btn",
+                                'clickHandler' : function(){
+                                                eventPopup.close();
+                                }
+                            }
+                        ]
+    
+                        let message = `${process.processed_items_cnt}/${process.items_to_process_cnt} commandes ont été suivies avec succès.`
+                        eventPopup.open("success","Succés",message,buttons)
+                    }else if (process.status == "Interrompu"){
+                        popup.close()
+                        console.log(process)
+                        buttons = [
+                            {
+                                'name' : 'Détail',
+                                'className' : "dz-event-popup-btn",
+                                'clickHandler' : function(){
+                                    let process_detail_url = moduleControllerBaseUrl+"/order_monitoring_process/"+process_id+"/?_token="+_token
+                                    window.open(process_detail_url,"_blank")
+                                    eventPopup.close();
+                                }
+                            }
+                        ]
+                        eventPopup.open("error","Erreur",process.error.message,buttons)
+                    }else{
+                        setTimeout(function(){
+                            Server.monitorOmp(process_id);
                         },3000)
                     }
                 }
@@ -838,8 +985,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     }
 
+    const progressOfMonitoringOrders = {
+        render : function(process){
+            popup.popupHeaderEl.innerText = "Progrès de suivi des commandes"        
+            popup.popupBodyEl.innerHTML = `
+                <div class="progress-of-monitoring-orders" >
+                    <div class="spinner-border dz-spinner" role="status" >
+                    <span class="sr-only">Loading...</span>
+                    </div>
+                    <p style="position:relative"><span class="dz-monitored-orders-cnt">0</span>/<span class="orders-to-monitor-cnt">${process.items_to_process_cnt}</span> commandes ont été suivies</span></p>
+                </div>
+                `
+            popup.popupFooterEl.innerHTML = ''
+            popup.open()
+            Server.monitorOmp(process.id)
+            
+        }
+    }
     
-    create_the_order_submit_btn()
+    create_the_start_btn()
     popup.create();
     eventPopup.create()
     popupOverlay.create();

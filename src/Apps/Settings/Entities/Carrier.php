@@ -13,6 +13,7 @@ class Carrier {
     public static function init($db){
         self::$db = $db;
     }
+    
     // START DEFINING get_create_table_sql
     public static function get_create_table_sql() {
         return 'CREATE TABLE IF NOT EXISTS `' . self::TABLE_NAME . '` (

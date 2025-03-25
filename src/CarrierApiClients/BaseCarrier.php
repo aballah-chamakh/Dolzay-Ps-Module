@@ -84,12 +84,55 @@ class BaseCarrier {
         self::$db->query("UPDATE "._DB_PREFIX_."orders SET ".implode(", ", $updates)." WHERE id_order=".$order_id);
     }
 
+    protected static function addOrderToMonitoring($carrier,$order_id,$carrier_order_ref){
+        
+        // if the order has an order to monitor update it
+        $sql = "UPDATE "._MODULE_PREFIX_."order_to_monitor SET carrier=:carrier,order_id=:order_id,carrier_order_ref=:carrier_order_ref WHERE order_id=:xorder_id";
+        $stmt = self::$db->prepare($sql);
+        $stmt->execute(
+            [
+                'carrier' => $carrier,
+                'order_id' => $order_id,
+                'carrier_order_ref' => $carrier_order_ref,
+                'xorder_id' => $order_id
+            ]        
+        );
+        $updatedRows = $stmt->rowCount();
+
+        // otherwise insert a new one 
+        if($updatedRows == 0){
+            $query = "INSERT INTO "._MODULE_PREFIX_."order_to_monitor (carrier,order_id,carrier_order_ref) VALUES (:carrier,:order_id,:carrier_order_ref);";
+            $stmt = self::$db->prepare($query);
+            $stmt->execute([
+                'carrier'=> $carrier,
+                'order_id'=> $order_id,
+                'carrier_order_ref'=> $carrier_order_ref
+            ]);
+        }
+
+    }
+
     public static function updateOrderSubmitProcess($updates){
         $query = "UPDATE "._MODULE_PREFIX_."order_submit_process SET ".implode(", ", $updates)." WHERE id=".self::$process_id ;
         self::$db->query($query);
     }
 
-    protected static function getObsStatus(){
+    public static function updateOrderMonitoringProcess($updates,$commit=false){
+        $setClause = '';
+        $params = [];
+        foreach ($updates as $key => $value) {
+            $setClause .= "$key = :$key, ";
+            $params[":$key"] = $value;
+        }
+        $query = "UPDATE "._MODULE_PREFIX_."order_monitoring_process SET $setClause WHERE id=".self::$process_id ;
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        if($commit){
+            self::$db->commit();
+        }
+    }
+
+    protected static function getOspStatus(){
         $query = "SELECT status FROM "._MODULE_PREFIX_."order_submit_process  WHERE id=".self::$process_id ;
         return self::$db->query($query)->fetch()['status'];
     }
@@ -103,6 +146,18 @@ class BaseCarrier {
             'order_state_id'=>$post_submit_status_id
         ]);
     }
+
+    protected static function getOrdersToMonitorByCarrier($carrier){
+        $query = "SELECT order_id,carrier_order_ref,Ord.current_state FROM "._MODULE_PREFIX_."order_to_monitor as Otm INNER JOIN "._DB_PREFIX_."orders AS Ord ON Ord.id_order=Otm.order_id WHERE Otm.carrier='" . $carrier."' ;" ;
+        return self::$db->query($query)->fetchAll();
+    }
+
+    protected static function removeOrderFromMonitoring($order_id){
+        $query = "DELETE FROM "._MODULE_PREFIX_."order_to_monitor WHERE order_id=$order_id" ;
+        self::$db->query($query);
+    }
+
+    
     //error='{"message":"Le token d'Afex est invalide. Veuillez le mettre \u00e0 jour avec un token valide.","status_code":401}'"
     //"UPDATE dz_order_submit_process SET status='Interrompu', error='{"message":"Le token d\\'Afex est invalide. Veuillez le mettre \u00e0 jour avec un token valide.","status_code":401}' WHERE id=2"
     //"UPDATE dz_order_submit_process SET status='Interrompu', error='{"message":"Le système d'Afex a été mis à jour. Veuillez appeler le support de Dolzay au 58671414 afin qu'ils vous fournissent la dernière mise à jour.","status_code":422,"response":"{\"message\": \"The request data contains invalid fields or fails validation.\", \"errors\": [{\"field\": \"delegation\", \"message\": \"Delegation is not valid\"}]}"}' WHERE id=13"

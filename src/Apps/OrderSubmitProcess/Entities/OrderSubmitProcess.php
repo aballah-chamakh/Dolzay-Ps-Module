@@ -81,7 +81,6 @@ class OrderSubmitProcess {
     // START DEFINING get_create_table_sql
     public static function get_create_table_sql() {
 
-        $process_types_str = '"'.implode('","', self::PROCESS_TYPES).'"';
         $status_types_str = '"'.implode('","', self::STATUS_TYPES).'"';
 
         return 'CREATE TABLE IF NOT EXISTS `'.self::TABLE_NAME.'` (
@@ -138,7 +137,7 @@ class OrderSubmitProcess {
         return $process === false ? null : $process;
     }
 
-    public static function insert(string $carrier): int {
+    public static function insert($carrier): int {
         $query = "INSERT INTO ".self::TABLE_NAME." (carrier) VALUES ('".$carrier."');";
         self::$db->query($query);
         return (int)self::$db->lastInsertId();

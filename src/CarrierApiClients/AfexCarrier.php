@@ -5,8 +5,16 @@ require_once __DIR__."/BaseCarrier.php" ;
 class AfexCarrier extends BaseCarrier {
     
     const name = "Afex" ;
-    const url = "https://apis.afex.tn/v1/shipments" ;
-    
+    const order_submit_api_url = "https://apis.afex.tn/v1/shipments" ;
+    const order_status_api_url = "https://apis.afex.tn/v1/shipments/status" ;
+    const afexToPrestaState = [
+        'pre_manifest' => 3, // 'En cours de préparation'
+        'awaiting_removal' => 3, // 'En cours de préparation'
+        'delivered' => 5, // 'Livré'
+        'returned' => 7, // 'Retour'
+        'canceled' => 6, // 'Annulé'
+        'pre_shipping_canceling' => 14, //'Annulé'
+    ];
 
     public static function get_api_key(){
         $carrier = self::$db->query("SELECT token FROM "._MODULE_PREFIX_."carrier AS car INNER JOIN "._MODULE_PREFIX_."api_credentials AS crd ON car.api_credentials_id=crd.id WHERE car.name = '".self::name."'")->fetch();
@@ -28,7 +36,7 @@ class AfexCarrier extends BaseCarrier {
             $ch = curl_init();
 
             // Set cURL options
-            curl_setopt($ch, CURLOPT_URL, self::url);
+            curl_setopt($ch, CURLOPT_URL, self::order_submit_api_url);
             curl_setopt($ch, CURLOPT_POST, true); // Use POST method
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // Return response instead of outputting it
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
@@ -71,7 +79,7 @@ class AfexCarrier extends BaseCarrier {
                 $response = str_replace("'", '"', $response);
                 $response = json_decode($response, true);
                 if ($status_code == 200){
-                    $index = $index + 1 ;
+                    $index += 1 ;
                     echo "THE ORDER WITH THE ID : $order_id WAS SUBMITTED | PROGRESS : $index / $orders_cnt  \n\n" ;
                     
                     self::$db->beginTransaction();
@@ -82,21 +90,24 @@ class AfexCarrier extends BaseCarrier {
                                     "tracking_code=".$response['barcode'],
                                     "current_state=".$post_submit_status_id]);
                     
+                    // add the order to the monitoring phase 
+                    self::addOrderToMonitoring("Afex",$order['id_order'],$response['barcode']);
+                    
                     // add the order history for this status
                     self::addOrderStatusHistory($order['id_order'],$post_submit_status_id);
                         
                     // update the progress of the order submit process
-                    $orderSubmitProcessUpdates = ["processed_items_cnt=$index"] ;
+                    $orderSubmitProcessUpdates["processed_items_cnt"] = $index ;
                     // check if it's the last order to submit
                     if ($index == $orders_cnt){
-                        $orderSubmitProcessUpdates[] = "status='Terminé'" ;
-                        $orderSubmitProcessUpdates[] = "ended_at=CURRENT_TIMESTAMP()" ;
+                        $orderSubmitProcessUpdates["status"] = "Terminé" ;
+                        $orderSubmitProcessUpdates["ended_at"] = date('Y-m-d H:i:s') ;
                     }else{
                         // check if the obs was terinated by the user 
-                        $obsStatus = self::getObsStatus();
+                        $obsStatus = self::getOspStatus();
                         if($obsStatus == "Pre-terminé par l'utilisateur"){ 
-                            $orderSubmitProcessUpdates[] = "status='Terminé par l\\'utilisateur'" ; 
-                            $orderSubmitProcessUpdates[] = "ended_at=CURRENT_TIMESTAMP()" ;
+                            $orderSubmitProcessUpdates["status"] = "Terminé par l'utilisateur" ; 
+                            $orderSubmitProcessUpdates["ended_at"] = date('Y-m-d H:i:s') ;
                             self::updateOrderSubmitProcess($orderSubmitProcessUpdates);
                             self::$db->commit();
                             break ;
@@ -123,12 +134,11 @@ class AfexCarrier extends BaseCarrier {
                                 ],JSON_UNESCAPED_UNICODE);
                     // escape the single quotes
                     $error = str_replace("'", "\'", $error);
-                    
                     self::updateOrderSubmitProcess(
                                                     [
-                                                        "status='Interrompu'",
-                                                        "error='$error'",
-                                                        "ended_at=CURRENT_TIMESTAMP()" 
+                                                        "status"=>"Interrompu",
+                                                        "error"=>$error,
+                                                        "ended_at"=>date('Y-m-d H:i:s') 
                                                     ]
                                                 );
                     break;
@@ -144,9 +154,9 @@ class AfexCarrier extends BaseCarrier {
 
                     // escape the single quotes
                     $error = str_replace("'", "\'", $error);
-                    self::updateOrderSubmitProcess(["status='Interrompu'",
-                                                    "error='$error'",
-                                                    "ended_at=CURRENT_TIMESTAMP()" 
+                    self::updateOrderSubmitProcess(["status"=>"Interrompu",
+                                                    "error"=>$error,
+                                                    "ended_at"=>date('Y-m-d H:i:s')
                                                 ]);
                     break ;
                     
@@ -169,9 +179,9 @@ class AfexCarrier extends BaseCarrier {
                     $error = str_replace("'", "\'", $error);
                     self::updateOrderSubmitProcess(
                         [
-                            "status='Interrompu'",
-                            "error='$error'",
-                            "ended_at=CURRENT_TIMESTAMP()" 
+                            "status"=>"Interrompu",
+                            "error"=>$error,
+                            "ended_at"=> date('Y-m-d H:i:s')
                         ]
                     );
                     break ;
@@ -192,14 +202,193 @@ class AfexCarrier extends BaseCarrier {
                 'detail' => $e->getTraceAsString()
             ],JSON_UNESCAPED_UNICODE);
             $error = addslashes($error) ;
-
             self::updateOrderSubmitProcess(
                 [
-                    "status='Interrompu'",
-                    "error='$error'",
-                    "ended_at=CURRENT_TIMESTAMP()" 
+                    "status"=>"Interrompu",
+                    "error"=>$error,
+                    "ended_at"=> date('Y-m-d H:i:s')
                 ]
             );
+            // i have to commit here to handle the case of having an active transaction
+            self::$db->commit();
+        }
+
+    }
+
+    public static function afexToPrestaStateConverter($afexOrderState) {
+
+        return self::afexToPrestaState[$afexOrderState] ?? 4 ; // Expidié 
+    }
+
+    public static function monitor_orders(){
+        try {
+            // collect the afex orders in the monitoring phase 
+            
+            $afex_orders_to_monitor = self::getOrdersToMonitorByCarrier("Afex");
+            
+
+            if(count($afex_orders_to_monitor) == 0){
+                return true;
+            }
+
+            // prepare the payload / shipement ids
+            $payload = [
+                "shipmentIds" => []
+            ];
+            foreach($afex_orders_to_monitor as $order_to_monitor){
+                $payload['shipmentIds'][] = $order_to_monitor['carrier_order_ref'];
+            }
+            $payload = json_encode($payload, JSON_UNESCAPED_UNICODE);
+
+            $token = self::get_api_key();
+
+            // Initialize cURL session
+            $ch = curl_init();
+
+            // Set cURL options
+            curl_setopt($ch, CURLOPT_URL, self::order_status_api_url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // Return response instead of outputting it
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                "X-API-Key: $token",
+                "Content-Type: application/text",
+            ]);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $payload); // Attach JSON payload
+
+            // Execute the request and get the response
+            $response = curl_exec($ch);
+
+            // Handle cURL errors
+            if ($response === false) {
+                throw new Exception("!!!!cURL Error: " . curl_error($ch));
+            }
+            // get the response status code 
+            $status_code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE); // Get status code
+            $afex_orders_to_monitor_count = count($afex_orders_to_monitor);
+            if ($status_code == 200){
+
+                $response = str_replace("'", '"', $response);
+                $response = json_decode($response,true);
+                foreach($afex_orders_to_monitor as $index => $order_to_monitor){
+                    self::$db->beginTransaction();
+                    // check if the current afex order to monitor is in the response
+                    $shipments = array_values(array_filter($response['shipments'], fn($shipment) => $shipment['barcode'] == (int)$order_to_monitor["carrier_order_ref"]));
+                    dump($shipments);
+                    dump(count($shipments));
+                    // if the current afex order to monitor is in the response, check if his state has changed and update it accordingly
+                    if (count($shipments)){
+                        $shipment = $shipments[0];
+                        $new_afex_state = self::afexToPrestaStateConverter($shipment['state']) ;
+                        if($new_afex_state != $order_to_monitor['current_state']){
+                            
+                            // update the order state 
+                            self::updateOrder($order_to_monitor['order_id'],["current_state=".$new_afex_state]);
+                            
+                            // add the order history for this status
+                            self::addOrderStatusHistory($order_to_monitor['order_id'],$new_afex_state);
+                            
+                            // if the new state is an exit state remove the order from the monitoring phase
+                            if (in_array($new_afex_state, $exit_states)){
+                                self::removeOrderFromMonitoring($order_to_monitor['order_id']);
+                            }
+                            
+                        }
+                    }else{ // otherwise set it to pre-shipping canceling since it was deleted by the user in the carrier platform
+                        // update the order state to pre-shipping canceling
+                        self::updateOrder($order_to_monitor['order_id'],["current_state=".self::afexToPrestaState["pre_shipping_canceling"]]);
+
+                        // add the order history for this status
+                        self::addOrderStatusHistory($order_to_monitor['order_id'],self::afexToPrestaState["pre_shipping_canceling"]);
+
+                        // remove the order from the monitoring phase
+                        self::removeOrderFromMonitoring($order_to_monitor['order_id']);
+                    }
+
+                    // increase the counter of order monitoring process 
+                    $index += 1 ;
+
+                    self::updateOrderMonitoringProcess([
+                        "processed_items_cnt"=>$index,
+                    ]);
+                    self::$db->commit();
+                }
+
+                return true ;
+            }else if ($status_code == 401 || !$token){
+                
+                // set for the order monitoring process the status and the error data 
+                $message = "Le token d'Afex est invalide. Veuillez le mettre à jour avec un token valide." ;
+                
+                $error = json_encode([
+                    'message' => $message,
+                ],JSON_UNESCAPED_UNICODE);
+
+                // escape the single quotes
+                $error = str_replace("'", "\'", $error);
+                self::updateOrderMonitoringProcess(["status"=>"Interrompu",
+                                                    "error"=>$error,
+                                                    "ended_at"=>date('Y-m-d H:i:s')
+                                                    ]);
+                return false ;
+            }else if($status_code == 404){
+                foreach($afex_orders_to_monitor as $index => $order_to_monitor){
+                    self::$db->beginTransaction();
+                    // update the order state to pre-shipping canceling
+                    self::updateOrder($order_to_monitor['order_id'],["current_state=".self::afexToPrestaState["pre_shipping_canceling"]]);
+
+                    // add the order history for this status
+                    self::addOrderStatusHistory($order_to_monitor['order_id'],self::afexToPrestaState["pre_shipping_canceling"]);
+
+                    // remove the order from the monitoring phase
+                    self::removeOrderFromMonitoring($order_to_monitor['order_id']);
+                    $index += 1  ;
+                    self::updateOrderMonitoringProcess([
+                        "processed_items_cnt"=>$index,
+                    ]);
+                    self::$db->commit();
+                }
+                
+                return true ;
+            }
+            else{
+                $message = "Une erreur de code $status_code s'est produite lors du suivi des commandes. Veuillez appeler le support de Dolzay au " . _SUPPORT_PHONE_ . " afin qu'ils résolvent votre problème.";
+
+                $error = json_encode([
+                            'message' => $message,
+                            'detail' =>[
+                                'status_code' => $status_code,
+                                'response'=>$response]
+                        ],JSON_UNESCAPED_UNICODE);
+
+                // escape the single quotes
+                $error = str_replace("'", "\'", $error);
+                self::updateOrderMonitoringProcess(
+                    [
+                        "status"=>"Interrompu",
+                        "error"=>$error,
+                        "ended_at"=>date('Y-m-d H:i:s')
+                    ]
+                );
+                return false ;
+            }
+        }catch(Error $e){
+            echo "=======  THE OMP HOLDING THE ID : " . self::$process_id . " ENDED AT : $current_datetime AFTER SUBMITTING $index/$orders_cnt WITH AN EXCEPTION ======= \n\n\n\n";
+
+            $error = json_encode([
+                'message' => $e->getMessage(),
+                'detail' => $e->getTraceAsString()
+            ],JSON_UNESCAPED_UNICODE);
+            $error = addslashes($error) ;
+
+            self::updateOrderMonitoringProcess(
+                [
+                    "status"=>"Interrompu",
+                    "error"=>$error,
+                    "ended_at"=>date('Y-m-d H:i:s') 
+                ]
+            );
+            // i have to commit here to handle the case of having an active transaction
+            self::$db->commit();
+            return false ;
         }
 
     }
