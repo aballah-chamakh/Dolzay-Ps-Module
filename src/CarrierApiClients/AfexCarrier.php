@@ -290,7 +290,10 @@ class AfexCarrier extends BaseCarrier {
                             if (in_array($new_afex_state, $exit_states)){
                                 self::removeOrderFromMonitoring($order_to_monitor['order_id']);
                             }
+
+                            $updated_orders[] = ["order_id"=>$order_to_monitor['order_id'],"old_state"=>$order_to_monitor['current_state'],"new_state"=>$new_afex_state];
                             
+                            self::insert_an_update_order(self::$process_id,$order_to_monitor['order_id'],$order_to_monitor['current_state'],$new_afex_state);    
                         }
                     }else{ // otherwise set it to pre-shipping canceling since it was deleted by the user in the carrier platform
                         // update the order state to pre-shipping canceling
