@@ -58,7 +58,7 @@ class OrderMonitoringProcessController extends FrameworkBundleAdminController
         OrderMonitoringProcess::init($db);
         $order_monitoring_process_id = OrderMonitoringProcess::insert($orders_to_monitor_cnt); 
 
-        // launch the order submit process 
+        // launch the order monitoring process 
         $this->launchOmpScript($order_monitoring_process_id,$employee_id) ;
         return new JsonResponse(["status"=>"success","process"=>["id"=>$order_monitoring_process_id,"items_to_process_cnt"=>$orders_to_monitor_cnt]],200, ['json_options' => JSON_UNESCAPED_UNICODE]);
     }
@@ -79,6 +79,51 @@ class OrderMonitoringProcessController extends FrameworkBundleAdminController
     }
 
     // ACID FRIENDLY
+    public function orderMonitoringProcessList(Request $request){
+        
+        $query_parameter = [
+            "is_json" => $request->query->get('is_json'),
+            "status" => $request->query->get('status'),
+            "start_date" => ($request->query->get('start_date') == "null") ? null : $request->query->get('start_date'),
+            "end_date" => ($request->query->get('end_date') == "null") ? null : $request->query->get('end_date'),
+            "page_nb" =>  $request->query->get('page_nb') ?? 1,
+            "batch_size" => $request->query->get('batch_size') ?? self::BATCH_SIZES[0]
+        ];
+
+        $db = DzDb::getInstance();
+        orderMonitoringProcess::init($db);
+        $order_monitoring_processes = orderMonitoringProcess::get_order_monitoring_process_list($query_parameter);
+        
+        if($query_parameter['is_json']){
+            return new JsonResponse(['status'=>'success','order_monitoring_processes'=>$order_monitoring_processes],200, ['json_options' => JSON_UNESCAPED_UNICODE]);
+        }
+
+        $total_pages = 1 ;
+        $total_count = 0 ;
+        $first_end = 0 ;
+        $last_end = 0 ;
+
+        if(count($order_monitoring_processes)){
+            $total_count = $order_monitoring_processes[0]['total_count'] ;
+            $total_pages = ceil($total_count / self::BATCH_SIZES[0]) ;
+            $first_end = 1 ;
+            $last_end = $total_count >= self::BATCH_SIZES[0] ? self::BATCH_SIZES[0] : $total_count ;
+        }
+
+        
+        return $this->render('@Modules/dolzay/views/templates/admin/omp/omp_list.html.twig',[
+            'order_monitoring_processes'=>$order_monitoring_processes,
+            'status_types'=> orderMonitoringProcess::STATUS_TYPES,
+            'batch_sizes'=>self::BATCH_SIZES,
+            'total_pages'=>$total_pages,
+            'first_end'=>$first_end,
+            'last_end'=>$last_end,
+            'total_count'=>$total_count,
+            'status_colors'=>orderMonitoringProcess::STATUS_COLORS
+        ]);
+    }
+
+    // ACID FRIENDLY
     public function orderMonitoringProcessDetail($process_id,Request $request){
         $query_parameter = [
             "order_id" => $request->query->get('order_id'),
@@ -92,45 +137,49 @@ class OrderMonitoringProcessController extends FrameworkBundleAdminController
 
         $db = DzDb::getInstance();
         OrderMonitoringProcess::init($db);
-        $order_submit_process_detail = OrderMonitoringProcess::get_order_monitoring_process_detail($process_id,$query_parameter);
+        $order_monitoring_process_detail = OrderMonitoringProcess::get_order_monitoring_process_detail($process_id,$query_parameter);
         
         // handle the api request 
         if($query_parameter['is_json']){
-            if($order_submit_process_detail){
-                return new JsonResponse(['status'=>"success",'order_submit_process'=>$order_submit_process_detail],200, ['json_options' => JSON_UNESCAPED_UNICODE]);
+            if($order_monitoring_process_detail){
+                return new JsonResponse(['status'=>"success",'order_monitoring_process'=>$order_monitoring_process_detail],200, ['json_options' => JSON_UNESCAPED_UNICODE]);
             }else{
                 return new JsonResponse(['status'=>'not_found'],JsonResponse::HTTP_NOT_FOUND, ['json_options' => JSON_UNESCAPED_UNICODE]);
             }
         }
         
         // handle the template request 
-        if($order_submit_process_detail){
+        if($order_monitoring_process_detail){
             // setup the variables of the pagination
-            $orders_to_submit = $order_submit_process_detail['orders_to_submit'] ;
+            $orders_to_monitor = $order_monitoring_process_detail['orders_to_monitor'] ;
 
             $total_pages = 1 ;
             $total_count = 0 ;
             $first_end = 0 ;
             $last_end = 0 ;
     
-            if(count($orders_to_submit)){
-                $total_count = $orders_to_submit[0]['total_count'] ;
+            if(count($orders_to_monitor)){
+                $total_count = $orders_to_monitor[0]['total_count'] ;
                 $total_pages = ceil($total_count / self::BATCH_SIZES[0]) ;
                 $first_end = 1 ;
                 $last_end = $total_count >= self::BATCH_SIZES[0] ? self::BATCH_SIZES[0] : $total_count ;
             }
+
+            $defaultLanguageId = $this->getContext()->language->id;
+            $stmt = $db->query("SELECT id_order_state,name FROM "._DB_PREFIX_."order_state_lang WHERE id_lang=".$defaultLanguageId);
+            $order_state_options = $stmt->fetchAll();
             
-            return $this->render("@Modules/dolzay/views/templates/admin/process/process_detail.html.twig",
-                                 ["process"=>$order_submit_process_detail,
+            return $this->render("@Modules/dolzay/views/templates/admin/omp/omp_detail.html.twig",
+                                 ["process"=>$order_monitoring_process_detail,
+                                 "order_state_options"=>$order_state_options,
                                  'batch_sizes'=>self::BATCH_SIZES,
                                  'total_pages'=>$total_pages,
                                  'first_end'=>$first_end,
                                  'last_end'=>$last_end,
-                                 'show_terminate_btn'=> in_array($order_submit_process_detail["status"],OrderSubmitProcess::ACTIVE_STATUSES),
                                  'total_count'=>$total_count]) ;
-        }else{
-            return $this->render("@Modules/dolzay/views/templates/admin/process/not_found_process.html.twig") ;
         }
+
+        $this->redirectToRoute('dz_order_monitoring_process_list');
     }
 
 

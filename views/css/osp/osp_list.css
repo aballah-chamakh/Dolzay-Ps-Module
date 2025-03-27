@@ -1,0 +1,224 @@
+:root {
+    --gray-bg: #f2f2f2;
+    --border-color: #ddd;
+}
+
+.dz-process-list-container {
+    width: 100% ;
+    margin: 10px auto;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+.dz-filter-container, .dz-process-list-table-container {
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+    background-color : white ;
+    border-radius : 5px ;
+    position: relative;
+    width : 100% ;
+}
+
+.dz-filter-form {
+    width : 100% ;
+    padding: 5px 10px 10px 10px;
+}
+
+.dz-filter-header {
+    border-bottom: 1px solid #ddd;
+    padding: 10px;
+    width : 100% ;
+}
+
+.dz-filter-header p {
+    margin: 0;
+    font-weight: 600;
+    font-size: 17px;
+}
+
+
+
+.dz-filter-form-first-row{
+    display: flex;
+    width : 100% ;
+    gap: 10px;
+    margin-bottom: 0px;
+}
+
+.dz-form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 7px;
+}
+
+.dz-form-group label {
+    font-size : 16px ;
+}
+
+.dz-input-daterange {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dz-filter-btn{
+    width: 100%;
+    padding: 8px;
+    background: #1a456e;
+    border: none;
+    cursor: pointer;
+    margin-top: 5px ;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: 600;
+    color:white;
+}
+
+
+.dz-process-list-table-header{
+    border-bottom: 1px solid var(--border-color);
+    padding: 10px;
+    width : 100% ;
+}
+
+.dz-process-list-table-header p {
+    margin: 0;
+    font-weight: 600;
+    font-size: 17px;
+}
+
+.dz-process-list-table {
+    padding : 10px ;
+    width: 100%;
+    position : relative ;
+    overflow: auto ;
+
+}
+
+.dz-loading-overlay{
+    display: none;
+    position : absolute ;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    background-color: gray;
+    opacity : 0.8 ;
+    z-index: 2000;
+}
+.dz-process-list-table-spinner{
+    z-index: 2001;
+    color : black ;
+    height: 50px;
+    width: 50px; 
+}
+
+
+.dz-process-list-table .table {
+    width: 100%;
+    min-width: 800px;
+    text-align: center;    
+    margin-bottom: 10px;
+}
+
+.dz-process-list-table .table thead {
+    background-color: #1a456e;
+    color : white ;
+}
+
+
+.dz-process-list-table .table thead th {
+    padding: 10px;
+    border : none ;
+    font-size: 16px;
+    font-weight: 600;
+
+}
+
+.dz-process-list-table .table td {
+    padding: 10px;
+    font-size: 16px;
+}
+
+.dz-process-list-table .table .dz-badge {
+    padding: 6px 20px;
+    color: white;
+    border-radius: 5px;
+}
+
+.dz-process-list-table .table .dz-process-detail-link{
+    color : #1a456e ;
+    cursor: pointer;
+}
+
+.dz-process-list-table-footer {
+    display: flex;
+    width : 100% ;
+    justify-content: space-between;
+    align-items: center;
+}
+.dz-process-list-table-footer p{
+    margin: 0px;
+    font-size: 16px;
+}
+
+.dz-process-list-table-footer label{
+    font-size: 16px;
+}
+
+.dz-process-list-table-footer .dz-page-number {
+    display: flex ;
+    gap : 5px ;
+    align-items: center;
+}
+
+.dz-process-list-table-footer select {
+    padding : 0px 10px; 
+    width : 60px ;
+}
+
+.dz-pagination {
+    display: flex;
+    gap: 5px;
+}
+
+.dz-pagination button {
+    padding: 5px 10px;
+    border: 1px solid var(--border-color);
+    background: white;
+    cursor: pointer;
+}
+
+.dz-pagination button.active {
+    background: var(--gray-bg);
+}
+
+
+
+
+@media (max-width: 768px) {
+    .dz-filter-form-first-row{
+        flex-direction: column;
+    }
+    .daterangepicker.show-calendar .drp-buttons{
+        display: flex;
+        gap: 10px;
+    }
+    
+    .daterangepicker{
+        right: 0px !important;
+        top: 0px !important;
+        left: auto;
+        width: 100vw;
+        height: 100vh;
+        position: fixed;
+        overflow: auto;
+        margin: 0;
+    }
+    
+    .daterangepicker .drp-calendar {
+        max-width: unset;
+    }
+    
+}
+ 

@@ -23,7 +23,8 @@ class UpdatedOrder {
             `omp_id` INT(10) UNSIGNED  NOT NULL ,
             `order_id` INT(10) UNSIGNED  NOT NULL ,
             `old_status` INT(10) UNSIGNED  NOT NULL,
-            `new_status` INT(10) UNSIGNED  NOT NULL
+            `new_status` INT(10) UNSIGNED  NOT NULL,
+             PRIMARY KEY (omp_id, order_id)
         );';
 
     }

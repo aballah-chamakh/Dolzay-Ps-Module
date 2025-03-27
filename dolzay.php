@@ -219,17 +219,23 @@ class Dolzay extends Module
         // Create sub-tabs under the parent tab (My Module)
         $subTabs = [
             [
-                'class_name' => 'DzAdminProcessus',
-                'name' => 'Processus',
+                'class_name' => 'DzAdminOrderSubmitProcessList',
+                'name' => 'Processus de soumission',
                 'id_parent' => $parentTabId, // Assign the parent tab ID
                 'route_name' => 'dz_order_submit_process_list',
+            ],
+            [
+                'class_name' => 'DzAdminOrderMonitoringProcessList',
+                'name' => 'Processus de suivi',
+                'id_parent' => $parentTabId, // Assign the parent tab ID
+                'route_name' => 'dz_order_monitoring_process_list',
             ],
             [
                 'class_name' => 'DzAdminParametres',
                 'name' => 'Parametres',
                 'id_parent' => $parentTabId, // Assign the parent tab ID
                 'route_name' => 'dz_get_settings',
-            ],
+            ]
         ];
     
         // Create each sub-tab

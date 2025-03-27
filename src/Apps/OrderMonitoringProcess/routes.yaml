@@ -14,3 +14,18 @@ dz_monitor_order_monitoring_process:
     _controller: 'Dolzay\Apps\OrderMonitoringProcess\Controllers\OrderMonitoringProcessController::monitorOrderMonitoringProcess'
     _disable_module_prefix: true
 
+dz_order_monitoring_process_list : 
+  path: /dz/order_monitoring_processes
+  methods: [GET]
+  defaults:
+    _controller: 'Dolzay\Apps\OrderMonitoringProcess\Controllers\OrderMonitoringProcessController::orderMonitoringProcessList'
+    _disable_module_prefix: true
+
+dz_order_monitoring_submit_process_detail : 
+  path: /dz/order_monitoring_process/{process_id}/
+  methods: [GET]
+  requirements:
+    process_id: \d+
+  defaults:
+    _controller: 'Dolzay\Apps\OrderMonitoringProcess\Controllers\OrderProcessController::orderMonitoringProcessDetail'
+    _disable_module_prefix: true

@@ -112,6 +112,12 @@ class BaseCarrier {
 
     }
 
+    public static function insert_an_update_order($omp_id, $order_id, $old_status, $new_status): int {
+        $query = "INSERT INTO "._MODULE_PREFIX_."updated_order (omp_id, order_id, old_status, new_status) VALUES($omp_id, $order_id, $old_status, $new_status);";
+        self::$db->query($query);
+        return (int)self::$db->lastInsertId();
+    }
+
     public static function updateOrderSubmitProcess($updates){
         $query = "UPDATE "._MODULE_PREFIX_."order_submit_process SET ".implode(", ", $updates)." WHERE id=".self::$process_id ;
         self::$db->query($query);

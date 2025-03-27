@@ -1,0 +1,160 @@
+{% extends '@PrestaShop/Admin/layout.html.twig' %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('../modules/dolzay/views/css/osp/osp_detail.css') }}">
+{% endblock %}
+
+
+{% block content %}
+<div>
+
+    <div class="dz-process-state-container">
+        <div class="dz-process-state-header">
+            <p>ÉTAT DU PROCESSUS</p>
+        </div>
+            <div class="dz-process-state-body">
+                <div class="dz-process-key-value"><label>Transporteur : </label><span>{{process.carrier}}</span></div>
+                <div class="dz-process-key-value"><label>État : </label> <span class="dz-badge dz-process-status" style="background-color:{{process.status_color}}">{{process.status}}</span></div>
+                <div class="dz-process-key-value"><label>Heure et Date de début : </label> <span class="dz-process-start-date" >{{process.started_at}}</span></div>
+                <div class="dz-process-key-value"><label>Heure et Date de fin : </label> <span class="dz-process-end-date" >{{process.ended_at ? process.ended_at : "____"}}</span></div>
+            
+                {% if process.items_to_process_cnt %}
+                    <div class="dz-process-key-value dz-vertical-direction">
+                        <label>Progrés : </label>
+                        <div class="dz-progress-placeholder">
+                            <div class="dz-progress" style="width:{{process.processed_items_cnt / process.items_to_process_cnt * 100}}%">
+                                <span class="dz-process-submitted-orders">{{process.processed_items_cnt}}</span>
+                            </div>
+                            <span class="dz-process-orders-to-submit">{{process.items_to_process_cnt}}</span>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="dz-process-key-value dz-process-progress">
+                        <label>Progrés : </label>
+                        <span>____</span>
+                    </div>
+                {% endif %}
+                
+
+                    {% if process.error %}
+                        <div class="dz-process-key-value dz-vertical-direction">
+                            <label>message d ‘erreur : </label> 
+                            <div class="dz-error-message-container">
+                                <span class="dz-error-message">
+                                    {{ process.error.message }}
+                                    {% if 'detail' in process.error|keys %}
+                                        <span class="dz-more-detail" onClick="toggleProcessErrorDetail()">détail</span>
+                                        <pre class="dz-error-message-detail">{{process.error.detail|json_encode(constant('JSON_PRETTY_PRINT'))}}</pre>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="dz-process-key-value dz-process-error">
+                            <label>message d ‘erreur : </label> 
+                            <span>____</span>
+                        </div>
+                    {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="dz-orders-to-submit-container">
+        <div class="dz-orders-to-submit-container-header">
+            <p>LES COMMANDES SOUMISES ET NON SOUMISES</p>
+        </div>
+        <div class="dz-orders-to-submit-container-body">
+            <div class="dz-orders-to-submit-filter-container">
+                <div class="dz-filter-header">
+                    <p>LE FILTRE</p>
+                </div> 
+                <div class="dz-filter-form">
+                    <div class="dz-filter-form-first-row">
+                        <div class="dz-form-group">
+                            <label>Identifiant de commande</label>
+                            <input class="form-control" name="order_id"  placeholder="Identifiant de commande" />
+                        </div>
+                        <div class="dz-form-group">
+                            <label>Soumis ?</label>
+                            <select class="form-control" name="submitted">
+                                <option value="">Oui et Non</option>
+                                <option value="Oui">Oui</option>
+                                <option value="Non">Non</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="dz-filter-form-second-row">
+                        <div class="dz-form-group">
+                            <label>client</label>
+                            <input class="form-control" name="client" placeholder="client" />
+                        </div>
+                    </div>
+                    <button class="dz-filter-btn">Filtrer</button>
+                </div>
+            </div>
+            <div class="dz-orders-to-submit-list-container">
+                <div class="dz-loading-overlay">
+                    <div class="dz-orders-to-submit-table-spinner spinner-border" role="status">
+                    </div>
+                </div>
+                <div class="dz-orders-to-submit-list-header">
+                    <p>LES COMMANDES</p>
+                </div>
+                <div class="dz-orders-to-submit-list-body">
+                    <table class="table">
+                        <thead >
+                            <tr>
+                                <th>Identifiant de commande</th>
+                                <th>Client</th>
+                                <th>Soumis</th>
+                                <th>Détail</th>
+                            </tr>
+                        </thead>
+                        <tbody class="dz-orders-to-submit-table-body" >
+                            {% for order in process.orders_to_submit %}
+                                <td>{{order.id_order}}</td>
+                                <td>{{order.firstname}} {{order.lastname}}</td>
+                                {% if order.submitted %}
+                                    <td>Oui</td>
+                                {% else %}
+                                    <td>Non</td>
+                                {% endif %}
+                                <td><span class="dz-order-detail-link" onClick="goToOrder({{order.id_order}})" ><i class="material-icons">remove_red_eye</i></span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="dz-orders-to-submit-table-footer">
+                    <p class="dz-pagination-range">{{first_end}} to {{last_end}} / {{total_count}}</p>
+                    <div class="dz-page-number" >
+                        <label>page : </label>
+                        <select  class="dz-page-nb-select form-control" >
+                            {% for i in range(1, total_pages) %}
+                                <option value={{i}} >{{i}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <select class="dz-batch-size-select form-control" >
+                            {% for batch_size in batch_sizes %}
+                                <option value={{batch_size}} >{{batch_size}}</option>
+                            {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% if show_terminate_btn %}
+        <div class="dz-fixed-footer">
+                <button class="dz-process-terminate-btn">Arrêter</button>
+        </div>  
+    {% endif %}
+    
+    <script src="{{ asset('../modules/dolzay/views/js/osp/osp_detail.js') }}"></script>
+
+</div>
+
+
+
+{% endblock %}

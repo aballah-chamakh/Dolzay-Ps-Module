@@ -1,0 +1,108 @@
+{% extends '@PrestaShop/Admin/layout.html.twig' %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('../modules/dolzay/views/css/osp/osp_list.css') }}">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+{% endblock %}
+
+{% block content %}
+    
+  <div class="dz-process-list-container">
+        <div class="dz-filter-container">
+            <div class="dz-filter-header">
+                <p>LE FILTRE</p>
+            </div> 
+            <div class="dz-filter-form">
+                <div class="dz-filter-form-first-row">
+                    <div class="dz-form-group">
+                        <label>carrier</label>
+                        <select class="dz-carrier-select form-control" name="carrier">
+                            <option value="">Tous</option>
+                            {% for carrier in carriers %}
+                                <option value="{{carrier['name']|e}}" >{{carrier['name']}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="dz-form-group">
+                        <label>status</label>
+                        <select class="dz-status-select form-control" name="status">
+                            <option value="">Tous</option>
+                            {% for status_type in status_types %}
+                                <option value="{{status_type|e}}" >{{status_type}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="dz-filter-form-second-row">
+                    <div class="dz-form-group">
+                        <label>L'Intervalle de dates</label>
+                        <input class="dz-date-range form-control" type="text" name="daterange"  />
+                    </div>
+                </div>
+                <button class="dz-filter-btn">Filtrer</button>
+            </div>
+        </div>
+
+        <div class="dz-process-list-table-container">
+            <div class="dz-loading-overlay">
+                <div class="dz-process-list-table-spinner spinner-border" role="status">
+                </div>
+            </div>
+            <div class="dz-process-list-table-header">
+                <p>LES PROCESSUS</p>
+            </div>
+            <div class="dz-process-list-table">
+                <table class="table">
+                    <thead >
+                        <tr>
+                            <th>id</th>
+                            <th>heure et date du lancement</th>
+                            <th>progrès</th>
+                            <th>transporteur</th>
+                            <th>état</th>
+                            <th>detail</th>
+                        </tr>
+                    </thead>
+                    <tbody class="dz-process-list-table-body" >
+                        {% for order_submit_process in order_submit_processes %}
+                            <td>{{order_submit_process.id}}</td>
+                            <td>{{order_submit_process.started_at}}</td>
+                            {% if order_submit_process.items_to_process_cnt %}
+                                <td>{{order_submit_process.processed_items_cnt}}/{{order_submit_process.items_to_process_cnt}}</td>
+                            {% else %}
+                                <td>___</td>
+                            {% endif %}
+                            <td>{{order_submit_process.carrier}}</span></td>
+                            <td><span class="dz-badge" style="background-color : {{ status_colors[order_submit_process.status] }}" >{{order_submit_process.status}}</span></td>
+                            <td><span class="dz-process-detail-link" onClick="goToProcess({{order_submit_process.id}})" ><i class="material-icons">remove_red_eye</i></span></td>
+                        </tr>
+                        {% endfor %}
+
+                    </tbody>
+                </table>
+                <div class="dz-process-list-table-footer">
+                    <p class="dz-pagination-range">{{first_end}} to {{last_end}} / {{total_count}}</p>
+                    <div class="dz-page-number" >
+                        <label>page : </label>
+                        <select  class="dz-page-nb-select form-control" >
+                            {% for i in range(1, total_pages) %}
+                                <option value={{i}} >{{i}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <select class="dz-batch-size-select form-control" >
+                            {% for batch_size in batch_sizes %}
+                                <option value={{batch_size}} >{{batch_size}}</option>
+                            {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ asset('../modules/dolzay/views/js/osp/osp_list.js') }}"></script>
+
+{% endblock %}

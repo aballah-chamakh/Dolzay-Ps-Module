@@ -20,6 +20,7 @@ use Dolzay\Apps\Settings\Entities\Settings ;
 class OrderSubmitProcessController extends FrameworkBundleAdminController
 {   
     private const BATCH_SIZES = [20,50,100] ;
+
     public function launchObsScript($order_submit_process_id, $carrier, $employee_id) {
         // Path to the PHP script
         $script_path = dirname(__DIR__, 1) . '/order_submit_process.php';
@@ -67,8 +68,7 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         return new JsonResponse(['status'=>"success",'process'=> ($process) ? $process : false],['json_options' => JSON_UNESCAPED_UNICODE]);
     }
 
-
-    // ACID FRIENDLY
+    // ACID FRIENDLY 
     public function orderSubmitProcessList(Request $request){
         $query_parameter = [
             "status" => $request->query->get('status'),
@@ -104,7 +104,7 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         }
         
 
-        return $this->render('@Modules/dolzay/views/templates/admin/process/process_list.html.twig',[
+        return $this->render('@Modules/dolzay/views/templates/admin/osp/osp_list.html.twig',[
             'order_submit_processes'=>$order_submit_processes,
             'status_types'=> OrderSubmitProcess::STATUS_TYPES,
             'carriers'=>$carriers,
@@ -160,7 +160,7 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
                 $last_end = $total_count >= self::BATCH_SIZES[0] ? self::BATCH_SIZES[0] : $total_count ;
             }
             
-            return $this->render("@Modules/dolzay/views/templates/admin/process/process_detail.html.twig",
+            return $this->render("@Modules/dolzay/views/templates/admin/osp/osp_detail.html.twig",
                                  ["process"=>$order_submit_process_detail,
                                  'batch_sizes'=>self::BATCH_SIZES,
                                  'total_pages'=>$total_pages,
@@ -168,9 +168,9 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
                                  'last_end'=>$last_end,
                                  'show_terminate_btn'=> in_array($order_submit_process_detail["status"],OrderSubmitProcess::ACTIVE_STATUSES),
                                  'total_count'=>$total_count]) ;
-        }else{
-            return $this->render("@Modules/dolzay/views/templates/admin/process/not_found_process.html.twig") ;
         }
+
+        $this->redirectToRoute('dz_order_submit_process_list');
     }
 
 
