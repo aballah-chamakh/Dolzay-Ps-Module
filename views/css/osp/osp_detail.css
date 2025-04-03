@@ -1,3 +1,18 @@
+.dz-process-detail-header {
+    display: flex;
+    padding : 10px ;
+    background-color: #1a456e;
+    margin-bottom : 10px ;
+    border-radius : 5px ;
+}
+
+.dz-process-detail-header p{
+    margin: 0;
+    font-weight: 600;
+    font-size: 17px;
+    color : white ;
+}
+
 .dz-process-state-container{
     display : flex ; 
     flex-direction: column;
@@ -155,6 +170,7 @@
     margin-bottom: 0px;
     width: 100%;
 }
+
 .dz-form-group {
     flex: 1;
     display: flex;
@@ -302,16 +318,6 @@
     width: 20px;
     border-width: 3px;
 }
-
-/* STYLING THE EVENT POPUP AND THE EVENT POPUP OVERLAY */
-/*
-    dz-popup-overlay d
-    dz-event-popup d
-    dz-event-popup-header d
-    dz-event-popup-body d
-    dz-event-popup-footer
-    dz-show
-*/
 
 .dz-event-popup-overlay {
     display : none ;

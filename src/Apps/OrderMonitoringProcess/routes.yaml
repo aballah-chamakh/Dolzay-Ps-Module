@@ -27,5 +27,5 @@ dz_order_monitoring_submit_process_detail :
   requirements:
     process_id: \d+
   defaults:
-    _controller: 'Dolzay\Apps\OrderMonitoringProcess\Controllers\OrderProcessController::orderMonitoringProcessDetail'
+    _controller: 'Dolzay\Apps\OrderMonitoringProcess\Controllers\OrderMonitoringProcessController::orderMonitoringProcessDetail'
     _disable_module_prefix: true

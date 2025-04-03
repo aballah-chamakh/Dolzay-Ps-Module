@@ -133,7 +133,8 @@ class AfexCarrier extends BaseCarrier {
                                                 'response'=>$response]
                                 ],JSON_UNESCAPED_UNICODE);
                     // escape the single quotes
-                    $error = str_replace("'", "\'", $error);
+                    
+                    //$error = str_replace("'", "\'", $error);
                     self::updateOrderSubmitProcess(
                                                     [
                                                         "status"=>"Interrompu",
@@ -153,7 +154,7 @@ class AfexCarrier extends BaseCarrier {
                     ],JSON_UNESCAPED_UNICODE);
 
                     // escape the single quotes
-                    $error = str_replace("'", "\'", $error);
+                    //$error = str_replace("'", "\'", $error);
                     self::updateOrderSubmitProcess(["status"=>"Interrompu",
                                                     "error"=>$error,
                                                     "ended_at"=>date('Y-m-d H:i:s')
@@ -176,7 +177,7 @@ class AfexCarrier extends BaseCarrier {
                                     'response'=>$response]
                             ],JSON_UNESCAPED_UNICODE);
                     // escape the single quotes
-                    $error = str_replace("'", "\'", $error);
+                    //$error = str_replace("'", "\'", $error);
                     self::updateOrderSubmitProcess(
                         [
                             "status"=>"Interrompu",
@@ -201,7 +202,7 @@ class AfexCarrier extends BaseCarrier {
                 'message' => $e->getMessage(),
                 'detail' => $e->getTraceAsString()
             ],JSON_UNESCAPED_UNICODE);
-            $error = addslashes($error) ;
+            //$error = addslashes($error) ;
             self::updateOrderSubmitProcess(
                 [
                     "status"=>"Interrompu",
@@ -291,7 +292,7 @@ class AfexCarrier extends BaseCarrier {
                                 self::removeOrderFromMonitoring($order_to_monitor['order_id']);
                             }
                             
-                            self::insert_an_update_order(self::$process_id,$order_to_monitor['order_id'],$order_to_monitor['current_state'],$new_afex_state);    
+                            self::insert_an_updated_order(self::$process_id,$order_to_monitor['order_id'],$order_to_monitor['current_state'],$new_afex_state);    
                         }
                     }else{ // otherwise set it to pre-shipping canceling since it was deleted by the user in the carrier platform
                         // update the order state to pre-shipping canceling
@@ -324,7 +325,7 @@ class AfexCarrier extends BaseCarrier {
                 ],JSON_UNESCAPED_UNICODE);
 
                 // escape the single quotes
-                $error = str_replace("'", "\'", $error);
+                //$error = "'".str_replace("'", "\'", $error)."'";
                 self::updateOrderMonitoringProcess(["status"=>"Interrompu",
                                                     "error"=>$error,
                                                     "ended_at"=>date('Y-m-d H:i:s')
@@ -341,6 +342,8 @@ class AfexCarrier extends BaseCarrier {
 
                     // remove the order from the monitoring phase
                     self::removeOrderFromMonitoring($order_to_monitor['order_id']);
+                    self::insert_an_updated_order(self::$process_id,$order_to_monitor['order_id'],$order_to_monitor['current_state'],self::afexToPrestaState["pre_shipping_canceling"]);    
+
                     $index += 1  ;
                     self::updateOrderMonitoringProcess([
                         "processed_items_cnt"=>$index,
@@ -361,7 +364,7 @@ class AfexCarrier extends BaseCarrier {
                         ],JSON_UNESCAPED_UNICODE);
 
                 // escape the single quotes
-                $error = str_replace("'", "\'", $error);
+                //$error = str_replace("'", "\'", $error);
                 self::updateOrderMonitoringProcess(
                     [
                         "status"=>"Interrompu",
@@ -378,7 +381,7 @@ class AfexCarrier extends BaseCarrier {
                 'message' => $e->getMessage(),
                 'detail' => $e->getTraceAsString()
             ],JSON_UNESCAPED_UNICODE);
-            $error = addslashes($error) ;
+            //$error = addslashes($error) ;
 
             self::updateOrderMonitoringProcess(
                 [

@@ -304,7 +304,7 @@ class OrderSubmitProcess {
 
     public static function get_order_submit_process_detail($process_id,$query_parameter){
         
-        $query = "SELECT carrier,status,DATE_FORMAT(started_at, '%H:%i:%s - %d/%m/%Y') AS started_at,DATE_FORMAT(ended_at, '%H:%i:%s - %d/%m/%Y') AS ended_at,processed_items_cnt,items_to_process_cnt,error,meta_data" ;
+        $query = "SELECT id,carrier,status,DATE_FORMAT(started_at, '%H:%i:%s - %d/%m/%Y') AS started_at,DATE_FORMAT(ended_at, '%H:%i:%s - %d/%m/%Y') AS ended_at,processed_items_cnt,items_to_process_cnt,error,meta_data" ;
         $query .= " FROM ".self::TABLE_NAME." WHERE id=".$process_id ;
 
         $order_submit_process_detail = self::$db->query($query)->fetch() ;

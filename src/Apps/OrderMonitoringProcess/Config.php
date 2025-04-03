@@ -7,11 +7,12 @@ class Config {
     public static $create_app_entities_order = array(
         "OrderToMonitor",
         "OrderMonitoringProcess",
-        "UpdatedOrders"
+        "UpdatedOrder"
     );
 
     public static $drop_app_entities_order = array(
         "OrderToMonitor",
+        "UpdatedOrder",
         "OrderMonitoringProcess"
     );
     

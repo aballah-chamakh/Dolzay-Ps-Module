@@ -3,14 +3,17 @@
 {% block stylesheets %}
     {{ parent() }}
     <link rel="stylesheet" href="{{ asset('../modules/dolzay/views/css/omp/omp_detail.css') }}">
+    
 {% endblock %}
 
 {% block content %}
 <div>
-
+    <div class="dz-process-detail-header">
+        <p>LE PROCESSUS DE SUIVI #{{process.id}}</p>
+    </div> 
     <div class="dz-process-state-container">
         <div class="dz-process-state-header">
-            <p>ÉTAT DU PROCESSUS</p>
+            <p>L'ÉTAT DU PROCESSUS</p>
         </div>
             <div class="dz-process-state-body">
                 <div class="dz-process-key-value"><label>État : </label> <span class="dz-badge dz-process-status" style="background-color:{{process.status_color}}">{{process.status}}</span></div>
@@ -58,12 +61,12 @@
         </div>
     </div>
 
-    <div class="dz-updateds-orders-container">
-        <div class="dz-updateds-orders-container-header">
-            <p>LES COMMANDES</p>
+    <div class="dz-updated-orders-container">
+        <div class="dz-updated-orders-container-header">
+            <p>LES COMMANDES MISES À JOUR</p>
         </div>
-        <div class="dz-updateds-orders-container-body">
-            <div class="dz-updateds-orders-filter-container">
+        <div class="dz-updated-orders-container-body">
+            <div class="dz-updated-orders-filter-container">
                 <div class="dz-filter-header">
                     <p>LE FILTRE</p>
                 </div> 
@@ -80,11 +83,20 @@
                     </div>
                     <div class="dz-filter-form-second-row">
                         <div class="dz-form-group">
-                            <label>status</label>
-                            <select class="dz-status-select form-control" name="status">
+                            <label>Ancien status</label>
+                            <select class="dz-status-select form-control" name="old_status">
                                 <option value="">Tous</option>
                                 {% for order_state_option in order_state_options %}
-                                    <option value="{{order_state_option.id}}" >{{order_state_option.name}}</option>
+                                    <option value="{{order_state_option.id_order_state}}" data-background-color={{order_state_option.color}} >{{order_state_option.name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="dz-form-group">
+                            <label>Nouvel status</label>
+                            <select class="dz-status-select form-control" name="new_status">
+                                <option value="">Tous</option>
+                                {% for order_state_option in order_state_options %}
+                                    <option value="{{order_state_option.id_order_state}}" data-background-color={{order_state_option.color}} >{{order_state_option.name}}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -92,15 +104,37 @@
                     <button class="dz-filter-btn">Filtrer</button>
                 </div>
             </div>
-            <div class="dz-updateds-orders-list-container">
+            <div class="dz-updated-orders-list-container">
                 <div class="dz-loading-overlay">
-                    <div class="dz-updateds-orders-table-spinner spinner-border" role="status">
+                    <div class="dz-updated-orders-table-spinner spinner-border" role="status">
                     </div>
                 </div>
-                <div class="dz-updateds-orders-list-header">
+                <div class="dz-updated-orders-list-header">
                     <p>LES COMMANDES</p>
                 </div>
-                <div class="dz-updateds-orders-list-body">
+                <div class="dz-slider-container">
+                    <div class="dz-slider dz-slider-mode" id="dz-kpi-slider">
+                        {% for kpi in process.kpis %}
+                            <div class="dz-kpi-card" style="background-color:{{kpi.new_status_color}}">
+                                <div class="dz-kpi-title">{{kpi.new_status}}</div>
+                                <div class="dz-kpi-value">{{kpi.count}}</div>
+                            </div> 
+                        {% endfor %}
+                    </div>
+                    <div class="dz-slider-controls">
+                        <button class="dz-slider-btn" id="dz-prev-btn" disabled>
+                            <svg viewBox="0 0 24 24">
+                                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                            </svg>
+                        </button>
+                        <button class="dz-slider-btn" id="dz-next-btn">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="dz-updated-orders-list-body">
                     <table class="table">
                         <thead >
                             <tr>
@@ -111,19 +145,19 @@
                                 <th>Détail</th>
                             </tr>
                         </thead>
-                        <tbody class="dz-updateds-orders-table-body" >
-                            {% for order in process.orders_to_monitor %}
-                                <td>{{order.id_order}}</td>
+                        <tbody class="dz-updated-orders-table-body" >
+                            {% for order in process.updated_orders %}
+                                <td>{{order.order_id}}</td>
                                 <td>{{order.firstname}} {{order.lastname}}</td>
-                                <td>{{order.old_status}}</td>
-                                <td>{{order.new_status}}</td>
-                                <td><span class="dz-order-detail-link" onClick="goToOrder({{order.id_order}})" ><i class="material-icons">remove_red_eye</i></span></td>
+                                <td><span class="dz-badge" style="background-color:{{order.old_status_color}}" >{{order.old_status}}</span></td>
+                                <td><span class="dz-badge" style="background-color:{{order.new_status_color}}" >{{order.new_status}}</span></td>
+                                <td><span class="dz-order-detail-link" onClick="goToOrder({{order.order_id}})" ><i class="material-icons">remove_red_eye</i></span></td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
-                <div class="dz-updateds-orders-table-footer">
+                <div class="dz-updated-orders-table-footer">
                     <p class="dz-pagination-range">{{first_end}} to {{last_end}} / {{total_count}}</p>
                     <div class="dz-page-number" >
                         <label>page : </label>

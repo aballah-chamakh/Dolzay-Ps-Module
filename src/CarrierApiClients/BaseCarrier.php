@@ -112,26 +112,41 @@ class BaseCarrier {
 
     }
 
-    public static function insert_an_update_order($omp_id, $order_id, $old_status, $new_status): int {
+    public static function insert_an_updated_order($omp_id, $order_id, $old_status, $new_status): int {
         $query = "INSERT INTO "._MODULE_PREFIX_."updated_order (omp_id, order_id, old_status, new_status) VALUES($omp_id, $order_id, $old_status, $new_status);";
         self::$db->query($query);
         return (int)self::$db->lastInsertId();
     }
 
     public static function updateOrderSubmitProcess($updates){
-        $query = "UPDATE "._MODULE_PREFIX_."order_submit_process SET ".implode(", ", $updates)." WHERE id=".self::$process_id ;
-        self::$db->query($query);
+        
+        $setParts = [];
+        $params = [];
+        foreach ($updates as $key => $value) {
+            $setParts[] = "$key = :$key";
+            $params[":$key"] = $value;
+        }
+        $setClause = implode(', ', $setParts);
+
+        $query = "UPDATE "._MODULE_PREFIX_."order_submit_process SET $setClause WHERE id=".self::$process_id ;
+        echo $query ;
+        $stmt = self::$db->prepare($query);
+        $stmt->execute($params);
+        
     }
 
     public static function updateOrderMonitoringProcess($updates,$commit=false){
-        $setClause = '';
+
+        $setParts = [];
         $params = [];
         foreach ($updates as $key => $value) {
-            $setClause .= "$key = :$key, ";
+            $setParts[] = "$key = :$key";
             $params[":$key"] = $value;
         }
+        $setClause = implode(', ', $setParts);
+
         $query = "UPDATE "._MODULE_PREFIX_."order_monitoring_process SET $setClause WHERE id=".self::$process_id ;
-        $stmt = $pdo->prepare($sql);
+        $stmt = self::$db->prepare($query);
         $stmt->execute($params);
         if($commit){
             self::$db->commit();

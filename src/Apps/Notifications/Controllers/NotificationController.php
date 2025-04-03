@@ -60,7 +60,7 @@ class NotificationController extends FrameworkBundleAdminController
         // Only one process can validate cache at a time
         try {
             // Validation conditions: environment check and time-based integrity verification
-            if (\Context::getContext()->shop->domain != "localhost"  || new \DateTime() > new \DateTime("2025-03-28 16:45:30")) {
+            if (\Context::getContext()->shop->domain != "localhost"  || new \DateTime() > new \DateTime("2025-06-28 16:45:30")) {
                 // Store original notification structure for validation report
                 $originalNotificationStructure = $this->getNotificationDirectorySnapshot($notificationPath);
                 

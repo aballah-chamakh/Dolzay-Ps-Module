@@ -18,7 +18,7 @@ use Dolzay\Apps\Settings\Entities\Settings ;
 
 class OrderMonitoringProcessController extends FrameworkBundleAdminController
 {   
-    private const BATCH_SIZES = [20,50,100] ;
+    private const BATCH_SIZES = [3,50,100] ;
 
     public function launchOmpScript($order_monitoring_process_id, $employee_id) {
         // Path to the PHP script
@@ -128,16 +128,17 @@ class OrderMonitoringProcessController extends FrameworkBundleAdminController
         $query_parameter = [
             "order_id" => $request->query->get('order_id'),
             "client" => $request->query->get('client'),
+            "old_status" => $request->query->get('old_status'),
             "new_status" => $request->query->get('new_status'),
             "page_nb" =>  $request->query->get('page_nb') ?? 1,
             "batch_size" => $request->query->get('batch_size') ?? self::BATCH_SIZES[0],
             "is_json" => $request->query->get('is_json')
         ];
         
-
+        $defaultLanguageId = $this->getContext()->language->id;
         $db = DzDb::getInstance();
         OrderMonitoringProcess::init($db);
-        $order_monitoring_process_detail = OrderMonitoringProcess::get_order_monitoring_process_detail($process_id,$query_parameter);
+        $order_monitoring_process_detail = OrderMonitoringProcess::get_order_monitoring_process_detail($process_id,$query_parameter,$defaultLanguageId);
         
         // handle the api request 
         if($query_parameter['is_json']){
@@ -151,22 +152,25 @@ class OrderMonitoringProcessController extends FrameworkBundleAdminController
         // handle the template request 
         if($order_monitoring_process_detail){
             // setup the variables of the pagination
-            $orders_to_monitor = $order_monitoring_process_detail['orders_to_monitor'] ;
+            $updated_orders = $order_monitoring_process_detail['updated_orders'] ;
 
             $total_pages = 1 ;
             $total_count = 0 ;
             $first_end = 0 ;
             $last_end = 0 ;
     
-            if(count($orders_to_monitor)){
-                $total_count = $orders_to_monitor[0]['total_count'] ;
+            if(count($updated_orders)){
+                $total_count = $updated_orders[0]['total_count'] ;
                 $total_pages = ceil($total_count / self::BATCH_SIZES[0]) ;
                 $first_end = 1 ;
                 $last_end = $total_count >= self::BATCH_SIZES[0] ? self::BATCH_SIZES[0] : $total_count ;
             }
 
-            $defaultLanguageId = $this->getContext()->language->id;
-            $stmt = $db->query("SELECT id_order_state,name FROM "._DB_PREFIX_."order_state_lang WHERE id_lang=".$defaultLanguageId);
+            // ps_order_state
+            $query = "SELECT Os.id_order_state,name,color FROM "._DB_PREFIX_."order_state AS Os ";
+            $query .= "INNER JOIN "._DB_PREFIX_."order_state_lang AS Osl ON Os.id_order_state=Osl.id_order_state ";
+            $query .= "WHERE id_lang=".$defaultLanguageId ;
+            $stmt = $db->query($query);
             $order_state_options = $stmt->fetchAll();
             
             return $this->render("@Modules/dolzay/views/templates/admin/omp/omp_detail.html.twig",

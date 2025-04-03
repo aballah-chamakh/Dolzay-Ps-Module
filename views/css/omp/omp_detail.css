@@ -1,3 +1,19 @@
+
+.dz-process-detail-header {
+    display: flex;
+    padding : 10px ;
+    background-color: #1a456e;
+    margin-bottom : 10px ;
+    border-radius : 5px ;
+}
+
+.dz-process-detail-header p{
+    margin: 0;
+    font-weight: 600;
+    font-size: 17px;
+    color : white ;
+}
+
 .dz-process-state-container{
     display : flex ; 
     flex-direction: column;
@@ -8,7 +24,6 @@
     margin-bottom : 10px ;
     font-size : 16px
 }
-
 .dz-process-state-header{
     display : flex ; 
     border-bottom : 1px solid #ddd; 
@@ -23,7 +38,7 @@
 }
 
 .dz-process-state-body,
-.dz-orders-to-submit-list-body{
+.dz-updated-orders-list-body{
     display: flex;
     width : 100% ;
     flex-direction: column;
@@ -58,8 +73,6 @@
     margin-bottom : 5px !important ;
 }
 
-
-
 .dz-progress-placeholder {
     height : 20px ;
     width : 100% ;
@@ -78,7 +91,7 @@
     border-radius: 4px; 
 }
 
-.dz-process-orders-to-submit,.dz-process-submitted-orders{
+.dz-process-orders-to-monitor,.dz-process-monitored-orders{
     position : absolute ;
     font-weight: 600;
     right: -5px;
@@ -109,7 +122,7 @@
 }
 
 
-.dz-orders-to-submit-container{
+.dz-updated-orders-container{
     display: flex;
     flex-direction: column;
     background-color: white;
@@ -117,17 +130,17 @@
     border-radius : 5px ;
 }
 
-.dz-orders-to-submit-filter-container,
-.dz-orders-to-submit-list-container{
+.dz-updated-orders-filter-container,
+.dz-updated-orders-list-container{
     margin : 10px ;
     border : 0.1px solid #ddd ;
     border-radius : 5px ;
     position : relative
 }
 
-.dz-orders-to-submit-container-header,
+.dz-updated-orders-container-header,
 .dz-filter-header,
-.dz-orders-to-submit-list-header
+.dz-updated-orders-list-header
 {
     display : flex ; 
     border-bottom : 1px solid #ddd; 
@@ -135,9 +148,9 @@
     width : 100% ;
 }
 
-.dz-orders-to-submit-container-header p,
+.dz-updated-orders-container-header p,
 .dz-filter-header p,
-.dz-orders-to-submit-list-header p{
+.dz-updated-orders-list-header p{
     margin: 0;
     font-weight: 600;
     font-size: 17px;
@@ -155,6 +168,14 @@
     margin-bottom: 0px;
     width: 100%;
 }
+.dz-filter-form-second-row{
+    display: flex;
+    width : 100% ;
+    gap: 10px;
+    margin-bottom: 0px;
+    width: 100%;
+}
+
 .dz-form-group {
     flex: 1;
     display: flex;
@@ -191,14 +212,14 @@
     z-index: 2000;
 }
 
-.dz-orders-to-submit-table-spinner{
+.dz-updated-orders-table-spinner{
     z-index: 2001;
     color : black ;
     height: 50px;
     width: 50px; 
 }
 
-.dz-orders-to-submit-list-body table {
+.dz-updated-orders-list-body table {
     width: 100%;
     min-width: 800px;
     text-align: center;    
@@ -206,13 +227,13 @@
 
 }
 
-.dz-orders-to-submit-list-body .table thead {
+.dz-updated-orders-list-body .table thead {
     background-color: #1a456e;
     color : white ;
 }
 
 
-.dz-orders-to-submit-list-body .table thead th {
+.dz-updated-orders-list-body .table thead th {
     padding: 10px;
     border : none ;
     font-size: 16px;
@@ -220,17 +241,17 @@
 
 }
 
-.dz-orders-to-submit-list-body .table td {
+.dz-updated-orders-list-body .table td {
     padding: 10px;
     font-size: 16px;
 }
 
-.dz-orders-to-submit-list-body .table .dz-order-detail-link{
+.dz-updated-orders-list-body .table .dz-order-detail-link{
     color : #1a456e ;
     cursor: pointer;
 }
 
-.dz-orders-to-submit-table-footer{
+.dz-updated-orders-table-footer{
     display: flex;
     width : 100% ;
     justify-content: space-between;
@@ -238,22 +259,22 @@
     padding : 0px 10px 8px 10px ;
 }
 
-.dz-orders-to-submit-table-footer p{
+.dz-updated-orders-table-footer p{
     margin: 0px;
     font-size: 16px;
 }
 
-.dz-orders-to-submit-table-footer label{
+.dz-updated-orders-table-footer label{
     font-size: 16px;
 }
 
-.dz-orders-to-submit-table-footer .dz-page-number {
+.dz-updated-orders-table-footer .dz-page-number {
     display: flex ;
     gap : 5px ;
     align-items: center;
 }
 
-.dz-orders-to-submit-table-footer select {
+.dz-updated-orders-table-footer select {
     padding : 0px 10px; 
     width : 60px ;
 }
@@ -285,17 +306,7 @@
     right: 0px;
 }
 
-.dz-process-terminate-btn{
-    width: 200px;
-    padding: 8px;
-    background: #1a456e;
-    border: none;
-    cursor: pointer;
-    border-radius: 5px;
-    font-size: 16px;
-    font-weight: 600;
-    color:white;
-}
+
 .dz-btn-spinner-white {
     color: white;
     height: 20px;
@@ -303,15 +314,6 @@
     border-width: 3px;
 }
 
-/* STYLING THE EVENT POPUP AND THE EVENT POPUP OVERLAY */
-/*
-    dz-popup-overlay d
-    dz-event-popup d
-    dz-event-popup-header d
-    dz-event-popup-body d
-    dz-event-popup-footer
-    dz-show
-*/
 
 .dz-event-popup-overlay {
     display : none ;
@@ -404,15 +406,173 @@
 }
 
 
+/* START STYLING THE SLIDER */
+
+
+.dz-slider-container {
+    position: relative;
+    overflow: hidden;
+    padding: 10px ;
+    padding-bottom : 0px ;
+}
+
+.dz-slider {
+    display: flex;
+    transition: transform 0.5s ease;
+    width: 100%;
+}
+
+.dz-kpi-card {
+    color :white ;
+    height: 100px;
+    margin-right: 10px;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+    border-left: 5px solid rgba(0, 0, 0, 0.1);
+    /* Flexible width settings */
+    flex: 1;
+    min-width: 200px; /* Minimum width for very small screens */
+}
+
+/* When in slider mode (multiple cards visible) */
+.dz-slider-mode .dz-kpi-card {
+    flex: 0 0 auto; /* Don't grow in slider mode */
+    width: calc((100% - 30px) / 3); /* Show 3 cards with margins in between */
+}
+
+/* When in single card mode (mobile) */
+.dz-single-card-mode .dz-kpi-card {
+    flex: 0 0 auto;
+    width: 100%;
+    margin-right: 0;
+}
+
+.dz-kpi-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.dz-kpi-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.dz-kpi-label {
+    font-size: 0.75rem;
+    color: #4b5563;
+    margin-top: 0.25rem;
+}
+
+.dz-slider-controls {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+}
+
+.dz-slider-btn {
+    background: #fff;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    pointer-events: auto;
+    z-index: 10;
+}
+
+.dz-slider-btn:hover {
+    background: #f8fafc;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.dz-slider-btn:active {
+    transform: translateY(0);
+}
+
+.dz-slider-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.dz-slider-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: #333;
+}
+
+.dz-total-orders {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 1rem;
+    color: #6b7280;
+    padding: 0.75rem;
+    background-color: #f9fafb;
+    border-radius: 8px;
+}
+
+.dz-total-orders span {
+    font-weight: bold;
+    color: #111827;
+}
+
+
+
+
+
+/* Make the design responsive */
+@media (max-width: 992px) {
+    .dz-slider-mode .dz-kpi-card {
+        width: calc((100% - 20px) / 2); /* Show 2 cards with margins in between */
+    }
+}
+
+
+
+
+
+
 @media (max-width: 768px) {
     .dz-filter-form-first-row{
         flex-direction: column;
     }
-    .dz-process-terminate-btn{
-        width : 100% ;
+    .dz-filter-form-second-row{
+        flex-direction: column;
     }
-    .dz-orders-to-submit-table-footer{
+
+    .dz-updated-orders-table-footer{
         padding : 8px  10px ;
+    }
+
+    .dz-slider-mode .dz-kpi-card {
+        width: calc(100% - 20px); /* Show 1 card at a time */
+    }
+    
+    .dz-slider-btn {
+        width: 36px;
+        height: 36px;
     }
 
 }
@@ -426,6 +586,10 @@
     }
     .dz-event-popup-body p{
         text-align: center;
+    }
+    .dz-slider-btn {
+        width: 32px;
+        height: 32px;
     }
 }
 

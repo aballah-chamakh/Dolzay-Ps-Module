@@ -8,10 +8,12 @@
 
 {% block content %}
 <div>
-
+    <div class="dz-process-detail-header">
+        <p>Le processus de soumission #{{process.id}}</p>
+    </div> 
     <div class="dz-process-state-container">
         <div class="dz-process-state-header">
-            <p>ÉTAT DU PROCESSUS</p>
+            <p>L'ÉTAT DU PROCESSUS</p>
         </div>
             <div class="dz-process-state-body">
                 <div class="dz-process-key-value"><label>Transporteur : </label><span>{{process.carrier}}</span></div>
@@ -62,7 +64,7 @@
 
     <div class="dz-orders-to-submit-container">
         <div class="dz-orders-to-submit-container-header">
-            <p>LES COMMANDES SOUMISES ET NON SOUMISES</p>
+            <p>LES COMMANDES SOUMISES</p>
         </div>
         <div class="dz-orders-to-submit-container-body">
             <div class="dz-orders-to-submit-filter-container">

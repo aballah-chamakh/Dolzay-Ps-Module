@@ -3,6 +3,20 @@
     --border-color: #ddd;
 }
 
+.dz-process-list-header {
+    display: flex;
+    padding : 10px ;
+    background-color: #1a456e;
+    margin-bottom : 10px ;
+    border-radius : 5px ;
+}
+
+.dz-process-list-header p{
+    margin: 0;
+    font-weight: 600;
+    font-size: 17px;
+    color : white ;
+}
 .dz-process-list-container {
     width: 100% ;
     margin: 10px auto;

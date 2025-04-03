@@ -10,7 +10,7 @@ class OrderMonitoringProcess {
 
     public const TABLE_NAME = ModuleConfig::MODULE_PREFIX."order_monitoring_process";
     public const STATUS_TYPES = [
-                                  "Actif", // submitting orders 
+                                  "Actif", // monitoring orders 
                                    "Interrompu", // interrupted by the user
                                    "Terminé"];
 
@@ -61,7 +61,7 @@ class OrderMonitoringProcess {
         return $process ;
     }
 
-    public static function get_order_submit_process_list($query_parameter){
+    public static function get_order_monitoring_process_list($query_parameter){
         
         $values = ['limit'=>$query_parameter['batch_size'],'offset'=>($query_parameter['page_nb'] - 1) * $query_parameter['batch_size']] ;
         
@@ -97,21 +97,43 @@ class OrderMonitoringProcess {
         return $processes ;
     }
 
-    public static function get_order_monitoring_process_detail($process_id,$query_parameter){
+    public static function get_order_monitoring_process_detail($process_id,$query_parameter,$id_lang){
         
-        $query = "SELECT status,DATE_FORMAT(started_at, '%H:%i:%s - %d/%m/%Y') AS started_at,DATE_FORMAT(ended_at, '%H:%i:%s - %d/%m/%Y') AS ended_at,processed_items_cnt,items_to_process_cnt,error" ;
+        // fech the order_monitoring_process_detail by id
+        $query = "SELECT id,status,DATE_FORMAT(started_at, '%H:%i:%s - %d/%m/%Y') AS started_at,DATE_FORMAT(ended_at, '%H:%i:%s - %d/%m/%Y') AS ended_at,processed_items_cnt,items_to_process_cnt,error" ;
         $query .= " FROM ".self::TABLE_NAME." WHERE id=".$process_id ;
 
         $order_monitoring_process_detail = self::$db->query($query)->fetch() ;
         if(!$order_monitoring_process_detail){
             return false ;
         }
-        // add the orders_to_monitor to order_monitoring_process_detail
-        $orders_to_monitor = [];
+        $order_monitoring_process_detail['status_color'] = self::STATUS_COLORS[$order_monitoring_process_detail['status']] ;
+
+        // fetch the kpis of order_monitoring_process and add them to it
+        $query  = "SELECT NewStatusLang.name AS new_status,NewStatus.color AS new_status_color,COUNT(*) AS count FROM `dz_updated_order` As Uord ";
+        $query .= "LEFT JOIN "._DB_PREFIX_."order_state AS NewStatus ON Uord.new_status = NewStatus.id_order_state ";
+        $query .= "LEFT JOIN "._DB_PREFIX_."order_state_lang AS NewStatusLang ON NewStatus.id_order_state = NewStatusLang.id_order_state AND NewStatusLang.id_lang = ".(int)$id_lang." ";
+        $query .= "GROUP BY Uord.new_status";
+        $stmt = self::$db->prepare($query);
+        $stmt->execute();
+        $order_monitoring_process_detail['kpis'] = $stmt->fetchAll();
+
+        if(count($order_monitoring_process_detail['kpis']) == 0){
+            $order_monitoring_process_detail['updated_orders'] = [] ;
+            return $order_monitoring_process_detail ;
+        }
+
+        
+        // fetch the updated_orders of order_monitoring_process and add them to it
+        $updated_orders = [];
         $values = ['limit'=>$query_parameter['batch_size'],'offset'=>($query_parameter['page_nb'] - 1) * $query_parameter['batch_size']] ;
-        $query  = "SELECT id_order,firstname,lastname,COUNT(*) OVER() as total_count FROM ".UpdatedOrder::TABLE_NAME." AS Uord " ;
+        $query  = "SELECT Uord.order_id,Addr.firstname,Addr.lastname,OldStatusLang.name AS old_status,OldStatus.color AS old_status_color,NewStatusLang.name AS new_status,NewStatus.color AS new_status_color,COUNT(*) OVER() as total_count FROM ".UpdatedOrder::TABLE_NAME." AS Uord " ;
         $query .= "INNER JOIN "._DB_PREFIX_.\OrderCore::$definition['table']. " AS Ord ON Ord.id_order=Uord.order_id " ;
-        $query .= "INNER JOIN "._DB_PREFIX_.\AddressCore::$definition['table']." As Addr ON Ord.id_address_delivery=Addr.id_address ";
+        $query .= "LEFT JOIN "._DB_PREFIX_.\AddressCore::$definition['table']." As Addr ON Ord.id_address_delivery=Addr.id_address ";
+        $query .= "LEFT JOIN "._DB_PREFIX_."order_state AS OldStatus ON Uord.old_status = OldStatus.id_order_state ";
+        $query .= "LEFT JOIN "._DB_PREFIX_."order_state_lang AS OldStatusLang ON OldStatus.id_order_state = OldStatusLang.id_order_state AND OldStatusLang.id_lang = ".(int)$id_lang." ";
+        $query .= "LEFT JOIN "._DB_PREFIX_."order_state AS NewStatus ON Uord.new_status = NewStatus.id_order_state ";
+        $query .= "LEFT JOIN "._DB_PREFIX_."order_state_lang AS NewStatusLang ON NewStatus.id_order_state = NewStatusLang.id_order_state AND NewStatusLang.id_lang = ".(int)$id_lang." ";
         $query .= "WHERE Uord.omp_id=$process_id" ;
 
         if($query_parameter['order_id']){
@@ -129,21 +151,24 @@ class OrderMonitoringProcess {
             $values['new_status'] = $query_parameter['new_status'] ;
         }
 
+        if($query_parameter['old_status']){
+            $query .= " AND Uord.old_status=:old_status" ; 
+            $values['old_status'] = $query_parameter['old_status'] ;
+        }
+
         $query .= " LIMIT :limit OFFSET :offset ;" ;
         $stmt = self::$db->prepare($query);
         $stmt->execute($values);
-        $orders_to_monitor = $stmt->fetchAll();
-        if(count($orders_to_monitor) == 0){
+        $updated_orders = $stmt->fetchAll();
+        if(count($updated_orders) == 0){
             $values['offset'] = 0 ;
             $values['limit'] = $query_parameter['batch_size'] ;
             $stmt = self::$db->prepare($query);
             $stmt->execute($values);
-            $orders_to_monitor = $stmt->fetchAll();
+            $updated_orders = $stmt->fetchAll();
         }
-        
 
-        $order_monitoring_process_detail['orders_to_monitor'] = $orders_to_monitor ;
-        $order_monitoring_process_detail['status_color'] = self::STATUS_COLORS[$order_monitoring_process_detail['status']] ;
+        $order_monitoring_process_detail['updated_orders'] = $updated_orders ;
         return $order_monitoring_process_detail ;
     }
 
