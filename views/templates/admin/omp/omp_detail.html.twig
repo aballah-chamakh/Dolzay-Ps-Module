@@ -114,8 +114,9 @@
                 </div>
                 <div class="dz-slider-container">
                     <div class="dz-slider dz-slider-mode" id="dz-kpi-slider">
+
                         {% for kpi in process.kpis %}
-                            <div class="dz-kpi-card" style="background-color:{{kpi.new_status_color}}">
+                            <div class="dz-kpi-card" style="background-color:{{kpi.new_status_color}};">
                                 <div class="dz-kpi-title">{{kpi.new_status}}</div>
                                 <div class="dz-kpi-value">{{kpi.count}}</div>
                             </div> 

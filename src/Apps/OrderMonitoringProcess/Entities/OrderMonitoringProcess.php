@@ -110,9 +110,10 @@ class OrderMonitoringProcess {
         $order_monitoring_process_detail['status_color'] = self::STATUS_COLORS[$order_monitoring_process_detail['status']] ;
 
         // fetch the kpis of order_monitoring_process and add them to it
-        $query  = "SELECT NewStatusLang.name AS new_status,NewStatus.color AS new_status_color,COUNT(*) AS count FROM `dz_updated_order` As Uord ";
+        $query  = "SELECT NewStatusLang.name AS new_status,NewStatus.color AS new_status_color,COUNT(*) AS count FROM ".UpdatedOrder::TABLE_NAME." As Uord ";
         $query .= "LEFT JOIN "._DB_PREFIX_."order_state AS NewStatus ON Uord.new_status = NewStatus.id_order_state ";
         $query .= "LEFT JOIN "._DB_PREFIX_."order_state_lang AS NewStatusLang ON NewStatus.id_order_state = NewStatusLang.id_order_state AND NewStatusLang.id_lang = ".(int)$id_lang." ";
+        $query .= "WHERE Uord.omp_id=$process_id ";
         $query .= "GROUP BY Uord.new_status";
         $stmt = self::$db->prepare($query);
         $stmt->execute();

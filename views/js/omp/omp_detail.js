@@ -444,7 +444,97 @@ $('.dz-page-nb-select').on('change', function() {
 });
 
 // STARTING THE JS OF THE SLIDER
+const cardWidth = 400 
+const slider  = document.getElementById("dz-kpi-slider")
+const prevBtn = document.getElementById('dz-prev-btn');
+const nextBtn = document.getElementById('dz-next-btn');
+let currentsliderPosition = 0 ;
 
+function updateControlBtns(){
+  // show or hide the control buttons based on the tolal number of cards and the width of slider container
+  let cardsCountPerView = Math.trunc((slider.offsetWidth / (cardWidth + 10)))
+  console.log("cardsCountPerView : "+cardsCountPerView)
+  let totalCardsCount = document.querySelectorAll(".dz-kpi-card").length
+  console.log("totalCardsCount : "+totalCardsCount)
+  if(totalCardsCount > cardsCountPerView){
+    // enable the control buttons 
+    prevBtn.style.display = 'flex';
+    nextBtn.style.display = 'flex';
+  }else{
+    // disable the control buttons 
+    prevBtn.style.display = 'none';
+    nextBtn.style.display = 'none';
+  }
+
+  // disable the prev control button if we are in the first end and re-enable it if we aren't 
+  if(slider.style.transform == "translateX(0px)"){
+    prevBtn.disabled = true
+  }else{
+    prevBtn.disabled = false
+  }
+
+  // disable the next control button if we are in the last end and re-enable it if we aren't 
+
+}
+
+
+window.addEventListener('resize', function() {
+    
+    if(slider.offsetWidth < cardWidth){
+        document.querySelector(".dz-kpi-card").forEach((card)=>{
+            card.style.width = "100%"
+        })
+    }else{
+        document.querySelector(".dz-kpi-card").forEach((card)=>{
+            card.style.width = cardWidth +"px"
+        })
+    }
+
+    updateControlBtns()
+});
+
+// Slide to the left
+nextBtn.addEventListener('click', function() {
+    // get the count of the card that can fit in the visible part of the container
+    let cardsCountPerView = Math.trunc((slider.offsetWidth / (cardWidth + 10)))
+    // get the distance we should scroll which is the width of next cards we can fit in the visible part of the container
+    let distanceToScroll = (cardsCountPerView * (cardWidth + 10))
+    // get the distance left to scroll 
+    let distanceLeftToScroll = (slider.scrollWidth - (currentsliderPosition + distanceToScroll))
+    
+    if (distanceToScroll >= distanceLeftToScroll){
+        currentsliderPosition += distanceToScroll
+        updateControlBtns()
+    }else{
+        currentsliderPosition += distanceLeftToScroll
+    }
+    
+    slider.style.transform = `translateX(-${currentsliderPosition}px)`;
+});
+
+// Slide to the right
+prevBtn.addEventListener('click', function() {
+    // get the count of the card that can fit in the visible part of the container
+    let cardsCountPerView = Math.trunc((slider.offsetWidth / (cardWidth + 10)))
+    // get the distance we should scroll which is the width of previoys cards we can fit in the visible part of the container
+    let distanceToScroll = (cardsCountPerView * (cardWidth + 10))
+    // the distanceLeftToScroll is the same as currentsliderPosition
+    let distanceLeftToScroll = currentsliderPosition
+    
+    if (distanceToScroll >= distanceLeftToScroll){
+        currentsliderPosition -= distanceToScroll
+        updateControlBtns()
+    }else{
+        currentsliderPosition -= distanceLeftToScroll
+    }
+    
+    slider.style.transform = `translateX(-${currentsliderPosition}px)`;
+});
+
+
+
+// ENDING THE JS OF THE SLIDER
+/*
 const slider = document.getElementById('dz-kpi-slider');
 const prevBtn = document.getElementById('dz-prev-btn');
 const nextBtn = document.getElementById('dz-next-btn');
@@ -536,5 +626,5 @@ window.addEventListener('resize', function() {
 // Initialize
 calculateDimensions();
 updateButtons();
+*/
 
-// ENDING THE JS OF THE SLIDER
