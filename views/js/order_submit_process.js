@@ -1,8 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
 
-    //const moduleControllerBaseUrl = window.location.href.split('/index.php')[0]+"/dz";
-    const moduleControllerBaseUrl = "http://localhost/prestashop/dz_admin/dz" ;
-    const moduleMediaBaseUrl = window.location.origin+"/prestashop/modules/dolzay/uploads";
+    //const dz_module_controller_base_url = window.location.href.split('/index.php')[0]+"/dz";
+    //const dz_module_controller_base_url = "http://localhost/prestashop/dz_admin/dz" ;
     const urlParams = new URLSearchParams(window.location.search);
     const _token = urlParams.get('_token');
     //const dz_carriers = ["Afex"] ;
@@ -13,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
         restricted : {icon:`<i class='fas fa-minus-circle' style="color:#D81010" ></i>`,color:'#D81010'},
         error : {icon : `<i class="material-icons" style="color:#D81010" >error</i>`,color:'#D81010'},
         success : {icon:`<i class="fas fa-check-circle" style="color:#28C20F" ></i>`,color:'#28C20F'},
-        expired : {icon:`<img src='${moduleMediaBaseUrl}/expired.png' />`,color:'#D81010'}
+        expired : {icon:`<img src='${dz_module_base_url}/uploads/expired.png' />`,color:'#D81010'}
     }
 
 
@@ -82,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const Server = {
         launchOsp : function(orderIds,carrier,continueBtn,cancelBtn){
-            fetch(moduleControllerBaseUrl+"/order_submit_process?_token="+_token, {
+            fetch(dz_module_controller_base_url+"/order_submit_process?_token="+_token, {
                 method: 'POST',
                 credentials: 'include', // Ensures cookies are sent with the request
                 headers: {
@@ -154,7 +153,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         },
         continueOsp : function(process_id,ordersToResubmitIds,continueBtn,cancelBtn){
-            let url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/continue?_token="+_token
+            let url = dz_module_controller_base_url+"/order_submit_process/"+process_id+"/continue?_token="+_token
             console.log("url : "+url)
             console.log(ordersToResubmitIds)
             fetch(url, {
@@ -196,7 +195,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 'name' : 'Détail',
                                 'className' : "dz-event-popup-btn",
                                 'clickHandler' : function(){
-                                    let process_detail_url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/?_token="+_token
+                                    let process_detail_url = dz_module_controller_base_url+"/order_submit_process/"+process_id+"/?_token="+_token
                                     window.open(process_detail_url,"_blank")
                                     eventPopup.close();
                                 }
@@ -224,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Error:', error)});
         },
         cancelOsp : function(process_id,cancelBtn,continueBtn){
-            let url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/cancel?_token="+_token
+            let url = dz_module_controller_base_url+"/order_submit_process/"+process_id+"/cancel?_token="+_token
             console.log("url : "+url)
             fetch(url, {
                 method: 'PUT',
@@ -245,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 'name' : 'Détail',
                                 'className' : "dz-event-popup-btn",
                                 'clickHandler' : function(){
-                                    let process_detail_url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/?_token="+_token
+                                    let process_detail_url = dz_module_controller_base_url+"/order_submit_process/"+process_id+"/?_token="+_token
                                     window.open(process_detail_url,"_blank")
                                     eventPopup.close();
                                 }
@@ -276,7 +275,7 @@ document.addEventListener('DOMContentLoaded', function() {
         terminateOsp : function(process_id,terminateBtn){
             // note : the monitoring is the one reponsible for confirming the termination of the process or informing
             // the user about a conflict 
-            let url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/terminate?_token="+_token
+            let url = dz_module_controller_base_url+"/order_submit_process/"+process_id+"/terminate?_token="+_token
             console.log("url : "+url)
             fetch(url, {
                 method: 'PUT',
@@ -297,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         },
         monitorOsp : function(process_id){
-            let url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/monitor?_token="+_token
+            let url = dz_module_controller_base_url+"/order_submit_process/"+process_id+"/monitor?_token="+_token
             console.log("url : "+url)
             fetch(url, {
                 method: 'GET',
@@ -318,10 +317,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         popup.close()
                         buttons = [
                             {
-                                'name' : 'Ok',
+                                'name' : 'Détail',
                                 'className' : "dz-event-popup-btn",
                                 'clickHandler' : function(){
-                                                eventPopup.close();
+                                    let process_detail_url = dz_module_controller_base_url+"/order_submit_process/"+process_id+"/?_token="+_token
+                                    window.open(process_detail_url,"_blank")
+                                    eventPopup.close();
                                 }
                             }
                         ]
@@ -333,10 +334,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         buttons = [
                             {
-                                'name' : 'Ok',
+                                'name' : 'Détail',
                                 'className' : "dz-event-popup-btn",
                                 'clickHandler' : function(){
-                                                eventPopup.close();
+
+                                    let process_detail_url = dz_module_controller_base_url+"/order_submit_process/"+process_id+"/?_token="+_token
+                                    window.open(process_detail_url,"_blank")
+                                    eventPopup.close();
                                 }
                             }
                         ]
@@ -354,7 +358,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 'name' : 'Détail',
                                 'className' : "dz-event-popup-btn",
                                 'clickHandler' : function(){
-                                    let process_detail_url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/?_token="+_token
+                                    let process_detail_url = dz_module_controller_base_url+"/order_submit_process/"+process_id+"/?_token="+_token
                                     window.open(process_detail_url,"_blank")
                                     eventPopup.close();
                                 }
@@ -373,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
         launchOmp : function(){
             const start_btn = document.querySelector(".dz-start-btn")
 
-            fetch(moduleControllerBaseUrl+"/order_monitoring_process?_token="+_token, {
+            fetch(dz_module_controller_base_url+"/order_monitoring_process?_token="+_token, {
                 method: 'POST',
                 credentials: 'include', // Ensures cookies are sent with the request
             })
@@ -420,7 +424,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         },
         monitorOmp : function(process_id){
-            let url = moduleControllerBaseUrl+"/order_monitoring_process/"+process_id+"/monitor?_token="+_token
+            let url = dz_module_controller_base_url+"/order_monitoring_process/"+process_id+"/monitor?_token="+_token
 
             fetch(url, {
                 method: 'GET',
@@ -440,10 +444,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         popup.close()
                         buttons = [
                             {
-                                'name' : 'Ok',
+                                'name' : 'Détail',
                                 'className' : "dz-event-popup-btn",
                                 'clickHandler' : function(){
-                                                eventPopup.close();
+                                    let process_detail_url = dz_module_controller_base_url+"/order_monitoring_process/"+process_id+"/?_token="+_token
+                                    window.open(process_detail_url,"_blank")
+                                    eventPopup.close();
                                 }
                             }
                         ]
@@ -458,7 +464,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 'name' : 'Détail',
                                 'className' : "dz-event-popup-btn",
                                 'clickHandler' : function(){
-                                    let process_detail_url = moduleControllerBaseUrl+"/order_monitoring_process/"+process_id+"/?_token="+_token
+                                    let process_detail_url = dz_module_controller_base_url+"/order_monitoring_process/"+process_id+"/?_token="+_token
                                     window.open(process_detail_url,"_blank")
                                     eventPopup.close();
                                 }
@@ -475,7 +481,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => console.error('Error:', error));
         },
         monitorNotifications : function(){
-            let url = moduleControllerBaseUrl+"/notifications/list?_token="+_token+"&notif_type=process&page_nb=1&batch_size=20"
+            let url = dz_module_controller_base_url+"/notifications/list?_token="+_token+"&notif_type=process&page_nb=1&batch_size=20"
             fetch(url, {
                 method: 'GET',
                 credentials: 'include' // Ensures cookies are sent with the request
@@ -680,7 +686,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // create the carrier icon  
             const carrierIcon = document.createElement('img');
             carrierIcon.className = "dz-carrier-icon" 
-            carrierIcon.src = moduleMediaBaseUrl+"/carrier_icon.png";
+            carrierIcon.src = dz_module_base_url+"/uploads/carrier_icon.png";
             selectCarrierStepContainer.appendChild(carrierIcon);
     
             // create the carrier select 
@@ -896,7 +902,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `
             let ordersToResubmitIds = this.getOrdersToResubmitIds()
-            let url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/continue?_token="+_token
+            let url = dz_module_controller_base_url+"/order_submit_process/"+process_id+"/continue?_token="+_token
             console.log("url : "+url)
             Server.continueOsp(process_id,ordersToResubmitIds,continueBtn,cancelBtn)
 
@@ -912,7 +918,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `
 
-            let url = moduleControllerBaseUrl+"/order_submit_process/"+process_id+"/cancel?_token="+_token
+            let url = dz_module_controller_base_url+"/order_submit_process/"+process_id+"/cancel?_token="+_token
             console.log("url : "+url)
             Server.cancelOsp(process_id,cancelBtn,continueBtn);
         },
@@ -963,7 +969,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             ]
 
-            popup.addButtons(buttons);
+            //popup.addButtons(buttons);
 
             // here i have to put a set interval that periodically pulls the state of the order submit process
             // also i have to caputure the value of the interval to clear it later once the process is completed or has an error or was terminated by the user

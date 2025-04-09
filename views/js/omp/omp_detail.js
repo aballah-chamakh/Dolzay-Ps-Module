@@ -240,30 +240,9 @@ function monitorOrderMonitoringProcess(){
                     }
                 ]
 
-                let message = `${order_monitoring_process.processed_items_cnt}/${order_monitoring_process.items_to_process_cnt} commandes ont été soumises avec succès à ${order_monitoring_process.carrier}.`
+                let message = `${order_monitoring_process.processed_items_cnt}/${order_monitoring_process.items_to_process_cnt} commandes ont été suivies avec succès .`
                 eventPopup.open("success","Succés",message,buttons)
 
-                // hide the the fixed footer
-                $(".dz-fixed-footer").hide()
-                $(".dz-updated-orders-container").css("margin-bottom","0px")
-            }else if(order_monitoring_process.status == "Terminé par l'utilisateur"){
-                eventPopup.create()
-                eventPopupOverlay.create();
-                buttons = [
-                    {
-                        'name' : 'Ok',
-                        'clickHandler' : function(){
-                                        eventPopup.close();
-                        }
-                    }
-                ]
-
-                let message = "Le processus de soumission des commandes a bien été arrêté"
-                if(order_monitoring_process.processed_items_cnt > 0){
-                    message =`Le processus de soumission des commandes a bien été arrêté après la soumission de ${order_monitoring_process.processed_items_cnt}/${order_monitoring_process.items_to_process_cnt} commandes à ${order_monitoring_process.carrier}.`
-                }
-                eventPopup.open("success","Succés",message,buttons)
-                
                 // hide the the fixed footer
                 $(".dz-fixed-footer").hide()
                 $(".dz-updated-orders-container").css("margin-bottom","0px")
@@ -443,37 +422,64 @@ $('.dz-page-nb-select').on('change', function() {
     updateTheOrderList("page_nb");
 });
 
-// STARTING THE JS OF THE SLIDER
+/* STARTING THE JS OF THE SLIDER
 const cardWidth = 400 
 const slider  = document.getElementById("dz-kpi-slider")
 const prevBtn = document.getElementById('dz-prev-btn');
 const nextBtn = document.getElementById('dz-next-btn');
 let currentsliderPosition = 0 ;
+    //    hidden part of he slider      |      visible part of the slider      |    hidden part of the slider 
+    //         in the left                                                             in the right
+    // -------------------------------- | ------------------------------------ | -------------------------------
+    //      x is negative here          |           x is postive  here         |   x >= the offset width of the slider
+    // cardRect.x + cardRect.width <= 0 |                                      |  cardRect.x >= slider.offsetWidth
+    
+function isTheCardVisibleInTheSlider(card) {
+    const cardRect = card.getBoundingClientRect();
+    if (cardRect.x >= 0 && cardRect.x + cardRect.width <= slider.offsetWidth) {
+        return true;
+    }
+    return false 
+}
 
 function updateControlBtns(){
-  // show or hide the control buttons based on the tolal number of cards and the width of slider container
-  let cardsCountPerView = Math.trunc((slider.offsetWidth / (cardWidth + 10)))
-  console.log("cardsCountPerView : "+cardsCountPerView)
-  let totalCardsCount = document.querySelectorAll(".dz-kpi-card").length
-  console.log("totalCardsCount : "+totalCardsCount)
-  if(totalCardsCount > cardsCountPerView){
-    // enable the control buttons 
-    prevBtn.style.display = 'flex';
-    nextBtn.style.display = 'flex';
-  }else{
-    // disable the control buttons 
-    prevBtn.style.display = 'none';
-    nextBtn.style.display = 'none';
-  }
+    // show or hide the control buttons based on the tolal number of cards and the width of slider container
+    let kpiCards = document.querySelectorAll(".dz-kpi-card")
 
-  // disable the prev control button if we are in the first end and re-enable it if we aren't 
-  if(slider.style.transform == "translateX(0px)"){
-    prevBtn.disabled = true
-  }else{
-    prevBtn.disabled = false
-  }
+    if(slider.scrollWidth > slider.offsetWidth){
+        // enable the control buttons 
+        prevBtn.style.display = 'flex';
+        nextBtn.style.display = 'flex';
+    }else{
+        // disable the control buttons 
+        prevBtn.style.display = 'none';
+        nextBtn.style.display = 'none';
+    }
 
-  // disable the next control button if we are in the last end and re-enable it if we aren't 
+    /* disable the prev control button if we are in the first end and re-enable it if we aren't 
+    if(slider.style.transform == "translateX(0px)"){
+        prevBtn.disabled = true
+    }else{
+        prevBtn.disabled = false
+    }
+
+    // disable the prev control button if we are in the first end and re-enable it if we aren't 
+    if(isTheCardVisibleInTheSlider(kpiCards[0])){
+        console.log("the fiiiiiiiiiiirst card is visible")
+        prevBtn.disabled = true
+    }else{
+        console.log("the fiiiiiiiiiiirst card is nooooooot visible")
+        prevBtn.disabled = false
+    }
+
+    // disable the next control button if we are in the last end and re-enable it if we aren't 
+    if(isTheCardVisibleInTheSlider(kpiCards[kpiCards.length-1])){
+        console.log("the last card is visible")
+        nextBtn.disabled = true
+    }else{
+        console.log("the last card is noooooooooot visible")
+        nextBtn.disabled = false
+    }
 
 }
 
@@ -481,11 +487,11 @@ function updateControlBtns(){
 window.addEventListener('resize', function() {
     
     if(slider.offsetWidth < cardWidth){
-        document.querySelector(".dz-kpi-card").forEach((card)=>{
+        document.querySelectorAll(".dz-kpi-card").forEach((card)=>{
             card.style.width = "100%"
         })
     }else{
-        document.querySelector(".dz-kpi-card").forEach((card)=>{
+        document.querySelectorAll(".dz-kpi-card").forEach((card)=>{
             card.style.width = cardWidth +"px"
         })
     }
@@ -495,21 +501,23 @@ window.addEventListener('resize', function() {
 
 // Slide to the left
 nextBtn.addEventListener('click', function() {
+
     // get the count of the card that can fit in the visible part of the container
     let cardsCountPerView = Math.trunc((slider.offsetWidth / (cardWidth + 10)))
     // get the distance we should scroll which is the width of next cards we can fit in the visible part of the container
     let distanceToScroll = (cardsCountPerView * (cardWidth + 10))
     // get the distance left to scroll 
-    let distanceLeftToScroll = (slider.scrollWidth - (currentsliderPosition + distanceToScroll))
-    
-    if (distanceToScroll >= distanceLeftToScroll){
+    let distanceLeftToScroll = (slider.scrollWidth - (currentsliderPosition + slider.offsetWidth))
+    console.log("distanceLeftToScroll : "+distanceLeftToScroll)
+    console.log("distanceToScroll : "+distanceToScroll)
+    if (distanceLeftToScroll >= distanceToScroll){
         currentsliderPosition += distanceToScroll
-        updateControlBtns()
     }else{
         currentsliderPosition += distanceLeftToScroll
     }
     
     slider.style.transform = `translateX(-${currentsliderPosition}px)`;
+
 });
 
 // Slide to the right
@@ -521,9 +529,8 @@ prevBtn.addEventListener('click', function() {
     // the distanceLeftToScroll is the same as currentsliderPosition
     let distanceLeftToScroll = currentsliderPosition
     
-    if (distanceToScroll >= distanceLeftToScroll){
+    if (distanceLeftToScroll >= distanceToScroll){
         currentsliderPosition -= distanceToScroll
-        updateControlBtns()
     }else{
         currentsliderPosition -= distanceLeftToScroll
     }
@@ -531,8 +538,13 @@ prevBtn.addEventListener('click', function() {
     slider.style.transform = `translateX(-${currentsliderPosition}px)`;
 });
 
+function onTransitionEnd(e) {
+    if (e.propertyName === 'transform') {
+        updateControlBtns();
+    }
+}
 
-
+slider.addEventListener('transitionend', updateControlBtns);
 // ENDING THE JS OF THE SLIDER
 /*
 const slider = document.getElementById('dz-kpi-slider');

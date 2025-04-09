@@ -166,8 +166,8 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
                                  'total_pages'=>$total_pages,
                                  'first_end'=>$first_end,
                                  'last_end'=>$last_end,
-                                 'show_terminate_btn'=> in_array($order_submit_process_detail["status"],OrderSubmitProcess::ACTIVE_STATUSES),
                                  'total_count'=>$total_count]) ;
+                                 //'show_terminate_btn'=> in_array($order_submit_process_detail["status"],OrderSubmitProcess::ACTIVE_STATUSES),                
         }
 
         $this->redirectToRoute('dz_order_submit_process_list');

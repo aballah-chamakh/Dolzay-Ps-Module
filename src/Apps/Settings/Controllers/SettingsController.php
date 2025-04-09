@@ -8,14 +8,15 @@ use PrestaShopBundle\Controller\Admin\FrameworkBundleAdminController;
 use Dolzay\CustomClasses\Db\DzDb ;  
 use Dolzay\Apps\Settings\Entities\Settings ;
 use Dolzay\Apps\Settings\Entities\Carrier ;
-
-
+use Media ;
+use Context ;
 
 class SettingsController extends FrameworkBundleAdminController
 {
 
     public function getSettings(Request $request)
     { 
+
         $employee = $this->getUser();
         $employee =  new \Employee($employee->getId());
         if ($employee->id_profile != 1) {
@@ -46,10 +47,23 @@ class SettingsController extends FrameworkBundleAdminController
         $settings['carriers'] = $carriers;
         $settings['order_state_options'] = $order_state_options;
 
+        $link = Context::getContext()->link;
+        $baseUrl = $link->getBaseLink();
+
+        $adminBaseUrl = $link->getAdminLink('AdminModules', true);
+        // Extract the base up to /index.php
+        $adminBaseUrl = preg_replace('#(index\.php).*#', '', $adminBaseUrl);
+
+        Media::addJsDef([
+            'dz_module_media_base_url' => $baseUrl . 'modules/dolzay/uploads',
+            'dz_module_controller_base_url' => $adminBaseUrl . 'dz'
+        ]) ;
+        
         return $this->render('@Modules/dolzay/views/templates/admin/settings/settings.html.twig',[
             'settings'=>$settings,
             'carriers'=>$carriers,
-            'order_state_options'=> $order_state_options
+            'order_state_options'=> $order_state_options,
+            'dz_module_media_base_url' => $baseUrl . 'modules/dolzay/uploads'
         ]);
     }
 

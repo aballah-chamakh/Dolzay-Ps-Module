@@ -764,8 +764,17 @@ class Dolzay extends Module
             $db = DzDb::getInstance();
             Carrier::init($db) ;
             $carriers = Carrier::get_all();
+            $link = Context::getContext()->link;
+            $baseUrl = $link->getBaseLink();
+
+            $adminBaseUrl = $link->getAdminLink('AdminModules', true);
+            // Extract the base up to /index.php
+            $adminBaseUrl = preg_replace('#(index\.php).*#', '', $adminBaseUrl);
+
             Media::addJsDef([
                 'dz_carriers' => array_values($carriers),
+                'dz_module_base_url' => $baseUrl . 'modules/dolzay',
+                'dz_module_controller_base_url' => $adminBaseUrl . 'dz'
             ]) ;
 
 

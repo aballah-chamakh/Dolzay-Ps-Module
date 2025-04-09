@@ -110,6 +110,7 @@ class OrderMonitoringProcess {
         $order_monitoring_process_detail['status_color'] = self::STATUS_COLORS[$order_monitoring_process_detail['status']] ;
 
         // fetch the kpis of order_monitoring_process and add them to it
+        /*
         $query  = "SELECT NewStatusLang.name AS new_status,NewStatus.color AS new_status_color,COUNT(*) AS count FROM ".UpdatedOrder::TABLE_NAME." As Uord ";
         $query .= "LEFT JOIN "._DB_PREFIX_."order_state AS NewStatus ON Uord.new_status = NewStatus.id_order_state ";
         $query .= "LEFT JOIN "._DB_PREFIX_."order_state_lang AS NewStatusLang ON NewStatus.id_order_state = NewStatusLang.id_order_state AND NewStatusLang.id_lang = ".(int)$id_lang." ";
@@ -122,9 +123,8 @@ class OrderMonitoringProcess {
         if(count($order_monitoring_process_detail['kpis']) == 0){
             $order_monitoring_process_detail['updated_orders'] = [] ;
             return $order_monitoring_process_detail ;
-        }
+        }*/
 
-        
         // fetch the updated_orders of order_monitoring_process and add them to it
         $updated_orders = [];
         $values = ['limit'=>$query_parameter['batch_size'],'offset'=>($query_parameter['page_nb'] - 1) * $query_parameter['batch_size']] ;

@@ -406,7 +406,7 @@
 }
 
 
-/* START STYLING THE SLIDER */
+/* START STYLING THE SLIDER 
 
 
 .dz-slider-container {
@@ -436,17 +436,14 @@
     position: relative;
     overflow: hidden;
     border-left: 5px solid rgba(0, 0, 0, 0.1);
-    /* Flexible width settings */
     flex: 1;
     width: 400px;
 }
 
-/* When in slider mode (multiple cards visible) */
 .dz-slider-mode .dz-kpi-card {
-    flex: 0 0 auto; /* Don't grow in slider mode */
+    flex: 0 0 auto; 
 }
 
-/* When in single card mode (mobile) */
 .dz-single-card-mode .dz-kpi-card {
     flex: 0 0 auto;
 
@@ -538,9 +535,7 @@
     color: #111827;
 }
 
-
-
-
+*/
 
 
 

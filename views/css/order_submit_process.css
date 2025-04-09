@@ -258,7 +258,8 @@
     padding: 0px 10px ;
 }
 
-.progress-of-submitting-orders-step p{
+.progress-of-submitting-orders-step p,
+.progress-of-monitoring-orders p{
     margin: 0px;
     margin-top: 10px;
     font-weight: 600;
