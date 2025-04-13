@@ -18,7 +18,7 @@ use Dolzay\Apps\Settings\Entities\Settings ;
 
 class OrderMonitoringProcessController extends FrameworkBundleAdminController
 {   
-    private const BATCH_SIZES = [3,50,100] ;
+    private const BATCH_SIZES = [20,50,100] ;
 
     public function launchOmpScript($order_monitoring_process_id, $employee_id) {
         // Path to the PHP script

@@ -217,7 +217,7 @@ function monitorOrderMonitoringProcess(){
             }
             
             // update the kpis 
-            updateKpis(order_monitoring_process.kpis)
+            //updateKpis(order_monitoring_process.kpis)
 
 
             // update the table and the pagination
@@ -314,7 +314,7 @@ function updateTheOrderList(trigger) {
                 let order_monitoring_process = data.order_monitoring_process
                 let updated_orders = order_monitoring_process.updated_orders
                 let total_count = updated_orders.length ? updated_orders[0].total_count : 0
-                updateKpis(order_monitoring_process.kpis)
+                //updateKpis(order_monitoring_process.kpis)
                 updateTable(updated_orders);
                 updatePagination(total_count);
                 // show the loading spinner

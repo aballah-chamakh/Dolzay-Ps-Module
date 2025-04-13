@@ -25,7 +25,7 @@
             z-index: 1;
         }
         .logo {
-            max-width: 250px;
+            max-width: 300px;
             width: 100%;
             height: auto;
             margin-bottom: 30px;
@@ -107,7 +107,7 @@
     <div class="dolzay-container">
         <img src="{$module_base_link}/modules/dolzay/uploads/dolzay-logo.png" alt="Logo Dolzay" class="logo">
 
-        <h1>{$domain_name} recommande vivement le plugin Dolzay !</h1>
+        <h1 style="color:#5b209a">Mawlety Recommande Dolzay !</h1>
         <div class="gradient-line"></div>
     </div>
 </body>

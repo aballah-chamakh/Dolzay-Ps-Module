@@ -1,11 +1,7 @@
 <?php
 
-if (true){
-    $x =10  ;
-}
-$o = $x ;
-echo $o ;
-/*
+
+
 function addIndexFile($dir) {
     // Skip . and .. directories
     if (!is_dir($dir)) {
@@ -51,7 +47,7 @@ addIndexFile($moduleRoot);
 
 echo "✅ All directories now contain an index.php file!\n";
 
-
+/*
 
 
 
