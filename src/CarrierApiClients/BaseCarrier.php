@@ -112,6 +112,19 @@ class BaseCarrier {
 
     }
 
+    protected static function addOrderToSubmit($order_id,$error_type,$error_detail){
+
+        $query = "INSERT INTO "._MODULE_PREFIX_."order_to_submit (order_id,process_id,error_type,error_detail) VALUES (:order_id,:process_id,:error_type,:error_detail);";
+        $stmt = self::$db->prepare($query);
+        $stmt->execute([
+            'order_id'=> $order_id,
+            'process_id'=> self::$process_id,
+            'error_type'=> $error_type,
+            'error_detail'=> $error_detail
+        ]);
+
+    }
+
     public static function insert_an_updated_order($omp_id, $order_id, $old_status, $new_status): int {
         $query = "INSERT INTO "._MODULE_PREFIX_."updated_order (omp_id, order_id, old_status, new_status) VALUES($omp_id, $order_id, $old_status, $new_status);";
         self::$db->query($query);

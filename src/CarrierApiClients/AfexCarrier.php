@@ -35,6 +35,13 @@ class AfexCarrier extends BaseCarrier {
             // Initialize cURL session
             $ch = curl_init();
 
+            // Conditionally disable SSL verification on Windows
+            if (PHP_OS_FAMILY === 'Windows') {
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            }
+
+
             // Set cURL options
             curl_setopt($ch, CURLOPT_URL, self::order_submit_api_url);
             curl_setopt($ch, CURLOPT_POST, true); // Use POST method
@@ -43,6 +50,7 @@ class AfexCarrier extends BaseCarrier {
                 "X-API-Key: $token",
                 "Content-Type: application/text",
             ]);
+
 
             
             foreach($orders as $index => $order){
@@ -95,106 +103,90 @@ class AfexCarrier extends BaseCarrier {
                     
                     // add the order history for this status
                     self::addOrderStatusHistory($order['id_order'],$post_submit_status_id);
-                        
+
+                    // add an OrderToSubmit
+                    self::addOrderToSubmit($order['id_order'],null,null);  
+                    
                     // update the progress of the order submit process
-                    $orderSubmitProcessUpdates["processed_items_cnt"] = $index ;
-                    // check if it's the last order to submit
-                    if ($index == $orders_cnt){
-                        $orderSubmitProcessUpdates["status"] = "Terminé" ;
-                        $orderSubmitProcessUpdates["ended_at"] = date('Y-m-d H:i:s') ;
-                    }else{
-                        // check if the obs was terinated by the user 
-                        $obsStatus = self::getOspStatus();
-                        if($obsStatus == "Pre-terminé par l'utilisateur"){ 
-                            $orderSubmitProcessUpdates["status"] = "Terminé par l'utilisateur" ; 
-                            $orderSubmitProcessUpdates["ended_at"] = date('Y-m-d H:i:s') ;
-                            self::updateOrderSubmitProcess($orderSubmitProcessUpdates);
-                            self::$db->commit();
-                            break ;
-                        }
-                    }
-                    self::updateOrderSubmitProcess($orderSubmitProcessUpdates);
+                    self::updateOrderSubmitProcess(["processed_items_cnt"=>$index]);
+
                     self::$db->commit();
 
                 }else if ($status_code == 422){
+                    
+                    $index += 1 ;
                     // 422 means invalid data were sent
-                    echo "THE ORDER WITH THE ID : $order_id GOT THE 422 STATUS CODE  \n\n" ;
-                    
-                    // set the error
-                    $message = "Une erreur de code 422 s'est produite lors de la soumission de la 1ʳᵉ commande portant l'ID : $order_id. Veuillez appeler le support de Dolzay au " . _SUPPORT_PHONE_ . " afin qu'ils résolvent votre problème.";
-                    if($index > 0){
-                        $message = "Après la soumission de $index/$orders_cnt commande(s), une erreur de code 422 s'est produite lors de la soumission de la commande portant l'ID : $order_id. Veuillez appeler le support de Dolzay au " . _SUPPORT_PHONE_ . " afin qu'ils résolvent votre problème.";
-                    }
+                    echo "THE ORDER WITH THE ID : $order_id GOT THE 422 STATUS CODE | PROGRESS : $index / $orders_cnt  \n\n";
 
-                    $error = json_encode([
-                                    'message' => $message,
-                                    'detail' =>[
-                                                'status_code' => $status_code,
-                                                'response'=>$response]
-                                ],JSON_UNESCAPED_UNICODE);
-                    // escape the single quotes
-                    
-                    //$error = str_replace("'", "\'", $error);
-                    self::updateOrderSubmitProcess(
-                                                    [
-                                                        "status"=>"Interrompu",
-                                                        "error"=>$error,
-                                                        "ended_at"=>date('Y-m-d H:i:s') 
-                                                    ]
-                                                );
-                    break;
+                    $error_details = json_encode(
+                                    [
+                                        'status_code' => $status_code,
+                                        'response'=>$response
+                                    ]
+                                ,JSON_UNESCAPED_UNICODE);
+
+                    self::$db->beginTransaction();
+                    // add an OrderToSubmit
+                    self::addOrderToSubmit($order['id_order'],"Champ(s) invalide(s)",$error_details); 
+                    // update the progress of the Osp 
+                    self::updateOrderSubmitProcess(["processed_items_cnt"=>$index]);
+                    self::$db->commit();
+
                 }else if ($status_code == 401 || !$token){
-                    echo "THE ORDER WITH THE ID : $order_id GOT 401 STATUS CODE \n\n" ;
 
-                    // set for the order submit process the status and the error data 
-                    $message = "Le token d'Afex est invalide. Veuillez le mettre à jour avec un token valide." ;
-                    
-                    $error = json_encode([
-                        'message' => $message,
-                    ],JSON_UNESCAPED_UNICODE);
-
-                    // escape the single quotes
-                    //$error = str_replace("'", "\'", $error);
-                    self::updateOrderSubmitProcess(["status"=>"Interrompu",
-                                                    "error"=>$error,
-                                                    "ended_at"=>date('Y-m-d H:i:s')
-                                                ]);
-                    break ;
-                    
-                }else{
-                    echo "THE ORDER WITH THE ID : $order_id GOT AN UNEXPECTED ERROR  \n\n" ;
-                    // set for the order submit process the status and the error data 
-                    
-                    $message = "Une erreur de code $status_code s'est produite lors de la soumission de la 1ʳᵉ commande portant l'ID : $order_id. Veuillez appeler le support de Dolzay au " . _SUPPORT_PHONE_ . " afin qu'ils résolvent votre problème.";
-                    if($index > 0){
-                        $message = "Après la soumission de $index/$orders_cnt, une erreur de code $status_code s'est produite lors de la soumission de la commande portant l'ID : $order_id. Veuillez appeler le support de Dolzay au " . _SUPPORT_PHONE_ . " afin qu'ils résolvent votre problème.";
-                    }
-
-                    $error = json_encode([
-                                'message' => $message,
-                                'detail' =>[
-                                    'status_code' => $status_code,
-                                    'response'=>$response]
-                            ],JSON_UNESCAPED_UNICODE);
-                    // escape the single quotes
-                    //$error = str_replace("'", "\'", $error);
-                    self::updateOrderSubmitProcess(
+                    $error_details = json_encode(
                         [
-                            "status"=>"Interrompu",
-                            "error"=>$error,
-                            "ended_at"=> date('Y-m-d H:i:s')
+                            'status_code' => $status_code,
+                            'response'=>$response
                         ]
-                    );
+                    ,JSON_UNESCAPED_UNICODE);
+
+                    $remaining_orders = array_slice($orders, $index);
+                    
+                    foreach($remaining_orders as $remaining_order){
+                        $index += 1 ;
+                        echo "THE ORDER WITH THE ID : ".$remaining_order['id_order']." GOT 401 STATUS CODE | PROGRESS : $index / $orders_cnt  \n\n";
+
+                        self::$db->beginTransaction();
+                        // add an OrderToSubmit
+                        self::addOrderToSubmit($remaining_order['id_order'],"Token invalide",$error_details);  
+                        // increase the counter of the osp 
+                        self::updateOrderSubmitProcess(["processed_items_cnt"=>$index]);
+                        self::$db->commit();
+                    }
                     break ;
+                }else{
+                    $index += 1 ;
+                    echo "THE ORDER WITH THE ID : $order_id GOT AN UNEXPECTED ERROR | PROGRESS : $index / $orders_cnt  \n\n";
+                    // set for the order submit process the status and the error data 
+        
+                    $error_details = json_encode(
+                                [
+                                    'status_code' => $status_code,
+                                    'response'=>$response
+                                ]
+                            ,JSON_UNESCAPED_UNICODE);
+
+                    self::$db->beginTransaction();
+                    self::addOrderToSubmit($order['id_order'],"Erreur inattendue",$error_details);  
+                    self::updateOrderSubmitProcess(["processed_items_cnt"=>$index ]);
+                    self::$db->commit();
+
                 }
             }
+            self::updateOrderSubmitProcess(
+                [
+                    "status"=>"Terminé",
+                    "ended_at"=>date('Y-m-d H:i:s')
+                ]
+            );
 
             $current_datetime = date("H:i:s d/m/Y");
             echo "=======  THE OSP HOLDING THE ID : " . self::$process_id . " ENDED AT : $current_datetime AFTER SUBMITTING $index/$orders_cnt =======\n\n\n\n";
 
             // Close cURL session
             curl_close($ch);   
-        }catch(Error $e){
+        }catch(Throwable $e){
 
             echo "=======  THE OSP HOLDING THE ID : " . self::$process_id . " ENDED AT : $current_datetime AFTER SUBMITTING $index/$orders_cnt WITH AN EXCEPTION ======= \n\n\n\n";
 
@@ -245,6 +237,12 @@ class AfexCarrier extends BaseCarrier {
 
             // Initialize cURL session
             $ch = curl_init();
+
+            // Conditionally disable SSL verification on Windows
+            if (PHP_OS_FAMILY === 'Windows') {
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            }
 
             // Set cURL options
             curl_setopt($ch, CURLOPT_URL, self::order_status_api_url);
@@ -374,7 +372,7 @@ class AfexCarrier extends BaseCarrier {
                 );
                 return false ;
             }
-        }catch(Error $e){
+        }catch(Throwable $e){
             echo "=======  THE OMP HOLDING THE ID : " . self::$process_id . " ENDED AT : $current_datetime AFTER SUBMITTING $index/$orders_cnt WITH AN EXCEPTION ======= \n\n\n\n";
 
             $error = json_encode([

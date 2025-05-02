@@ -19,8 +19,8 @@ class OrderToSubmit {
         return 'CREATE TABLE IF NOT EXISTS `'.self::TABLE_NAME.'` (
             `order_id` INT(10) UNSIGNED NOT NULL,
             `process_id` INT(10) UNSIGNED NOT NULL,
-            `carrier_name` VARCHAR(255) NOT NULL,
-            `submitted` BOOLEAN DEFAULT FALSE,
+            `error_type` VARCHAR(60) NULL,
+            `error_detail` JSON NULL,
             PRIMARY KEY(`order_id`, `process_id`),
             FOREIGN KEY (`order_id`) REFERENCES `' . _DB_PREFIX_.\OrderCore::$definition['table'] . '` (`id_order`),
             FOREIGN KEY (`process_id`) REFERENCES `'.OrderSubmitProcess::TABLE_NAME.'` (`id`)
