@@ -38,7 +38,7 @@
 }
 
 .dz-process-state-body,
-.dz-orders-to-submit-list-body{
+.dz-order-list-body{
     display: flex;
     width : 100% ;
     flex-direction: column;
@@ -124,35 +124,56 @@
 }
 
 
-.dz-orders-to-submit-container{
+.dz-red-circle {
+    background-color : red ;
+    border-radius : 15px ;
+    width : 50px ;
+    height : 30px ;
+}
+
+.dz-green-circle {
+    background-color : #83f40a ;
+    border-radius : 15px ;
+    width : 50px ;
+    height : 30px ;
+}
+
+.dz-order-list-container{
     display: flex;
     flex-direction: column;
     background-color: white;
     width: 100%;
     border-radius : 5px ;
-}
-
-.dz-orders-to-submit-filter-container,
-.dz-orders-to-submit-list-container{
-    margin : 10px ;
+    margin-top : 10px ;
     border : 0.1px solid #ddd ;
     border-radius : 5px ;
-    position : relative
+    position : relative ;
 }
 
-.dz-orders-to-submit-container-header,
+.dz-order-list-container-body{
+    padding : 10px 
+}
+
+.dz-order-list-filter-container{
+    border : 0.1px solid #ddd ;
+    border-radius : 5px ;
+}
+
+.dz-order-list-container-header,
 .dz-filter-header,
-.dz-orders-to-submit-list-header
+.dz-order-list-header
 {
     display : flex ; 
     border-bottom : 1px solid #ddd; 
     padding : 10px ;
     width : 100% ;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.dz-orders-to-submit-container-header p,
+.dz-order-list-container-header p,
 .dz-filter-header p,
-.dz-orders-to-submit-list-header p{
+.dz-order-list-header p{
     margin: 0;
     font-weight: 600;
     font-size: 17px;
@@ -207,14 +228,14 @@
     z-index: 2000;
 }
 
-.dz-orders-to-submit-table-spinner{
+.dz-order-list-table-spinner{
     z-index: 2001;
     color : black ;
     height: 50px;
     width: 50px; 
 }
 
-.dz-orders-to-submit-list-body table {
+.dz-order-list-body table {
     width: 100%;
     min-width: 800px;
     text-align: center;    
@@ -222,13 +243,13 @@
 
 }
 
-.dz-orders-to-submit-list-body .table thead {
+.dz-order-list-body .table thead {
     background-color: #1a456e;
     color : white ;
 }
 
 
-.dz-orders-to-submit-list-body .table thead th {
+.dz-order-list-body .table thead th {
     padding: 10px;
     border : none ;
     font-size: 16px;
@@ -236,17 +257,17 @@
 
 }
 
-.dz-orders-to-submit-list-body .table td {
+.dz-order-list-body .table td {
     padding: 10px;
     font-size: 16px;
 }
 
-.dz-orders-to-submit-list-body .table .dz-order-detail-link{
+.dz-order-list-body .table .dz-order-detail-link{
     color : #1a456e ;
     cursor: pointer;
 }
 
-.dz-orders-to-submit-table-footer{
+.dz-order-list-table-footer{
     display: flex;
     width : 100% ;
     justify-content: space-between;
@@ -254,22 +275,22 @@
     padding : 0px 10px 8px 10px ;
 }
 
-.dz-orders-to-submit-table-footer p{
+.dz-order-list-table-footer p{
     margin: 0px;
     font-size: 16px;
 }
 
-.dz-orders-to-submit-table-footer label{
+.dz-order-list-table-footer label{
     font-size: 16px;
 }
 
-.dz-orders-to-submit-table-footer .dz-page-number {
+.dz-order-list-table-footer .dz-page-number {
     display: flex ;
     gap : 5px ;
     align-items: center;
 }
 
-.dz-orders-to-submit-table-footer select {
+.dz-order-list-table-footer select {
     padding : 0px 10px; 
     width : 60px ;
 }
@@ -416,7 +437,7 @@
     .dz-process-terminate-btn{
         width : 100% ;
     }
-    .dz-orders-to-submit-table-footer{
+    .dz-order-list-table-footer{
         padding : 8px  10px ;
     }
 

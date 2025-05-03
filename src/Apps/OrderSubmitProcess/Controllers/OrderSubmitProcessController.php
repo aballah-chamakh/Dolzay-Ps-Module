@@ -120,19 +120,25 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
     // ACID FRIENDLY
     public function orderSubmitProcessDetail($process_id,Request $request){
         $is_json = $request->query->get('is_json');
-        $query_parameter = [
-            "order_id" => $request->query->get('order_id'),
-            "submitted" => $request->query->get('submitted'),
-            "client" => $request->query->get('client'),
-            "page_nb" =>  $request->query->get('page_nb') ?? 1,
-            "batch_size" => $request->query->get('batch_size') ?? self::BATCH_SIZES[0],
-            "is_json" => $request->query->get('is_json')
+        $submitted_orders_qp = [
+            "order_id" => $request->query->get('submitted_orders__order_id'),
+            "client" => $request->query->get('submitted_orders__client'),
+            "page_nb" =>  $request->query->get('submitted_orders__page_nb') ?? 1,
+            "batch_size" => $request->query->get('submitted_orders__batch_size') ?? self::BATCH_SIZES[0]
+        ];
+
+        $orders_with_errors_qp = [
+            "order_id" => $request->query->get('orders_with_errors__order_id'),
+            "client" => $request->query->get('orders_with_errors__client'),
+            "error_type" => $request->query->get('orders_with_errors__error_type'),
+            "page_nb" =>  $request->query->get('orders_with_errors__page_nb') ?? 1,
+            "batch_size" => $request->query->get('orders_with_errors__batch_size') ?? self::BATCH_SIZES[0]
         ];
         
 
         $db = DzDb::getInstance();
         OrderSubmitProcess::init($db);
-        $order_submit_process_detail = OrderSubmitProcess::get_order_submit_process_detail($process_id,$query_parameter);
+        $order_submit_process_detail = OrderSubmitProcess::get_order_submit_process_detail($process_id,$submitted_orders_qp,$orders_with_errors_qp);
         
         // handle the api request 
         if($is_json){
@@ -145,28 +151,46 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         
         // handle the template request 
         if($order_submit_process_detail){
-            // setup the variables of the pagination
-            $orders_to_submit = $order_submit_process_detail['orders_to_submit'] ;
 
-            $total_pages = 1 ;
-            $total_count = 0 ;
-            $first_end = 0 ;
-            $last_end = 0 ;
+            // setup the pagination attributes of the submitted orders 
+            $pagination_attributes_of_submitted_orders = [
+                "total_pages" => 1,
+                "total_count" => 0,
+                "first_end"  => 0,
+                "last_end" => 0 
+            ];
+
+            $submitted_orders = $order_submit_process_detail['submitted_orders'] ;
     
-            if(count($orders_to_submit)){
-                $total_count = $orders_to_submit[0]['total_count'] ;
-                $total_pages = ceil($total_count / self::BATCH_SIZES[0]) ;
-                $first_end = 1 ;
-                $last_end = $total_count >= self::BATCH_SIZES[0] ? self::BATCH_SIZES[0] : $total_count ;
+            if(count($submitted_orders)){
+                $pagination_attributes_of_submitted_orders['total_count'] = $submitted_orders[0]['total_count'] ;
+                $pagination_attributes_of_submitted_orders['total_pages'] = ceil($submitted_orders[0]['total_count'] / self::BATCH_SIZES[0]) ;
+                $pagination_attributes_of_submitted_orders['first_end'] = 1 ;
+                $pagination_attributes_of_submitted_orders['last_end'] = $submitted_orders[0]['total_count'] >= self::BATCH_SIZES[0] ? self::BATCH_SIZES[0] : $submitted_orders[0]['total_count'] ;
+            }
+
+            // setup the pagination attribute of the orders with errors 
+            $pagination_attributes_of_orders_with_errors = [
+                "total_pages" => 1,
+                "total_count" => 0,
+                "first_end"  => 0,
+                "last_end" => 0 
+            ];
+
+            $orders_width_errors = $order_submit_process_detail['orders_with_errors'] ;
+    
+            if(count($orders_width_errors)){
+                $pagination_attributes_of_orders_with_errors['total_count'] = $orders_width_errors[0]['total_count'] ;
+                $pagination_attributes_of_orders_with_errors['total_pages'] = ceil($orders_width_errors[0]['total_count'] / self::BATCH_SIZES[0]) ;
+                $pagination_attributes_of_orders_with_errors['first_end'] = 1 ;
+                $pagination_attributes_of_orders_with_errors['last_end'] = $orders_width_errors[0]['total_count'] >= self::BATCH_SIZES[0] ? self::BATCH_SIZES[0] : $orders_width_errors[0]['total_count'] ;
             }
             
             return $this->render("@Modules/dolzay/views/templates/admin/osp/osp_detail.html.twig",
-                                 ["process"=>$order_submit_process_detail,
-                                 'batch_sizes'=>self::BATCH_SIZES,
-                                 'total_pages'=>$total_pages,
-                                 'first_end'=>$first_end,
-                                 'last_end'=>$last_end,
-                                 'total_count'=>$total_count]) ;
+                                 ['process' => $order_submit_process_detail,
+                                 'batch_sizes' => self::BATCH_SIZES,
+                                 'pagination_attributes_of_submitted_orders' => $pagination_attributes_of_submitted_orders,
+                                 'pagination_attributes_of_orders_with_errors'=> $pagination_attributes_of_orders_with_errors]) ;
                                  //'show_terminate_btn'=> in_array($order_submit_process_detail["status"],OrderSubmitProcess::ACTIVE_STATUSES),                
         }
 

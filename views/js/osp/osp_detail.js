@@ -120,14 +120,14 @@ const eventPopup = {
     },
 }
 
-let orderListOverlay = $(".dz-loading-overlay")
+
 let processStatusEl  = $(".dz-process-status")
 let process_id = current_link.split("dz/order_submit_process/")[1].split("/")[0]
 
 // if the fixed footer exist 
 if($(".dz-fixed-footer").length){
     // add margin to the bottom of the orders to submit container 
-    $(".dz-orders-to-submit-container").css("margin-bottom","53px")
+    $(".dz-order-list-container").css("margin-bottom","53px")
     // add a click event listener to the terminate btn 
     $('.dz-process-terminate-btn').on('click', terminateOrderSubmitProcess);
 }
@@ -264,7 +264,7 @@ function monitorOrderSubmitProcess(){
 
                 // hide the the fixed footer
                 $(".dz-fixed-footer").hide()
-                $(".dz-orders-to-submit-container").css("margin-bottom","0px")
+                $(".dz-order-list-container").css("margin-bottom","0px")
             }else if(order_submit_process.status == "Terminé par l'utilisateur"){
                 eventPopup.create()
                 eventPopupOverlay.create();
@@ -285,7 +285,7 @@ function monitorOrderSubmitProcess(){
                 
                 // hide the the fixed footer
                 $(".dz-fixed-footer").hide()
-                $(".dz-orders-to-submit-container").css("margin-bottom","0px")
+                $(".dz-order-list-container").css("margin-bottom","0px")
             }else if (order_submit_process.status == "Interrompu"){
                 eventPopup.create();
                 eventPopupOverlay.create();
@@ -301,7 +301,7 @@ function monitorOrderSubmitProcess(){
 
                 // hide the the fixed footer
                 $(".dz-fixed-footer").hide()
-                $(".dz-orders-to-submit-container").css("margin-bottom","0px")
+                $(".dz-order-list-container").css("margin-bottom","0px")
             }else{
                 // since the process is still active monitor the process again within 2 seconds
                 setTimeout(monitorOrderSubmitProcess,2000);
@@ -318,24 +318,24 @@ function goToOrder(orderId){
     window.location = current_link.replace("/dz/order_submit_process/"+process_id+"/","/sell/orders/"+orderId+"/view")
 }
 
-function updateTheOrderList(trigger) {
+function updateTheOrderList(container,trigger) {
     // show the loading spinner 
-    orderListOverlay.css('display', 'flex')
+    $(`.${container} .dz-loading-overlay`).css('display', 'flex')
     // disable all of the selects and input in the process list container 
-    $(".dz-orders-to-submit-container select,.dz-orders-to-submit-container input").prop('disabled',true)
+    $(`.${container} .dz-order-list-container select,.dz-order-list-container input`).prop('disabled',true)
 
     if (trigger != "page_nb"){
-        $('.dz-page-nb-select').val(1)
+        $(`.${container} .dz-page-nb-select`).val(1)
     }
 
     // make the request 
 
     let query_parameters = {
-        order_id: $("input[name='order_id']").val(),
-        submitted: $("select[name='submitted']").val(),
-        client : $("input[name='client']").val(),
-        page_nb: $('.dz-page-nb-select').val(),
-        batch_size: $(".dz-batch-size-select").val(),
+        order_id: $(`.${container} input[name='order_id']`).val(),
+        submitted: $(`.${container} select[name='submitted']`).val(),
+        client : $(`.${container} input[name='client']`).val(),
+        page_nb: $(`.${container} .dz-page-nb-select`).val(),
+        batch_size: $(`.${container} .dz-batch-size-select`).val(),
         is_json : true
     }
 
@@ -353,24 +353,24 @@ function updateTheOrderList(trigger) {
                 let order_submit_process = data.order_submit_process
                 let orders_to_submit = order_submit_process.orders_to_submit
                 let total_count = orders_to_submit.length ? orders_to_submit[0].total_count : 0
-                updateTable(orders_to_submit);
-                updatePagination(total_count);
+                updateTable(container,orders_to_submit);
+                updatePagination(container,total_count);
                 // show the loading spinner
-                orderListOverlay.hide()
+                $(`.${container} .dz-loading-overlay`).hide()
                 // disable all of the selects and input in the process list container 
-                $(".dz-orders-to-submit-container select,.dz-orders-to-submit-container input").prop('disabled',false)
+                $(`.${container} .dz-order-list-container select,.dz-order-list-container input`).prop('disabled',false)
             }   
         })
         .catch(error =>{console.error('Error:', error)
                 // hide the loading spinner 
-                orderListOverlay.css('display', 'none')
+                $(`.${container} .dz-loading-overlay`).css('display', 'none')
                 // re-enable all of the selects and input in the process list container 
-                $(".dz-orders-to-submit-container select,.dz-orders-to-submit-container input").prop('disabled',false)
+                $(`.${container} .dz-order-list-container select,.dz-order-list-container input`).prop('disabled',false)
         });
 }
 
-function updateTable(orders) {
-    const tbody = $(".dz-orders-to-submit-table-body");
+function updateTable(container,orders) {
+    const tbody = $(`.${container} .dz-order-list-container-table-body`);
     tbody.empty();
     
     orders.forEach(order => {
@@ -386,15 +386,15 @@ function updateTable(orders) {
     });
 }
 
-function updatePagination(totalCount) {
-    let page_nb_select = $(".dz-page-nb-select")
+function updatePagination(container,totalCount) {
+    let page_nb_select = $(`.${container} .dz-page-nb-select`)
     if (totalCount == 0){
-        $(".dz-pagination-range").text("0 to 0 / 0")
+        $(`.${container} .dz-pagination-range`).text("0 to 0 / 0")
         page_nb_select.empty()
         page_nb_select.append(new Option("1", 1));
         
     }else{
-        let batch_size_val = $(".dz-batch-size-select").val()
+        let batch_size_val = $(`.${container} .dz-batch-size-select`).val()
         
         // update the options of the page_nb select based on the total count
         let page_nb_val = page_nb_select.val()
@@ -426,18 +426,32 @@ function updatePagination(totalCount) {
 
         // the set the value of the page nb and the pagination range
         page_nb_select.val(page_nb_val)
-        $(".dz-pagination-range").text(`${firstEnd} to ${lastEnd} / ${totalCount}`)
+        $(`.${container} .dz-pagination-range`).text(`${firstEnd} to ${lastEnd} / ${totalCount}`)
     }
 }
 
-$('.dz-filter-btn').on('click', function(e) {
-    updateTheOrderList("filter");
+// setup the event listeners for the submitted orders container
+$('.dz-submitted-orders-container .dz-filter-btn').on('click', function(e) {
+    updateTheOrderList("dz-submitted-orders-container","filter");
 });
 
-$('.dz-batch-size-select').on('change', function() {
-    updateTheOrderList("batch_size");
+$('.dz-submitted-orders-container .dz-batch-size-select').on('change', function() {
+    updateTheOrderList("dz-submitted-orders-container","batch_size");
 });
 
-$('.dz-page-nb-select').on('change', function() {
-    updateTheOrderList("page_nb");
+$('.dz-submitted-orders-container .dz-page-nb-select').on('change', function() {
+    updateTheOrderList("dz-submitted-orders-container","page_nb");
+});
+
+// setup the event listeners for the orders with errors container
+$('.dz-orders-with-errors-container .dz-filter-btn').on('click', function(e) {
+    updateTheOrderList("dz-orders-with-errors-container","filter");
+});
+
+$('.dz-orders-with-errors-container .dz-batch-size-select').on('change', function() {
+    updateTheOrderList("dz-orders-with-errors-container","batch_size");
+});
+
+$('.dz-orders-with-errors-container .dz-page-nb-select').on('change', function() {
+    updateTheOrderList("dz-orders-with-errors-container","page_nb");
 });

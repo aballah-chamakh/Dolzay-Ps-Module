@@ -62,12 +62,13 @@
         </div>
     </div>
 
-    <div class="dz-orders-to-submit-container">
-        <div class="dz-orders-to-submit-container-header">
+    <div class="dz-order-list-container dz-submitted-orders-container">
+        <div class="dz-order-list-container-header">
             <p>LES COMMANDES SOUMISES</p>
+            <span class="dz-green-circle"></span>
         </div>
-        <div class="dz-orders-to-submit-container-body">
-            <div class="dz-orders-to-submit-filter-container">
+        <div class="dz-order-list-container-body">
+            <div class="dz-order-list-filter-container">
                 <div class="dz-filter-header">
                     <p>LE FILTRE</p>
                 </div> 
@@ -78,15 +79,75 @@
                             <input class="form-control" name="order_id"  placeholder="Identifiant de commande" />
                         </div>
                         <div class="dz-form-group">
-                            <label>Soumis ?</label>
-                            <select class="form-control" name="submitted">
-                                <option value="">Oui et Non</option>
-                                <option value="Oui">Oui</option>
-                                <option value="Non">Non</option>
-                            </select>
+                            <label>client</label>
+                            <input class="form-control" name="client" placeholder="client" />
                         </div>
                     </div>
-                    <div class="dz-filter-form-second-row">
+                    <button class="dz-filter-btn">Filtrer</button>
+                </div>
+            </div>
+            <div class="dz-order-list-container">
+                <div class="dz-loading-overlay">
+                    <div class="dz-order-list-table-spinner spinner-border" role="status">
+                    </div>
+                </div>
+                <div class="dz-order-list-header">
+                    <p>LES COMMANDES</p>
+                </div>
+                <div class="dz-order-list-body">
+                    <table class="table">
+                        <thead >
+                            <tr>
+                                <th>Identifiant de commande</th>
+                                <th>Client</th>
+                                <th>Détail</th>
+                            </tr>
+                        </thead>
+                        <tbody class="dz-order-list-table-body" >
+                            {% for order in process.submitted_orders %}
+                                <td>{{order.id_order}}</td>
+                                <td>{{order.firstname}} {{order.lastname}}</td>
+                                <td><span class="dz-order-detail-link" onClick="goToOrder({{order.id_order}})" ><i class="material-icons">remove_red_eye</i></span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="dz-order-list-table-footer">
+                    <p class="dz-pagination-range">{{pagination_attributes_of_submitted_orders.first_end}} to {{pagination_attributes_of_submitted_orders.last_end}} / {{pagination_attributes_of_submitted_orders.total_count}}</p>
+                    <div class="dz-page-number" >
+                        <label>page : </label>
+                        <select  class="dz-page-nb-select form-control" >
+                            {% for i in range(1, pagination_attributes_of_submitted_orders.total_pages) %}
+                                <option value={{i}} >{{i}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <select class="dz-batch-size-select form-control" >
+                            {% for batch_size in batch_sizes %}
+                                <option value={{batch_size}} >{{batch_size}}</option>
+                            {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="dz-order-list-container dz-orders-with-errors-container">
+        <div class="dz-order-list-container-header">
+            <p>LES COMMANDES QUI ONT DES ERREURS</p>
+            <span class="dz-red-circle"></span>
+        </div>
+        <div class="dz-order-list-container-body">
+            <div class="dz-order-list-filter-container">
+                <div class="dz-filter-header">
+                    <p>LE FILTRE</p>
+                </div> 
+                <div class="dz-filter-form">
+                    <div class="dz-filter-form-first-row">
+                        <div class="dz-form-group">
+                            <label>Identifiant de commande</label>
+                            <input class="form-control" name="order_id"  placeholder="Identifiant de commande" />
+                        </div>
                         <div class="dz-form-group">
                             <label>client</label>
                             <input class="form-control" name="client" placeholder="client" />
@@ -95,45 +156,41 @@
                     <button class="dz-filter-btn">Filtrer</button>
                 </div>
             </div>
-            <div class="dz-orders-to-submit-list-container">
+            <div class="dz-order-list-container"  >
                 <div class="dz-loading-overlay">
-                    <div class="dz-orders-to-submit-table-spinner spinner-border" role="status">
+                    <div class="dz-order-list-table-spinner spinner-border" role="status">
                     </div>
                 </div>
-                <div class="dz-orders-to-submit-list-header">
+                <div class="dz-order-list-header">
                     <p>LES COMMANDES</p>
                 </div>
-                <div class="dz-orders-to-submit-list-body">
+                <div class="dz-order-list-body">
                     <table class="table">
                         <thead >
                             <tr>
                                 <th>Identifiant de commande</th>
                                 <th>Client</th>
-                                <th>Soumis</th>
+                                <th>Erreur</th>
                                 <th>Détail</th>
                             </tr>
                         </thead>
-                        <tbody class="dz-orders-to-submit-table-body" >
-                            {% for order in process.orders_to_submit %}
+                        <tbody class="dz-order-list-table-body" >
+                            {% for order in process.orders_with_errors %}
                                 <td>{{order.id_order}}</td>
                                 <td>{{order.firstname}} {{order.lastname}}</td>
-                                {% if order.submitted %}
-                                    <td>Oui</td>
-                                {% else %}
-                                    <td>Non</td>
-                                {% endif %}
+                                <td>{{order.error_type}}</td>
                                 <td><span class="dz-order-detail-link" onClick="goToOrder({{order.id_order}})" ><i class="material-icons">remove_red_eye</i></span></td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
-                <div class="dz-orders-to-submit-table-footer">
-                    <p class="dz-pagination-range">{{first_end}} to {{last_end}} / {{total_count}}</p>
+                <div class="dz-order-list-table-footer">
+                    <p class="dz-pagination-range">{{pagination_attributes_of_orders_with_errors.first_end}} to {{pagination_attributes_of_orders_with_errors.last_end}} / {{pagination_attributes_of_orders_with_errors.total_count}}</p>
                     <div class="dz-page-number" >
                         <label>page : </label>
                         <select  class="dz-page-nb-select form-control" >
-                            {% for i in range(1, total_pages) %}
+                            {% for i in range(1, pagination_attributes_of_orders_with_errors.total_pages) %}
                                 <option value={{i}} >{{i}}</option>
                             {% endfor %}
                         </select>

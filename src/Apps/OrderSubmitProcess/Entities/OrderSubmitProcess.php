@@ -263,26 +263,26 @@ class OrderSubmitProcess {
         self::$db->query("UPDATE ".self::TABLE_NAME." SET status='Pre-terminé par l\'utilisateur' WHERE id=".$process_id) ;
     }
 
-    public static function get_order_submit_process_list($query_parameter){
+    public static function get_order_submit_process_list($query_parameters){
         
-        $values = ['limit'=>$query_parameter['batch_size'],'offset'=>($query_parameter['page_nb'] - 1) * $query_parameter['batch_size']] ;
+        $values = ['limit'=>$query_parameters['batch_size'],'offset'=>($query_parameters['page_nb'] - 1) * $query_parameters['batch_size']] ;
         
         // note : i did add 1=1 for the case of there is no query parameters to filter by 
         $query = "SELECT id,carrier,DATE_FORMAT(started_at, '%H:%i:%s - %d/%m/%Y') AS started_at,processed_items_cnt,items_to_process_cnt,status,COUNT(*) OVER() as total_count FROM ".self::TABLE_NAME." WHERE 1=1 " ;
         
-        if ($query_parameter['carrier']){
-            $values['carrier'] = $query_parameter['carrier'] ;
+        if ($query_parameters['carrier']){
+            $values['carrier'] = $query_parameters['carrier'] ;
             $query .= "AND carrier= :carrier " ; 
         }
 
-        if ( $query_parameter['status']){
-            $values['status'] = $query_parameter['status'] ;
+        if ( $query_parameters['status']){
+            $values['status'] = $query_parameters['status'] ;
             $query .= "AND status= :status " ;
         }
 
-        if ($query_parameter['start_date'] && $query_parameter['end_date']){
-            $values['start_date'] = $query_parameter['start_date']." 00:00:00" ;
-            $values['end_date'] = $query_parameter['end_date']." 23:59:59" ;
+        if ($query_parameters['start_date'] && $query_parameters['end_date']){
+            $values['start_date'] = $query_parameters['start_date']." 00:00:00" ;
+            $values['end_date'] = $query_parameters['end_date']." 23:59:59" ;
             $query .= "AND started_at BETWEEN :start_date AND :end_date " ;
         }
 
@@ -293,7 +293,7 @@ class OrderSubmitProcess {
         $processes = $stmt->fetchAll();
         if(count($processes) == 0){
             $values['offset'] = 0 ;
-            $values['limit'] = $query_parameter['batch_size'] ;
+            $values['limit'] = $query_parameters['batch_size'] ;
             $stmt = self::$db->prepare($query);
             $stmt->execute($values);
             $processes = $stmt->fetchAll();
@@ -302,8 +302,8 @@ class OrderSubmitProcess {
         return $processes ;
     }
 
-    public static function get_order_submit_process_detail($process_id,$query_parameter){
-        
+    public static function get_order_submit_process_detail($process_id,$submitted_orders_qp,$orders_with_errors_qp){
+        // grap the osp detail
         $query = "SELECT id,carrier,status,DATE_FORMAT(started_at, '%H:%i:%s - %d/%m/%Y') AS started_at,DATE_FORMAT(ended_at, '%H:%i:%s - %d/%m/%Y') AS ended_at,processed_items_cnt,items_to_process_cnt,error,meta_data" ;
         $query .= " FROM ".self::TABLE_NAME." WHERE id=".$process_id ;
 
@@ -311,44 +311,58 @@ class OrderSubmitProcess {
         if(!$order_submit_process_detail){
             return false ;
         }
-        // add the orders_to_submit to order_submit_process_detail
-        $order_submit_process_detail["error"] = json_decode($order_submit_process_detail["error"],true);
-        $order_submit_process_detail['meta_data'] = json_decode($order_submit_process_detail['meta_data'],true);
-        $order_ids = ($order_submit_process_detail["meta_data"]) ? $order_submit_process_detail["meta_data"]['valid_order_ids'] : [];
-        $orders_to_submit = [];
-        if(count($order_ids)){
-            $values = ['limit'=>$query_parameter['batch_size'],'offset'=>($query_parameter['page_nb'] - 1) * $query_parameter['batch_size']] ;
-            $query = "SELECT id_order,firstname,lastname,submitted,COUNT(*) OVER() as total_count FROM ". _DB_PREFIX_.\OrderCore::$definition['table']." AS Ord INNER JOIN " ;
-            $query .= _DB_PREFIX_.\AddressCore::$definition['table']. " AS Addr ON Ord.id_address_delivery=Addr.id_address WHERE id_order IN  (".implode(',',$order_ids).")" ;
-            if($query_parameter['order_id']){
-                $query .= " AND Ord.id_order=:order_id" ;
-                $values['order_id'] = $query_parameter['order_id'] ;
-            }
-            if($query_parameter['submitted']){
-                $query .= " AND Ord.submitted=:submitted" ;
-                $values['submitted'] = ($query_parameter['submitted'] == "Oui") ? true : false ;
-            }
-            if($query_parameter['client']){
-                $query .= " AND CONCAT(firstname, ' ', lastname) LIKE :client" ; 
-                $values['client'] = "%".$query_parameter['client']."%";
-            }
-            $query .= " LIMIT :limit OFFSET :offset ;" ;
-            $stmt = self::$db->prepare($query);
-            $stmt->execute($values);
-            $orders_to_submit = $stmt->fetchAll();
-            if(count($orders_to_submit) == 0){
-                $values['offset'] = 0 ;
-                $values['limit'] = $query_parameter['batch_size'] ;
-                $stmt = self::$db->prepare($query);
-                $stmt->execute($values);
-                $orders_to_submit = $stmt->fetchAll();
-            }
-        }
 
-        $order_submit_process_detail['orders_to_submit'] = $orders_to_submit ;
+        // add the error to the order_submit_process_detail
+        $order_submit_process_detail["error"] = json_decode($order_submit_process_detail["error"],true);
+
+        // add the submitted orders to order_submit_process_detail
+        $submitted_orders = self::get_orders_to_submit($process_id,$submitted_orders_qp,false);
+        $order_submit_process_detail['submitted_orders'] = $submitted_orders ;
+
+        // add the orders with errors to order_submit_process_detail
+        $orders_with_errors = self::get_orders_to_submit($process_id,$orders_with_errors_qp,true);
+        $order_submit_process_detail['orders_with_errors'] = $orders_with_errors ;  
+
         $order_submit_process_detail['status_color'] = self::STATUS_COLORS[$order_submit_process_detail['status']] ;
         return $order_submit_process_detail ;
     }
-    
 
+    static function get_orders_to_submit($process_id,$query_parameters,$with_errors){
+
+        $values = ['limit'=>$query_parameters['batch_size'],'offset'=>($query_parameters['page_nb'] - 1) * $query_parameters['batch_size']] ;
+        $query  = "SELECT Ord.id_order,Addr.firstname,Addr.lastname,Ots.error_type,Ots.error_detail,COUNT(*) OVER() as total_count FROM " . OrderToSubmit::TABLE_NAME . " AS Ots " ;
+        $query .= "INNER JOIN ". _DB_PREFIX_.\OrderCore::$definition['table']." As Ord ON Ots.order_id=Ord.id_order " ;
+        $query .= "LEFT JOIN "._DB_PREFIX_.\AddressCore::$definition['table']. " AS Addr ON Ord.id_address_delivery=Addr.id_address WHERE Ots.process_id=$process_id " ;
+        
+        if($with_errors){
+            $query .= "AND Ots.error_type IS NOT NULL ";
+        }else{
+            $query .= "AND Ots.error_type IS NULL ";
+        }
+
+        if($query_parameters['order_id']){
+            $query .= "AND Ord.id_order=:order_id " ;
+            $values['order_id'] = $query_parameters['order_id'] ;
+        }
+        if($query_parameters['client']){
+            $query .= "AND CONCAT(firstname, ' ', lastname) LIKE :client " ; 
+            $values['client'] = "%".$query_parameters['client']."%";
+        }
+
+        $query .= "LIMIT :limit OFFSET :offset ;" ;
+        $stmt = self::$db->prepare($query);
+        $stmt->execute($values);
+        $orders_to_submit = $stmt->fetchAll();
+
+        // if the current page has no orders reset to the first page
+        if(count($orders_to_submit) == 0){
+            $values['offset'] = 0 ;
+            $values['limit'] = $query_parameters['batch_size'] ;
+            $stmt = self::$db->prepare($query);
+            $stmt->execute($values);
+            $orders_to_submit = $stmt->fetchAll();
+        }       
+        return $orders_to_submit ;
+    }
 }
+
