@@ -40,7 +40,8 @@ const eventPopupTypesData = {
     info : {icon:`<i class="material-icons" style="color:#101B82" >info</i>`,color:'#101B82'},
     restricted : {icon:`<i class='fas fa-minus-circle' style="color:#D81010" ></i>`,color:'#D81010'},
     error : {icon : `<i class="material-icons" style="color:#D81010" >error</i>`,color:'#D81010'},
-    success : {icon:`<i class="fas fa-check-circle" style="color:#28C20F" ></i>`,color:'#28C20F'}
+    success : {icon:`<i class="fas fa-check-circle" style="color:#28C20F" ></i>`,color:'#28C20F'},
+    error_detail : {icon : '',color:'#D81010'}
 }
 
 const eventPopupOverlay = {
@@ -140,14 +141,23 @@ function formatDatetime(datetime_str){
 
 
 function monitorOrderMonitoringProcess(){
+
     let query_parameters = {
-        order_id: $("input[name='order_id']").val(),
-        client : $("input[name='client']").val(),
-        new_status: $("select[name='new_status']").val(),
-        page_nb: $('.dz-page-nb-select').val(),
-        batch_size: $(".dz-batch-size-select").val(),
+        updated_orders__order_id : $(`.dz-updated-orders-container .dz-filter-form input[name='order_id']`).val(),
+        updated_orders__client : $(`.dz-updated-orders-container .dz-filter-form input[name='client']`).val(),
+        old_status : $(`.dz-updated-orders-container .dz-filter-form select[name='old_status']`).val(),
+        new_status : $(`.dz-updated-orders-container .dz-filter-form select[name='new_status']`).val(),
+        updated_orders__page_nb : $(`.dz-updated-orders-container .dz-page-nb-select`).val(),
+        updated_orders__batch_size : $(`.dz-updated-orders-container .dz-batch-size-select`).val(),
+
+        orders_with_errors__order_id : $(`.dz-orders-with-errors-container .dz-filter-form input[name='order_id']`).val(),
+        orders_with_errors__client : $(`.dz-orders-with-errors-container .dz-filter-form input[name='client']`).val(),
+        orders_with_errors__page_nb : $(`.dz-orders-with-errors-container .dz-page-nb-select`).val(),
+        orders_with_errors__batch_size : $(`.dz-orders-with-errors-container .dz-batch-size-select`).val(),
+       
         is_json : true
     }
+    
 
     let params = new URLSearchParams(query_parameters);
     let order_monitoring_process_detail_link = `${current_link}&${params}`
@@ -220,13 +230,18 @@ function monitorOrderMonitoringProcess(){
             //updateKpis(order_monitoring_process.kpis)
 
 
-            // update the table and the pagination
-            let updated_orders = order_monitoring_process.updated_orders
-            let total_count = updated_orders.length ? updated_orders[0].total_count : 0
-            updateTable(updated_orders);
-            updatePagination(total_count);
+            // update the table and the pagination of the updated orders 
+            let updated_orders = order_submit_process.updated_orders
+            let updated_orders_total_count = updated_orders.length ? updated_orders[0].total_count : 0
+            updateTable("dz-updated-orders-container",updated_orders);
+            updatePagination("dz-updated-orders-container",updated_orders_total_count);
 
-
+            // update the table and the pagination of the orders with errors 
+            let orders_with_errors = order_submit_process.orders_with_errors
+            let orders_with_errors_total_count = orders_with_errors.length ? orders_with_errors[0].total_count : 0
+            updateTable("dz-orders-with-errors-container",orders_with_errors);
+            updatePagination("dz-orders-with-errors-container",orders_with_errors_total_count);
+            
             // show event popups for final statuses
             if(order_monitoring_process.status == "Terminé" ){
                 eventPopup.create()
@@ -280,30 +295,43 @@ function goToOrder(orderId){
 
 function updateTheOrderList(trigger) {
     // show the loading spinner 
-    orderListOverlay.css('display', 'flex')
+    $(`.${container} .dz-loading-overlay`).css('display', 'flex')
+
     // disable all of the selects and input in the process list container 
-    $(".dz-updated-orders-container select,.dz-updated-orders-container input").prop('disabled',true)
+    $(`.${container} .dz-filter-form select,.${container} .dz-filter-form input`).prop('disabled',true)
 
     if (trigger != "page_nb"){
-        $('.dz-page-nb-select').val(1)
+        $(`.${container} .dz-page-nb-select`).val(1)
     }
 
     // make the request 
 
     let query_parameters = {
-        order_id: $("input[name='order_id']").val(),
-        client : $("input[name='client']").val(),
-        old_status : $("select[name='old_status']").val(),
-        new_status : $("select[name='new_status']").val(),
-        page_nb: $('.dz-page-nb-select').val(),
-        batch_size: $(".dz-batch-size-select").val(),
+        order_id: $(`.${container} .dz-filter-form input[name='order_id']`).val(),
+        client : $(`.${container} .dz-filter-form input[name='client']`).val(),
+        page_nb: $(`.${container} .dz-page-nb-select`).val(),
+        batch_size: $(`.${container} .dz-batch-size-select`).val(),
         is_json : true
+    }
+
+    if(container == "dz-orders-with-errors-container"){
+        query_parameters['error_type'] = $(`.${container} .dz-filter-form select[name='error_type']`).val()
+    }else{
+        query_parameters['new_status'] = $(`.${container} .dz-filter-form select[name='new_status']`).val()
+        query_parameters['old_status'] = $(`.${container} .dz-filter-form select[name='old_status']`).val()
     }
 
     console.log(query_parameters)
     let params = new URLSearchParams(query_parameters);
-    let order_monitoring_process_detail_link = `${current_link}&${params}`
-    fetch(order_monitoring_process_detail_link,{
+    let omp_orders_endpoint = ""
+    if (container == "dz-orders-with-errors-container"){
+        omp_orders_endpoint = "/dz/order_monitoring_process/"+process_id+"/orders_with_errors/"
+    }else{
+        omp_orders_endpoint = "/dz/order_monitoring_process/"+process_id+"/updated_orders/"
+    }
+    let omp_orders_link = current_link.replace("/dz/order_monitoring_process/"+process_id+"/",omp_orders_endpoint)
+    omp_orders_link = `${omp_orders_link}&${params}`
+    fetch(omp_orders_link,{
         method : "GET",
         credentials : "include"
     })
@@ -311,26 +339,26 @@ function updateTheOrderList(trigger) {
         .then(data => {
             if (data.status == "success"){
                 //updateTable(data.order_monitoring_processes);
-                let order_monitoring_process = data.order_monitoring_process
-                let updated_orders = order_monitoring_process.updated_orders
-                let total_count = updated_orders.length ? updated_orders[0].total_count : 0
+                let orders = data.orders
+                let total_count = orders.length ? orders[0].total_count : 0
                 //updateKpis(order_monitoring_process.kpis)
-                updateTable(updated_orders);
-                updatePagination(total_count);
+                updateTable(container,orders);
+                updatePagination(container,total_count);
                 // show the loading spinner
-                orderListOverlay.hide()
+                $(`.${container} .dz-loading-overlay`).hide()
                 // disable all of the selects and input in the process list container 
-                $(".dz-updated-orders-container select,.dz-updated-orders-container input").prop('disabled',false)
+                $(`.${container} .dz-filter-form select,.${container} .dz-filter-form input`).prop('disabled',false)
             }   
         })
         .catch(error =>{console.error('Error:', error)
-                // hide the loading spinner 
-                orderListOverlay.css('display', 'none')
-                // re-enable all of the selects and input in the process list container 
-                $(".dz-updated-orders-container select,.dz-updated-orders-container input").prop('disabled',false)
+            // hide the loading spinner 
+            $(`.${container} .dz-loading-overlay`).css('display', 'none')
+            // re-enable all of the selects and input in the process list container 
+            $(`.${container} .dz-filter-form select,.${container} .dz-filter-form input`).prop('disabled',false) 
         });
 }
 
+/*
 function updateKpis(kpis){  
     const slider = $("#dz-kpi-slider");
     //console.log()
@@ -346,10 +374,10 @@ function updateKpis(kpis){
    })
 
 }
-        
+*/
 
-function updateTable(orders) {
-    const tbody = $(".dz-updated-orders-table-body");
+function updateTable(container,orders) {
+    const tbody = $(`.${container} .dz-order-list-table-body`);
     tbody.empty();
     
     orders.forEach(order => {
@@ -358,23 +386,34 @@ function updateTable(orders) {
             <tr>
                 <td>${order.order_id}</td>
                 <td>${order.firstname} ${order.lastname}</td>
+            `
+        if (container == "dz-orders-with-errors-container"){
+            table_row += `
+                <td><button class="dz-order-error-type-btn" onClick='openErrorDetailEventPopup(${JSON.stringify(order.error_detail).replace(/'/g, "\\'")})'${order.error_type}</button></td>
+            `
+        }else{
+            table_row += `
                 <td><span class="dz-badge" style="background-color:${order.old_status_color}">${order.old_status}</span></td>
                 <td><span class="dz-badge" style="background-color:${order.new_status_color}">${order.new_status}</span></td>
-                <td><span class="dz-order-detail-link" onClick="goToOrder(${order.order_id})" ><i class="material-icons">remove_red_eye</i></span></td>
-            </tr>`
+            `
+        }
+        table_row += `
+            <td><span class="dz-order-detail-link" onClick="goToOrder(${order.id_order})" ><i class="material-icons">remove_red_eye</i></span></td>
+        </tr>`
+
         tbody.append(table_row)
     });
 }
 
-function updatePagination(totalCount) {
-    let page_nb_select = $(".dz-page-nb-select")
+function updatePagination(container,totalCount) {
+    let page_nb_select = $(`.${container} .dz-page-nb-select`)
     if (totalCount == 0){
-        $(".dz-pagination-range").text("0 to 0 / 0")
+        $(`.${container} .dz-pagination-range`).text("0 to 0 / 0")
         page_nb_select.empty()
         page_nb_select.append(new Option("1", 1));
         
     }else{
-        let batch_size_val = $(".dz-batch-size-select").val()
+        let batch_size_val = $(`.${container} .dz-batch-size-select`).val()
         
         // update the options of the page_nb select based on the total count
         let page_nb_val = page_nb_select.val()
@@ -406,20 +445,35 @@ function updatePagination(totalCount) {
 
         // the set the value of the page nb and the pagination range
         page_nb_select.val(page_nb_val)
-        $(".dz-pagination-range").text(`${firstEnd} to ${lastEnd} / ${totalCount}`)
+        $(`.${container} .dz-pagination-range`).text(`${firstEnd} to ${lastEnd} / ${totalCount}`)
     }
 }
 
-$('.dz-filter-btn').on('click', function(e) {
-    updateTheOrderList("filter");
+// setup the event listeners for the updated orders container
+
+$('.dz-updated-orders-container .dz-filter-btn').on('click', function(e) {
+    updateTheOrderList("dz-updated-orders-container","filter");
 });
 
-$('.dz-batch-size-select').on('change', function() {
-    updateTheOrderList("batch_size");
+$('.dz-updated-orders-container .dz-batch-size-select').on('change', function() {
+    updateTheOrderList("dz-updated-orders-container","batch_size");
 });
 
-$('.dz-page-nb-select').on('change', function() {
-    updateTheOrderList("page_nb");
+$('.dz-updated-orders-container .dz-page-nb-select').on('change', function() {
+    updateTheOrderList("dz-updated-orders-container","page_nb");
+});
+
+// setup the event listeners for the orders with errors container
+$('.dz-orders-with-errors-container .dz-filter-btn').on('click', function(e) {
+    updateTheOrderList("dz-orders-with-errors-container","filter");
+});
+
+$('.dz-orders-with-errors-container .dz-batch-size-select').on('change', function() {
+    updateTheOrderList("dz-orders-with-errors-container","batch_size");
+});
+
+$('.dz-orders-with-errors-container .dz-page-nb-select').on('change', function() {
+    updateTheOrderList("dz-orders-with-errors-container","page_nb");
 });
 
 /* STARTING THE JS OF THE SLIDER

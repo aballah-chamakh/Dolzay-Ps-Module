@@ -125,23 +125,33 @@ class OrderMonitoringProcessController extends FrameworkBundleAdminController
 
     // ACID FRIENDLY
     public function orderMonitoringProcessDetail($process_id,Request $request){
-        $query_parameter = [
-            "order_id" => $request->query->get('order_id'),
-            "client" => $request->query->get('client'),
-            "old_status" => $request->query->get('old_status'),
-            "new_status" => $request->query->get('new_status'),
-            "page_nb" =>  $request->query->get('page_nb') ?? 1,
-            "batch_size" => $request->query->get('batch_size') ?? self::BATCH_SIZES[0],
-            "is_json" => $request->query->get('is_json')
+        
+        $is_json = $request->query->get('is_json');
+
+        $updated_orders_qp = [
+            "order_id" => $request->query->get('updated_orders__order_id'),
+            "client" => $request->query->get('updated_orders__client'),
+            "page_nb" =>  $request->query->get('updated_orders__page_nb') ?? 1,
+            "batch_size" => $request->query->get('updated_orders__batch_size') ?? self::BATCH_SIZES[0],
+            "new_status" => $request->query->get('updated_orders__new_status'),
+            "old_status" => $request->query->get('updated_orders__old_status')
+        ];
+
+        $orders_with_errors_qp = [
+            "order_id" => $request->query->get('orders_with_errors__order_id'),
+            "client" => $request->query->get('orders_with_errors__client'),
+            "error_type" => $request->query->get('orders_with_errors__error_type'),
+            "page_nb" =>  $request->query->get('orders_with_errors__page_nb') ?? 1,
+            "batch_size" => $request->query->get('orders_with_errors__batch_size') ?? self::BATCH_SIZES[0]
         ];
         
         $defaultLanguageId = $this->getContext()->language->id;
         $db = DzDb::getInstance();
         OrderMonitoringProcess::init($db);
-        $order_monitoring_process_detail = OrderMonitoringProcess::get_order_monitoring_process_detail($process_id,$query_parameter,$defaultLanguageId);
+        $order_monitoring_process_detail = OrderMonitoringProcess::get_order_monitoring_process_detail($process_id,$updated_orders_qp,$orders_with_errors_qp,$defaultLanguageId);
         
         // handle the api request 
-        if($query_parameter['is_json']){
+        if($is_json){
             if($order_monitoring_process_detail){
                 return new JsonResponse(['status'=>"success",'order_monitoring_process'=>$order_monitoring_process_detail],200, ['json_options' => JSON_UNESCAPED_UNICODE]);
             }else{
@@ -186,6 +196,41 @@ class OrderMonitoringProcessController extends FrameworkBundleAdminController
         $this->redirectToRoute('dz_order_monitoring_process_list');
     }
 
+    public function getUpdatedOrdersOfAnOsp($process_id,Request $request){
+        $updated_orders_qp = [
+            "order_id" => $request->query->get('order_id'),
+            "client" => $request->query->get('client'),
+            "page_nb" =>  (int)$request->query->get('page_nb') ?? 1,
+            "batch_size" => (int)$request->query->get('batch_size') ?? self::BATCH_SIZES[0]
+        ];
+
+        $db = DzDb::getInstance();
+        OrderMonitoringProcess::init($db);
+
+        $updated_orders = OrderMonitoringProcess::get_updated_orders($process_id,$updated_orders_qp);
+
+        return new JsonResponse(['status'=>"success",
+                                 'orders'=>$updated_orders],200, ['json_options' => JSON_UNESCAPED_UNICODE]);
+    }
+
+    public function getOrdersWithErrorsOfAnOsp($process_id,Request $request){
+
+        $orders_with_errors_qp = [
+            "order_id" => $request->query->get('order_id'),
+            "client" => $request->query->get('client'),
+            "error_type" => $request->query->get('error_type'),
+            "page_nb" =>  $request->query->get('page_nb') ?? 1,
+            "batch_size" => $request->query->get('batch_size') ?? self::BATCH_SIZES[0]
+        ];
+
+        $db = DzDb::getInstance();
+        OrderMonitoringProcess::init($db);
+
+        $orders_with_errors = OrderMonitoringProcess::get_orders_with_errors($process_id,$orders_with_errors_qp);
+
+        return new JsonResponse(['status'=>"success",
+                                 'orders'=>$orders_with_errors],200, ['json_options' => JSON_UNESCAPED_UNICODE]);
+    }  
 
 
 }

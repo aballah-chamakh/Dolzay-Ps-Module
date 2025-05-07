@@ -104,8 +104,8 @@ class AfexCarrier extends BaseCarrier {
                     // add the order history for this status
                     self::addOrderStatusHistory($order['id_order'],$post_submit_status_id);
 
-                    // add an OrderToSubmit
-                    self::addOrderToSubmit($order['id_order'],null,null);  
+                    // add an submittedOrder
+                    self::addAsubmittedOrder($order['id_order']);  
                     
                     // update the progress of the order submit process
                     self::updateOrderSubmitProcess(["processed_items_cnt"=>$index]);
@@ -126,8 +126,8 @@ class AfexCarrier extends BaseCarrier {
                                 ,JSON_UNESCAPED_UNICODE);
 
                     self::$db->beginTransaction();
-                    // add an OrderToSubmit
-                    self::addOrderToSubmit($order['id_order'],"Champ(s) invalide(s)",$error_details); 
+                    // add an submittedOrder
+                    self::addAnOrderWithError($order['id_order'],"Champ(s) invalide(s)",$error_details); 
                     // update the progress of the Osp 
                     self::updateOrderSubmitProcess(["processed_items_cnt"=>$index]);
                     self::$db->commit();
@@ -148,8 +148,7 @@ class AfexCarrier extends BaseCarrier {
                         echo "THE ORDER WITH THE ID : ".$remaining_order['id_order']." GOT 401 STATUS CODE | PROGRESS : $index / $orders_cnt  \n\n";
 
                         self::$db->beginTransaction();
-                        // add an OrderToSubmit
-                        self::addOrderToSubmit($remaining_order['id_order'],"Token invalide",$error_details);  
+                        self::addAnOrderWithError($remaining_order['id_order'],"Token invalide",$error_details);  
                         // increase the counter of the osp 
                         self::updateOrderSubmitProcess(["processed_items_cnt"=>$index]);
                         self::$db->commit();
@@ -168,7 +167,7 @@ class AfexCarrier extends BaseCarrier {
                             ,JSON_UNESCAPED_UNICODE);
 
                     self::$db->beginTransaction();
-                    self::addOrderToSubmit($order['id_order'],"Erreur inattendue",$error_details);  
+                    self::addAnOrderWithError($order['id_order'],"Erreur inattendue",$error_details);  
                     self::updateOrderSubmitProcess(["processed_items_cnt"=>$index ]);
                     self::$db->commit();
 
@@ -219,7 +218,6 @@ class AfexCarrier extends BaseCarrier {
             
             $afex_orders_to_monitor = self::getOrdersToMonitorByCarrier("Afex");
             
-
             if(count($afex_orders_to_monitor) == 0){
                 return true;
             }
@@ -290,7 +288,7 @@ class AfexCarrier extends BaseCarrier {
                                 self::removeOrderFromMonitoring($order_to_monitor['order_id']);
                             }
                             
-                            self::insert_an_updated_order(self::$process_id,$order_to_monitor['order_id'],$order_to_monitor['current_state'],$new_afex_state);    
+                            self::insertAnUpdatedOrder(self::$process_id,$order_to_monitor['order_id'],$order_to_monitor['current_state'],$new_afex_state);    
                         }
                     }else{ // otherwise set it to pre-shipping canceling since it was deleted by the user in the carrier platform
                         // update the order state to pre-shipping canceling
@@ -298,6 +296,8 @@ class AfexCarrier extends BaseCarrier {
 
                         // add the order history for this status
                         self::addOrderStatusHistory($order_to_monitor['order_id'],self::afexToPrestaState["pre_shipping_canceling"]);
+
+                        self::insertAnUpdatedOrder(self::$process_id,$order_to_monitor['order_id'],$order_to_monitor['current_state'],self::afexToPrestaState["pre_shipping_canceling"]);    
 
                         // remove the order from the monitoring phase
                         self::removeOrderFromMonitoring($order_to_monitor['order_id']);
@@ -314,21 +314,25 @@ class AfexCarrier extends BaseCarrier {
 
                 return true ;
             }else if ($status_code == 401 || !$token){
-                
-                // set for the order monitoring process the status and the error data 
-                $message = "Le token d'Afex est invalide. Veuillez le mettre à jour avec un token valide." ;
-                
-                $error = json_encode([
-                    'message' => $message,
-                ],JSON_UNESCAPED_UNICODE);
 
-                // escape the single quotes
-                //$error = "'".str_replace("'", "\'", $error)."'";
-                self::updateOrderMonitoringProcess(["status"=>"Interrompu",
-                                                    "error"=>$error,
-                                                    "ended_at"=>date('Y-m-d H:i:s')
-                                                    ]);
-                return false ;
+                // add an Order with error for all of the orders to monitor
+                foreach($afex_orders_to_monitor as $index => $order_to_monitor){
+                    self::$db->beginTransaction();
+                    $error_details = json_encode(
+                        [
+                            'status_code' => $status_code,
+                            'response'=>$response
+                        ]
+                    ,JSON_UNESCAPED_UNICODE);
+                    self::addAnOrderWithError($order_to_monitor['order_id'], "Token invalide", $error_detail);
+                    self::updateOrderMonitoringProcess([
+                        "processed_items_cnt"=>$index + 1,
+                    ]);
+                    self::$db->commit();
+                }
+
+                
+                return true ;
             }else if($status_code == 404){
                 foreach($afex_orders_to_monitor as $index => $order_to_monitor){
                     self::$db->beginTransaction();
@@ -340,7 +344,7 @@ class AfexCarrier extends BaseCarrier {
 
                     // remove the order from the monitoring phase
                     self::removeOrderFromMonitoring($order_to_monitor['order_id']);
-                    self::insert_an_updated_order(self::$process_id,$order_to_monitor['order_id'],$order_to_monitor['current_state'],self::afexToPrestaState["pre_shipping_canceling"]);    
+                    self::insertAnUpdatedOrder(self::$process_id,$order_to_monitor['order_id'],$order_to_monitor['current_state'],self::afexToPrestaState["pre_shipping_canceling"]);    
 
                     $index += 1  ;
                     self::updateOrderMonitoringProcess([
@@ -352,25 +356,22 @@ class AfexCarrier extends BaseCarrier {
                 return true ;
             }
             else{
-                $message = "Une erreur de code $status_code s'est produite lors du suivi des commandes. Veuillez appeler le support de Dolzay au " . _SUPPORT_PHONE_ . " afin qu'ils résolvent votre problème.";
-
-                $error = json_encode([
-                            'message' => $message,
-                            'detail' =>[
-                                'status_code' => $status_code,
-                                'response'=>$response]
-                        ],JSON_UNESCAPED_UNICODE);
-
-                // escape the single quotes
-                //$error = str_replace("'", "\'", $error);
-                self::updateOrderMonitoringProcess(
-                    [
-                        "status"=>"Interrompu",
-                        "error"=>$error,
-                        "ended_at"=>date('Y-m-d H:i:s')
-                    ]
-                );
-                return false ;
+                // add an Order with error for all of the orders to monitor
+                foreach($afex_orders_to_monitor as $index => $order_to_monitor){
+                    self::$db->beginTransaction();
+                    $error_details = json_encode(
+                        [
+                            'status_code' => $status_code,
+                            'response'=>$response
+                        ]
+                    ,JSON_UNESCAPED_UNICODE);
+                    self::addAnOrderWithError($order_to_monitor['order_id'], "Champ(s) invalide(s)", $error_detail);
+                    self::updateOrderMonitoringProcess([
+                        "processed_items_cnt"=>$index + 1,
+                    ]);
+                    self::$db->commit();
+                }
+                return true ;
             }
         }catch(Throwable $e){
             echo "=======  THE OMP HOLDING THE ID : " . self::$process_id . " ENDED AT : $current_datetime AFTER SUBMITTING $index/$orders_cnt WITH AN EXCEPTION ======= \n\n\n\n";

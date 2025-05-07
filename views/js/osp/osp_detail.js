@@ -40,7 +40,8 @@ const eventPopupTypesData = {
     info : {icon:`<i class="material-icons" style="color:#101B82" >info</i>`,color:'#101B82'},
     restricted : {icon:`<i class='fas fa-minus-circle' style="color:#D81010" ></i>`,color:'#D81010'},
     error : {icon : `<i class="material-icons" style="color:#D81010" >error</i>`,color:'#D81010'},
-    success : {icon:`<i class="fas fa-check-circle" style="color:#28C20F" ></i>`,color:'#28C20F'}
+    success : {icon:`<i class="fas fa-check-circle" style="color:#28C20F" ></i>`,color:'#28C20F'},
+    error_detail : {icon : '',color:'#D81010'}
 }
 
 const eventPopupOverlay = {
@@ -107,7 +108,6 @@ const eventPopup = {
                 ${eventPopupTypesData[type].icon}
                 <p>${message}</p>
             `
-
             this.addButtons(buttons,eventPopupTypesData[type].color)
         }, 600);
     },
@@ -163,14 +163,22 @@ function terminateOrderSubmitProcess(){
 }
 
 function monitorOrderSubmitProcess(){
+
+
     let query_parameters = {
-        order_id: $("input[name='order_id']").val(),
-        submitted: $("select[name='submitted']").val(),
-        client : $("input[name='client']").val(),
-        page_nb: $('.dz-page-nb-select').val(),
-        batch_size: $(".dz-batch-size-select").val(),
+        submitted_orders__order_id : $(`.dz-submitted-orders-container .dz-filter-form input[name='order_id']`).val(),
+        submitted_orders__client : $(`.dz-submitted-orders-container .dz-filter-form input[name='client']`).val(),
+        submitted_orders__page_nb : $(`.dz-submitted-orders-container .dz-page-nb-select`).val(),
+        submitted_orders__batch_size : $(`.dz-submitted-orders-container .dz-batch-size-select`).val(),
+
+        orders_with_errors__order_id : $(`.dz-orders-with-errors-container .dz-filter-form input[name='order_id']`).val(),
+        orders_with_errors__client : $(`.dz-orders-with-errors-container .dz-filter-form input[name='client']`).val(),
+        orders_with_errors__page_nb : $(`.dz-orders-with-errors-container .dz-page-nb-select`).val(),
+        orders_with_errors__batch_size : $(`.dz-orders-with-errors-container .dz-batch-size-select`).val(),
+       
         is_json : true
     }
+    
 
     let params = new URLSearchParams(query_parameters);
     let order_submit_process_detail_link = `${current_link}&${params}`
@@ -239,11 +247,16 @@ function monitorOrderSubmitProcess(){
                 }
             }
             
-            // update the table and the pagination
-            let orders_to_submit = order_submit_process.orders_to_submit
-            let total_count = orders_to_submit.length ? orders_to_submit[0].total_count : 0
-            updateTable(orders_to_submit);
-            updatePagination(total_count);
+            // update the table and the pagination of the submitted orders 
+            let submitted_orders = order_submit_process.submitted_orders
+            let submitted_orders_total_count = submitted_orders.length ? submitted_orders[0].total_count : 0
+            updateTable("dz-submitted-orders-container",submitted_orders);
+            updatePagination("dz-submitted-orders-container",submitted_orders_total_count);
+
+            let orders_with_errors = order_submit_process.orders_with_errors
+            let orders_with_errors_total_count = orders_with_errors.length ? orders_with_errors[0].total_count : 0
+            updateTable("dz-orders-with-errors-container",orders_with_errors);
+            updatePagination("dz-orders-with-errors-container",orders_with_errors_total_count);
 
 
             // show event popups for final statuses
@@ -318,31 +331,59 @@ function goToOrder(orderId){
     window.location = current_link.replace("/dz/order_submit_process/"+process_id+"/","/sell/orders/"+orderId+"/view")
 }
 
+function openErrorDetailEventPopup(error_detail){
+    error_detail = JSON.parse(error_detail)
+    console.log(error_detail)
+    eventPopup.create()
+    eventPopupOverlay.create();
+    buttons = [
+        {
+            'name' : 'Ok',
+            'clickHandler' : function(){
+                            eventPopup.close();
+            }
+        }
+    ]
+
+    error_detail = "<pre class='dz-error-message-container'>" + JSON.stringify(error_detail, null, 2) + "</pre>"
+    console.log(error_detail)
+    eventPopup.open("error_detail","Détail d'erreur",error_detail,buttons)
+}
+
 function updateTheOrderList(container,trigger) {
     // show the loading spinner 
     $(`.${container} .dz-loading-overlay`).css('display', 'flex')
+
     // disable all of the selects and input in the process list container 
-    $(`.${container} .dz-order-list-container select,.dz-order-list-container input`).prop('disabled',true)
+    $(`.${container} .dz-filter-form select,.${container} .dz-filter-form input`).prop('disabled',true)
 
     if (trigger != "page_nb"){
         $(`.${container} .dz-page-nb-select`).val(1)
     }
 
     // make the request 
-
     let query_parameters = {
-        order_id: $(`.${container} input[name='order_id']`).val(),
-        submitted: $(`.${container} select[name='submitted']`).val(),
-        client : $(`.${container} input[name='client']`).val(),
+        order_id: $(`.${container} .dz-filter-form input[name='order_id']`).val(),
+        client : $(`.${container} .dz-filter-form input[name='client']`).val(),
         page_nb: $(`.${container} .dz-page-nb-select`).val(),
-        batch_size: $(`.${container} .dz-batch-size-select`).val(),
-        is_json : true
+        batch_size: $(`.${container} .dz-batch-size-select`).val()
+    }
+
+    if(container == "dz-orders-with-errors-container"){
+        query_parameters['error_type'] = $(`.${container} .dz-filter-form select[name='error_type']`).val()
     }
 
     console.log(query_parameters)
     let params = new URLSearchParams(query_parameters);
-    let order_submit_process_detail_link = `${current_link}&${params}`
-    fetch(order_submit_process_detail_link,{
+    let osp_orders_endpoint = ""
+    if (container == "dz-submitted-orders-container"){
+        osp_orders_endpoint = "/dz/order_submit_process/"+process_id+"/submitted_orders/"
+    }else{
+        osp_orders_endpoint = "/dz/order_submit_process/"+process_id+"/orders_with_errors/"
+    }
+    let osp_orders_link = current_link.replace("/dz/order_submit_process/"+process_id+"/",osp_orders_endpoint)
+    osp_orders_link = `${osp_orders_link}&${params}`
+    fetch(osp_orders_link,{
         method : "GET",
         credentials : "include"
     })
@@ -350,39 +391,44 @@ function updateTheOrderList(container,trigger) {
         .then(data => {
             if (data.status == "success"){
                 //updateTable(data.order_submit_processes);
-                let order_submit_process = data.order_submit_process
-                let orders_to_submit = order_submit_process.orders_to_submit
-                let total_count = orders_to_submit.length ? orders_to_submit[0].total_count : 0
-                updateTable(container,orders_to_submit);
+                let orders  = data.orders
+                let total_count = orders.length ? orders[0].total_count : 0
+                updateTable(container,orders);
                 updatePagination(container,total_count);
                 // show the loading spinner
                 $(`.${container} .dz-loading-overlay`).hide()
                 // disable all of the selects and input in the process list container 
-                $(`.${container} .dz-order-list-container select,.dz-order-list-container input`).prop('disabled',false)
+                $(`.${container} .dz-filter-form select,.${container} .dz-filter-form input`).prop('disabled',false)
             }   
         })
         .catch(error =>{console.error('Error:', error)
                 // hide the loading spinner 
                 $(`.${container} .dz-loading-overlay`).css('display', 'none')
                 // re-enable all of the selects and input in the process list container 
-                $(`.${container} .dz-order-list-container select,.dz-order-list-container input`).prop('disabled',false)
+                $(`.${container} .dz-filter-form select,.${container} .dz-filter-form input`).prop('disabled',false)
         });
 }
 
 function updateTable(container,orders) {
-    const tbody = $(`.${container} .dz-order-list-container-table-body`);
+    const tbody = $(`.${container} .dz-order-list-table-body`);
     tbody.empty();
     
     orders.forEach(order => {
         // id,carrier,started_at,processed_items_cnt,items_to_process_cnt,status
-        let row = `
+        let table_row = `
             <tr>
                 <td>${order.id_order}</td>
                 <td>${order.firstname} ${order.lastname}</td>
-                <td>${order.submitted ? "Oui" : "Non"}</td>
+            `
+
+        if(container == "dz-orders-with-errors-container"){
+            table_row += `<td><button class="dz-order-error-type-btn" onClick='openErrorDetailEventPopup(${JSON.stringify(order.error_detail).replace(/'/g, "\\'")})'>${order.error_type}</button></td>`;
+        }
+
+        table_row += `
                 <td><span class="dz-order-detail-link" onClick="goToOrder(${order.id_order})" ><i class="material-icons">remove_red_eye</i></span></td>
             </tr>`
-        tbody.append(row)
+        tbody.append(table_row)
     });
 }
 

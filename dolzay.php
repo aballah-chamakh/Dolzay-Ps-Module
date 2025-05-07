@@ -27,12 +27,14 @@ class Dolzay extends Module
         "Settings",
         "Notifications",
         "OrderSubmitProcess",
-        "OrderMonitoringProcess"
+        "OrderMonitoringProcess",
+        "Common"
     ];
     // END DEFINNING PUBLIC CONSTANTS
 
     const APPS_UNINIT_ORDER = [
         "Notifications",
+        //"Common",
         "OrderMonitoringProcess",
         "OrderSubmitProcess",
         "Settings"

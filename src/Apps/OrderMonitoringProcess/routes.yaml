@@ -29,3 +29,21 @@ dz_order_monitoring_submit_process_detail :
   defaults:
     _controller: 'Dolzay\Apps\OrderMonitoringProcess\Controllers\OrderMonitoringProcessController::orderMonitoringProcessDetail'
     _disable_module_prefix: true
+
+dz_get_updated_orders_of_an_osp : 
+  path: /dz/order_monitoring_process/{process_id}/updated_orders/
+  methods: [GET]
+  requirements:
+    process_id: \d+
+  defaults:
+    _controller: 'Dolzay\Apps\OrderMonitoringProcess\Controllers\OrderMonitoringProcessController::getUpdatedOrdersOfAnOsp'
+    _disable_module_prefix: true
+
+dz_get_orders_with_errors_of_an_osp : 
+  path: /dz/order_monitoring_process/{process_id}/orders_with_errors/
+  methods: [GET]
+  requirements:
+    process_id: \d+
+  defaults:
+    _controller: 'Dolzay\Apps\OrderMonitoringProcess\Controllers\OrderMonitoringProcessController::getOrdersWithErrorsOfAnOsp'
+    _disable_module_prefix: true

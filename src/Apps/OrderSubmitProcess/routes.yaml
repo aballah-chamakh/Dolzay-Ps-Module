@@ -65,3 +65,21 @@ dz_order_submit_process_detail :
   defaults:
     _controller: 'Dolzay\Apps\OrderSubmitProcess\Controllers\OrderSubmitProcessController::orderSubmitProcessDetail'
     _disable_module_prefix: true
+
+dz_get_submitted_orders_of_an_osp : 
+  path: /dz/order_submit_process/{process_id}/submitted_orders/
+  methods: [GET]
+  requirements:
+    process_id: \d+
+  defaults:
+    _controller: 'Dolzay\Apps\OrderSubmitProcess\Controllers\OrderSubmitProcessController::getSubmittedOrdersOfAnOsp'
+    _disable_module_prefix: true
+
+dz_get_orders_with_errors_of_an_osp : 
+  path: /dz/order_submit_process/{process_id}/orders_with_errors/
+  methods: [GET]
+  requirements:
+    process_id: \d+
+  defaults:
+    _controller: 'Dolzay\Apps\OrderSubmitProcess\Controllers\OrderSubmitProcessController::getOrdersWithErrorsOfAnOsp'
+    _disable_module_prefix: true

@@ -42,7 +42,6 @@ class SettingsController extends FrameworkBundleAdminController
         $carriers = $stmt->fetchAll();
 
         $db->commit();
-
         // set the carriers and order state options in the settings
         $settings['carriers'] = $carriers;
         $settings['order_state_options'] = $order_state_options;

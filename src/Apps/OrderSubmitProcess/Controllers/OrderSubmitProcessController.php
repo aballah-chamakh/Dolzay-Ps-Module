@@ -134,7 +134,6 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
             "page_nb" =>  $request->query->get('orders_with_errors__page_nb') ?? 1,
             "batch_size" => $request->query->get('orders_with_errors__batch_size') ?? self::BATCH_SIZES[0]
         ];
-        
 
         $db = DzDb::getInstance();
         OrderSubmitProcess::init($db);
@@ -196,6 +195,42 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
 
         $this->redirectToRoute('dz_order_submit_process_list');
     }
+
+    public function getSubmittedOrdersOfAnOsp($process_id,Request $request){
+        $submitted_orders_qp = [
+            "order_id" => $request->query->get('order_id'),
+            "client" => $request->query->get('client'),
+            "page_nb" =>  (int)$request->query->get('page_nb') ?? 1,
+            "batch_size" => (int)$request->query->get('batch_size') ?? self::BATCH_SIZES[0]
+        ];
+
+        $db = DzDb::getInstance();
+        OrderSubmitProcess::init($db);
+
+        $submitted_orders = OrderSubmitProcess::get_submitted_orders($process_id,$submitted_orders_qp);
+
+        return new JsonResponse(['status'=>"success",
+                                 'orders'=>$submitted_orders],200, ['json_options' => JSON_UNESCAPED_UNICODE]);
+    }
+
+    public function getOrdersWithErrorsOfAnOsp($process_id,Request $request){
+
+        $orders_with_errors_qp = [
+            "order_id" => $request->query->get('order_id'),
+            "client" => $request->query->get('client'),
+            "error_type" => $request->query->get('error_type'),
+            "page_nb" =>  $request->query->get('page_nb') ?? 1,
+            "batch_size" => $request->query->get('batch_size') ?? self::BATCH_SIZES[0]
+        ];
+
+        $db = DzDb::getInstance();
+        OrderSubmitProcess::init($db);
+
+        $orders_with_errors = OrderSubmitProcess::get_orders_with_errors($process_id,$orders_with_errors_qp);
+
+        return new JsonResponse(['status'=>"success",
+                                 'orders'=>$orders_with_errors],200, ['json_options' => JSON_UNESCAPED_UNICODE]);
+    }  
 
 
     // ACID FREINDLY

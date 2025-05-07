@@ -153,6 +153,17 @@
                             <input class="form-control" name="client" placeholder="client" />
                         </div>
                     </div>
+                    <div class="dz-filter-form-second-row">
+                        <div class="dz-form-group">
+                            <label>Type d'erreur</label>
+                            <select class="form-control" name="error_type" placeholder="Type d'erreur">
+                                <option value="" selected=true >Tous</option>
+                                <option value="Erreur inattendue">Erreur inattendue</option>
+                                <option value="Token invalide">Token invalide</option>
+                                <option value="Champ(s) invalide(s)">Champ(s) invalide(s)</option>
+                            </select>
+                        </div>
+                    </div>
                     <button class="dz-filter-btn">Filtrer</button>
                 </div>
             </div>
@@ -178,7 +189,7 @@
                             {% for order in process.orders_with_errors %}
                                 <td>{{order.id_order}}</td>
                                 <td>{{order.firstname}} {{order.lastname}}</td>
-                                <td>{{order.error_type}}</td>
+                                <td><button class="dz-order-error-type-btn" onClick="openErrorDetailEventPopup({{order.error_detail}})" >{{order.error_type}}</button></td>
                                 <td><span class="dz-order-detail-link" onClick="goToOrder({{order.id_order}})" ><i class="material-icons">remove_red_eye</i></span></td>
                             </tr>
                             {% endfor %}

@@ -5,6 +5,7 @@ namespace Dolzay\Apps\OrderMonitoringProcess\Entities;
 use Dolzay\ModuleConfig;
 use Dolzay\CustomClasses\Db\DzDb;
 use Dolzay\Apps\Settings\Entities\Carrier ;
+use Dolzay\Apps\Common\Entities\OrderWithError ;
 
 class OrderMonitoringProcess {
 
@@ -97,7 +98,7 @@ class OrderMonitoringProcess {
         return $processes ;
     }
 
-    public static function get_order_monitoring_process_detail($process_id,$query_parameter,$id_lang){
+    public static function get_order_monitoring_process_detail($process_id,$updated_orders_qp,$orders_with_errors_qp,$id_lang){
         
         // fech the order_monitoring_process_detail by id
         $query = "SELECT id,status,DATE_FORMAT(started_at, '%H:%i:%s - %d/%m/%Y') AS started_at,DATE_FORMAT(ended_at, '%H:%i:%s - %d/%m/%Y') AS ended_at,processed_items_cnt,items_to_process_cnt,error" ;
@@ -107,8 +108,6 @@ class OrderMonitoringProcess {
         if(!$order_monitoring_process_detail){
             return false ;
         }
-        $order_monitoring_process_detail['status_color'] = self::STATUS_COLORS[$order_monitoring_process_detail['status']] ;
-
         // fetch the kpis of order_monitoring_process and add them to it
         /*
         $query  = "SELECT NewStatusLang.name AS new_status,NewStatus.color AS new_status_color,COUNT(*) AS count FROM ".UpdatedOrder::TABLE_NAME." As Uord ";
@@ -125,6 +124,17 @@ class OrderMonitoringProcess {
             return $order_monitoring_process_detail ;
         }*/
 
+        // add the error to the order_submit_process_detail
+        $order_submit_process_detail["error"] = json_decode($order_monitoring_process_detail["error"],true);
+
+        $order_monitoring_process_detail['status_color'] = self::STATUS_COLORS[$order_monitoring_process_detail['status']] ;
+        $order_monitoring_process_detail['updated_orders'] = self::get_updated_orders($process_id,$updated_orders_qp,$id_lang) ;
+        $order_monitoring_process_detail['orders_with_errors'] = self::get_orders_with_errors($process_id,$orders_with_errors_qp,$id_lang) ;
+
+        return $order_monitoring_process_detail ;
+    }
+
+    public static function get_updated_orders($process_id,$query_parameter,$id_lang){
         // fetch the updated_orders of order_monitoring_process and add them to it
         $updated_orders = [];
         $values = ['limit'=>$query_parameter['batch_size'],'offset'=>($query_parameter['page_nb'] - 1) * $query_parameter['batch_size']] ;
@@ -168,9 +178,44 @@ class OrderMonitoringProcess {
             $stmt->execute($values);
             $updated_orders = $stmt->fetchAll();
         }
+        return $updated_orders;
+    }
 
-        $order_monitoring_process_detail['updated_orders'] = $updated_orders ;
-        return $order_monitoring_process_detail ;
+    static function get_orders_with_errors($process_id,$query_parameters,$id_lang){
+
+        $values = ['limit'=>$query_parameters['batch_size'],'offset'=>($query_parameters['page_nb'] - 1) * $query_parameters['batch_size']] ;
+        $query  = "SELECT Ord.id_order,Addr.firstname,Addr.lastname,Owe.error_type,Owe.error_detail,COUNT(*) OVER() as total_count FROM " . OrderWithError::TABLE_NAME . " AS Owe " ;
+        $query .= "INNER JOIN ". _DB_PREFIX_.\OrderCore::$definition['table']." As Ord ON Owe.order_id=Ord.id_order " ;
+        $query .= "LEFT JOIN "._DB_PREFIX_.\AddressCore::$definition['table']. " AS Addr ON Ord.id_address_delivery=Addr.id_address WHERE Owe.process_id=$process_id " ;
+        
+
+        if($query_parameters['order_id']){
+            $query .= "AND Ord.id_order=:order_id " ;
+            $values['order_id'] = $query_parameters['order_id'] ;
+        }
+        if($query_parameters['client']){
+            $query .= "AND CONCAT(firstname, ' ', lastname) LIKE :client " ; 
+            $values['client'] = "%".$query_parameters['client']."%";
+        }
+        if($query_parameters['error_type']){
+            $query .= "AND error_type=:error_type " ;
+            $values['error_type'] = $query_parameters['error_type'] ;
+        }
+
+        $query .= "LIMIT :limit OFFSET :offset ;" ;
+        $stmt = self::$db->prepare($query);
+        $stmt->execute($values);
+        $orders_with_errors = $stmt->fetchAll();
+
+        // if the current page has no orders reset to the first page
+        if(count($orders_with_errors) == 0){
+            $values['offset'] = 0 ;
+            $values['limit'] = $query_parameters['batch_size'] ;
+            $stmt = self::$db->prepare($query);
+            $stmt->execute($values);
+            $orders_to_submit = $stmt->fetchAll();
+        }       
+        return $orders_with_errors ;
     }
 
 }

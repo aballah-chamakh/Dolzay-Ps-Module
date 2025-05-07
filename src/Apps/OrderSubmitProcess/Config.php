@@ -6,11 +6,11 @@ class Config {
 
     public static $create_app_entities_order = array(
         "OrderSubmitProcess",
-        "OrderToSubmit"
+        "SubmittedOrder"
     );
 
     public static $drop_app_entities_order = array(
-        "OrderToSubmit",
+        "SubmittedOrder",
         "OrderSubmitProcess"
     );
     

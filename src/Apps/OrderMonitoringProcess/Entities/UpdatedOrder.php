@@ -24,6 +24,8 @@ class UpdatedOrder {
             `order_id` INT(10) UNSIGNED  NOT NULL ,
             `old_status` INT(10) UNSIGNED  NOT NULL,
             `new_status` INT(10) UNSIGNED  NOT NULL,
+            `error_type` VARCHAR(60) NULL,
+            `error_detail` JSON NULL,
              PRIMARY KEY (omp_id, order_id)
         );';
 

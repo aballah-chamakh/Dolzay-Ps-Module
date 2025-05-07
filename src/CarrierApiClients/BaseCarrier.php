@@ -58,11 +58,11 @@ class BaseCarrier {
         $orders_to_submit= $stmt->fetchAll() ;
     
         // add the cart products to each order 
-        foreach($orders_to_submit as &$order_to_submit){
-            $query = "SELECT product_name as name, product_quantity as quantity FROM " . _DB_PREFIX_ . "order_detail WHERE id_order=" . $order_to_submit['id_order'];
+        foreach($orders_to_submit as &$submitted_order){
+            $query = "SELECT product_name as name, product_quantity as quantity FROM " . _DB_PREFIX_ . "order_detail WHERE id_order=" . $submitted_order['id_order'];
             $stmt = self::$db->query($query) ;
             $cart_products =  $stmt->fetchAll() ;
-            $order_to_submit['cart_products'] = $cart_products ;
+            $submitted_order['cart_products'] = $cart_products ;
         }
     
         return $orders_to_submit ;
@@ -112,22 +112,44 @@ class BaseCarrier {
 
     }
 
-    protected static function addOrderToSubmit($order_id,$error_type,$error_detail){
+    protected static function addASubmittedOrder($order_id){
 
-        $query = "INSERT INTO "._MODULE_PREFIX_."order_to_submit (order_id,process_id,error_type,error_detail) VALUES (:order_id,:process_id,:error_type,:error_detail);";
+        $query = "INSERT INTO "._MODULE_PREFIX_."submitted_order (order_id,process_id) VALUES (:order_id,:process_id);";
         $stmt = self::$db->prepare($query);
         $stmt->execute([
             'order_id'=> $order_id,
             'process_id'=> self::$process_id,
-            'error_type'=> $error_type,
-            'error_detail'=> $error_detail
         ]);
 
     }
 
-    public static function insert_an_updated_order($omp_id, $order_id, $old_status, $new_status): int {
-        $query = "INSERT INTO "._MODULE_PREFIX_."updated_order (omp_id, order_id, old_status, new_status) VALUES($omp_id, $order_id, $old_status, $new_status);";
-        self::$db->query($query);
+    public static function insertAnUpdatedOrder($omp_id, $order_id, $old_status, $new_status): int {
+        $query = "INSERT INTO " . _MODULE_PREFIX_ . "updated_order (omp_id, order_id, old_status, new_status)
+                  VALUES (:omp_id, :order_id, :old_status, :new_status)";
+        
+        $stmt = self::$db->prepare($query);
+        $stmt->execute([
+            ':omp_id' => $omp_id,
+            ':order_id' => $order_id,
+            ':old_status' => $old_status,
+            ':new_status' => $new_status,
+        ]);
+    
+        return (int)self::$db->lastInsertId();
+    }
+    
+    public static function addAnOrderWithError($order_id, $error_type, $error_detail): int {
+        $query = "INSERT INTO " . _MODULE_PREFIX_ . "order_with_error (process_id, order_id, error_type, error_detail)
+                  VALUES (:process_id, :order_id, :error_type, :error_detail)";
+        
+        $stmt = self::$db->prepare($query);
+        $stmt->execute([
+            ':process_id' => self::$process_id,
+            ':order_id' => $order_id,
+            ':error_type' => $error_type,
+            ':error_detail' => $error_detail,
+        ]);
+    
         return (int)self::$db->lastInsertId();
     }
 

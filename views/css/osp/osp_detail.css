@@ -106,6 +106,7 @@
     background-color: rgb(249, 216, 216);
     padding : 10px ;
     width : 100% ;
+    margin-bottom : 0px ;
 }
 
 .dz-more-detail {
@@ -265,6 +266,15 @@
 .dz-order-list-body .table .dz-order-detail-link{
     color : #1a456e ;
     cursor: pointer;
+}
+
+.dz-order-list-body .table .dz-order-error-type-btn{
+    background-color: red;
+    padding: 5px 20px;
+    color: white;
+    outline: none;
+    border-radius: 5px ;
+    border : none ;
 }
 
 .dz-order-list-table-footer{

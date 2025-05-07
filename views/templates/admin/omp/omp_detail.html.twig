@@ -11,7 +11,7 @@
     <div class="dz-process-detail-header">
         <p>LE PROCESSUS DE SUIVI #{{process.id}}</p>
     </div> 
-    <div class="dz-process-state-container">
+    <div class="dz-process-state-container ">
         <div class="dz-process-state-header">
             <p>L'ÉTAT DU PROCESSUS</p>
         </div>
@@ -61,12 +61,12 @@
         </div>
     </div>
 
-    <div class="dz-updated-orders-container">
-        <div class="dz-updated-orders-container-header">
+    <div class="dz-order-list-container dz-updated-orders-container">
+        <div class="dz-order-list-container-header">
             <p>LES COMMANDES MISES À JOUR</p>
         </div>
-        <div class="dz-updated-orders-container-body">
-            <div class="dz-updated-orders-filter-container">
+        <div class="dz-order-list-container-body">
+            <div class="dz-order-list-filter-container">
                 <div class="dz-filter-header">
                     <p>LE FILTRE</p>
                 </div> 
@@ -104,12 +104,12 @@
                     <button class="dz-filter-btn">Filtrer</button>
                 </div>
             </div>
-            <div class="dz-updated-orders-list-container">
+            <div class="dz-order-list-container">
                 <div class="dz-loading-overlay">
-                    <div class="dz-updated-orders-table-spinner spinner-border" role="status">
+                    <div class="dz-order-list-table-spinner spinner-border" role="status">
                     </div>
                 </div>
-                <div class="dz-updated-orders-list-header">
+                <div class="dz-order-list-header">
                     <p>LES COMMANDES</p>
                 </div>
                 {#
@@ -137,7 +137,7 @@
                     </div>
                 </div>
                 #}
-                <div class="dz-updated-orders-list-body">
+                <div class="dz-order-list-body">
                     <table class="table">
                         <thead >
                             <tr>
@@ -148,7 +148,7 @@
                                 <th>Détail</th>
                             </tr>
                         </thead>
-                        <tbody class="dz-updated-orders-table-body" >
+                        <tbody class="dz-order-list-table-body" >
                             {% for order in process.updated_orders %}
                                 <td>{{order.order_id}}</td>
                                 <td>{{order.firstname}} {{order.lastname}}</td>
@@ -160,7 +160,7 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="dz-updated-orders-table-footer">
+                <div class="dz-order-list-table-footer">
                     <p class="dz-pagination-range">{{first_end}} to {{last_end}} / {{total_count}}</p>
                     <div class="dz-page-number" >
                         <label>page : </label>
@@ -179,7 +179,89 @@
             </div>
         </div>
     </div>
-    
+    <div class="dz-order-list-container dz-orders-with-errors-container">
+        <div class="dz-order-list-container-header">
+            <p>LES COMMANDES QUI ONT DES ERREURS</p>
+            <span class="dz-red-circle"></span>
+        </div>
+        <div class="dz-order-list-container-body">
+            <div class="dz-order-list-filter-container">
+                <div class="dz-filter-header">
+                    <p>LE FILTRE</p>
+                </div> 
+                <div class="dz-filter-form">
+                    <div class="dz-filter-form-first-row">
+                        <div class="dz-form-group">
+                            <label>Identifiant de commande</label>
+                            <input class="form-control" name="order_id"  placeholder="Identifiant de commande" />
+                        </div>
+                        <div class="dz-form-group">
+                            <label>client</label>
+                            <input class="form-control" name="client" placeholder="client" />
+                        </div>
+                    </div>
+                    <div class="dz-filter-form-second-row">
+                        <div class="dz-form-group">
+                            <label>Type d'erreur</label>
+                            <select class="form-control" name="error_type" placeholder="Type d'erreur">
+                                <option value="" selected=true >Tous</option>
+                                <option value="Erreur inattendue">Erreur inattendue</option>
+                                <option value="Token invalide">Token invalide</option>
+                                <option value="Champ(s) invalide(s)">Champ(s) invalide(s)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="dz-filter-btn">Filtrer</button>
+                </div>
+            </div>
+            <div class="dz-order-list-container"  >
+                <div class="dz-loading-overlay">
+                    <div class="dz-order-list-table-spinner spinner-border" role="status">
+                    </div>
+                </div>
+                <div class="dz-order-list-header">
+                    <p>LES COMMANDES</p>
+                </div>
+                <div class="dz-order-list-body">
+                    <table class="table">
+                        <thead >
+                            <tr>
+                                <th>Identifiant de commande</th>
+                                <th>Client</th>
+                                <th>Erreur</th>
+                                <th>Détail</th>
+                            </tr>
+                        </thead>
+                        <tbody class="dz-order-list-table-body" >
+                            {% for order in process.orders_with_errors %}
+                                <td>{{order.id_order}}</td>
+                                <td>{{order.firstname}} {{order.lastname}}</td>
+                                <td><button class="dz-order-error-type-btn" onClick="openErrorDetailEventPopup({{order.error_detail}})" >{{order.error_type}}</button></td>
+                                <td><span class="dz-order-detail-link" onClick="goToOrder({{order.id_order}})" ><i class="material-icons">remove_red_eye</i></span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="dz-order-list-table-footer">
+                    <p class="dz-pagination-range">{{pagination_attributes_of_orders_with_errors.first_end}} to {{pagination_attributes_of_orders_with_errors.last_end}} / {{pagination_attributes_of_orders_with_errors.total_count}}</p>
+                    <div class="dz-page-number" >
+                        <label>page : </label>
+                        <select  class="dz-page-nb-select form-control" >
+                            {% for i in range(1, pagination_attributes_of_orders_with_errors.total_pages) %}
+                                <option value={{i}} >{{i}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <select class="dz-batch-size-select form-control" >
+                            {% for batch_size in batch_sizes %}
+                                <option value={{batch_size}} >{{batch_size}}</option>
+                            {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
     <script src="{{ asset('../modules/dolzay/views/js/omp/omp_detail.js') }}"></script>
 
 </div>

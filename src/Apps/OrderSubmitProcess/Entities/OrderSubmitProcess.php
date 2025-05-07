@@ -5,6 +5,7 @@ namespace Dolzay\Apps\OrderSubmitProcess\Entities;
 use Dolzay\ModuleConfig;
 use Dolzay\CustomClasses\Db\DzDb;
 use Dolzay\Apps\Settings\Entities\Carrier ;
+use Dolzay\Apps\Common\Entities\OrderWithError ;
 
 class OrderSubmitProcess {
 
@@ -97,8 +98,8 @@ class OrderSubmitProcess {
              FOREIGN KEY (`carrier`) REFERENCES `'.Carrier::TABLE_NAME.'` (`name`) ON DELETE CASCADE
         );';
     }
-    
     // END DEFINING get_create_table_sql
+    
     public const DROP_TABLE_SQL = 'DROP TABLE IF EXISTS `'.self::TABLE_NAME.'`;';
 
     
@@ -316,29 +317,23 @@ class OrderSubmitProcess {
         $order_submit_process_detail["error"] = json_decode($order_submit_process_detail["error"],true);
 
         // add the submitted orders to order_submit_process_detail
-        $submitted_orders = self::get_orders_to_submit($process_id,$submitted_orders_qp,false);
-        $order_submit_process_detail['submitted_orders'] = $submitted_orders ;
+        $order_submit_process_detail['submitted_orders'] = self::get_submitted_orders($process_id,$submitted_orders_qp);
 
         // add the orders with errors to order_submit_process_detail
-        $orders_with_errors = self::get_orders_to_submit($process_id,$orders_with_errors_qp,true);
-        $order_submit_process_detail['orders_with_errors'] = $orders_with_errors ;  
+        $order_submit_process_detail['orders_with_errors'] = self::get_orders_with_errors($process_id,$orders_with_errors_qp);  
 
         $order_submit_process_detail['status_color'] = self::STATUS_COLORS[$order_submit_process_detail['status']] ;
         return $order_submit_process_detail ;
     }
 
-    static function get_orders_to_submit($process_id,$query_parameters,$with_errors){
+    static function get_submitted_orders($process_id,$query_parameters){
 
         $values = ['limit'=>$query_parameters['batch_size'],'offset'=>($query_parameters['page_nb'] - 1) * $query_parameters['batch_size']] ;
-        $query  = "SELECT Ord.id_order,Addr.firstname,Addr.lastname,Ots.error_type,Ots.error_detail,COUNT(*) OVER() as total_count FROM " . OrderToSubmit::TABLE_NAME . " AS Ots " ;
-        $query .= "INNER JOIN ". _DB_PREFIX_.\OrderCore::$definition['table']." As Ord ON Ots.order_id=Ord.id_order " ;
-        $query .= "LEFT JOIN "._DB_PREFIX_.\AddressCore::$definition['table']. " AS Addr ON Ord.id_address_delivery=Addr.id_address WHERE Ots.process_id=$process_id " ;
+        $query  = "SELECT Ord.id_order,Addr.firstname,Addr.lastname,COUNT(*) OVER() as total_count FROM " . SubmittedOrder::TABLE_NAME . " AS So " ;
+        $query .= "INNER JOIN ". _DB_PREFIX_.\OrderCore::$definition['table']." As Ord ON So.order_id=Ord.id_order " ;
+        $query .= "LEFT JOIN "._DB_PREFIX_.\AddressCore::$definition['table']. " AS Addr ON Ord.id_address_delivery=Addr.id_address WHERE So.process_id=$process_id " ;
         
-        if($with_errors){
-            $query .= "AND Ots.error_type IS NOT NULL ";
-        }else{
-            $query .= "AND Ots.error_type IS NULL ";
-        }
+
 
         if($query_parameters['order_id']){
             $query .= "AND Ord.id_order=:order_id " ;
@@ -363,6 +358,44 @@ class OrderSubmitProcess {
             $orders_to_submit = $stmt->fetchAll();
         }       
         return $orders_to_submit ;
+    }
+
+    static function get_orders_with_errors($process_id,$query_parameters){
+
+        $values = ['limit'=>$query_parameters['batch_size'],'offset'=>($query_parameters['page_nb'] - 1) * $query_parameters['batch_size']] ;
+        $query  = "SELECT Ord.id_order,Addr.firstname,Addr.lastname,Owe.error_type,Owe.error_detail,COUNT(*) OVER() as total_count FROM " . OrderWithError::TABLE_NAME . " AS Owe " ;
+        $query .= "INNER JOIN ". _DB_PREFIX_.\OrderCore::$definition['table']." As Ord ON Owe.order_id=Ord.id_order " ;
+        $query .= "LEFT JOIN "._DB_PREFIX_.\AddressCore::$definition['table']. " AS Addr ON Ord.id_address_delivery=Addr.id_address WHERE Owe.process_id=$process_id " ;
+        
+
+
+        if($query_parameters['order_id']){
+            $query .= "AND Ord.id_order=:order_id " ;
+            $values['order_id'] = $query_parameters['order_id'] ;
+        }
+        if($query_parameters['client']){
+            $query .= "AND CONCAT(firstname, ' ', lastname) LIKE :client " ; 
+            $values['client'] = "%".$query_parameters['client']."%";
+        }
+        if($query_parameters['error_type']){
+            $query .= "AND error_type=:error_type " ;
+            $values['error_type'] = $query_parameters['error_type'] ;
+        }
+
+        $query .= "LIMIT :limit OFFSET :offset ;" ;
+        $stmt = self::$db->prepare($query);
+        $stmt->execute($values);
+        $orders_with_errors = $stmt->fetchAll();
+
+        // if the current page has no orders reset to the first page
+        if(count($orders_with_errors) == 0){
+            $values['offset'] = 0 ;
+            $values['limit'] = $query_parameters['batch_size'] ;
+            $stmt = self::$db->prepare($query);
+            $stmt->execute($values);
+            $orders_to_submit = $stmt->fetchAll();
+        }       
+        return $orders_with_errors ;
     }
 }
 

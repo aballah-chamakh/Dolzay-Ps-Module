@@ -38,7 +38,7 @@
 }
 
 .dz-process-state-body,
-.dz-updated-orders-list-body{
+.dz-order-list-body{
     display: flex;
     width : 100% ;
     flex-direction: column;
@@ -122,7 +122,7 @@
 }
 
 
-.dz-updated-orders-container{
+.dz-order-list-container{
     display: flex;
     flex-direction: column;
     background-color: white;
@@ -130,17 +130,17 @@
     border-radius : 5px ;
 }
 
-.dz-updated-orders-filter-container,
-.dz-updated-orders-list-container{
+.dz-order-list-filter-container,
+.dz-order-list-container{
     margin : 10px ;
     border : 0.1px solid #ddd ;
     border-radius : 5px ;
     position : relative
 }
 
-.dz-updated-orders-container-header,
+.dz-order-list-container-header,
 .dz-filter-header,
-.dz-updated-orders-list-header
+.dz-order-list-header
 {
     display : flex ; 
     border-bottom : 1px solid #ddd; 
@@ -148,9 +148,9 @@
     width : 100% ;
 }
 
-.dz-updated-orders-container-header p,
+.dz-order-list-container-header p,
 .dz-filter-header p,
-.dz-updated-orders-list-header p{
+.dz-order-list-header p{
     margin: 0;
     font-weight: 600;
     font-size: 17px;
@@ -212,14 +212,14 @@
     z-index: 2000;
 }
 
-.dz-updated-orders-table-spinner{
+.dz-order-list-table-spinner{
     z-index: 2001;
     color : black ;
     height: 50px;
     width: 50px; 
 }
 
-.dz-updated-orders-list-body table {
+.dz-order-list-body table {
     width: 100%;
     min-width: 800px;
     text-align: center;    
@@ -227,13 +227,13 @@
 
 }
 
-.dz-updated-orders-list-body .table thead {
+.dz-order-list-body .table thead {
     background-color: #1a456e;
     color : white ;
 }
 
 
-.dz-updated-orders-list-body .table thead th {
+.dz-order-list-body .table thead th {
     padding: 10px;
     border : none ;
     font-size: 16px;
@@ -241,17 +241,17 @@
 
 }
 
-.dz-updated-orders-list-body .table td {
+.dz-order-list-body .table td {
     padding: 10px;
     font-size: 16px;
 }
 
-.dz-updated-orders-list-body .table .dz-order-detail-link{
+.dz-order-list-body .table .dz-order-detail-link{
     color : #1a456e ;
     cursor: pointer;
 }
 
-.dz-updated-orders-table-footer{
+.dz-order-list-table-footer{
     display: flex;
     width : 100% ;
     justify-content: space-between;
@@ -259,22 +259,22 @@
     padding : 0px 10px 8px 10px ;
 }
 
-.dz-updated-orders-table-footer p{
+.dz-order-list-table-footer p{
     margin: 0px;
     font-size: 16px;
 }
 
-.dz-updated-orders-table-footer label{
+.dz-order-list-table-footer label{
     font-size: 16px;
 }
 
-.dz-updated-orders-table-footer .dz-page-number {
+.dz-order-list-table-footer .dz-page-number {
     display: flex ;
     gap : 5px ;
     align-items: center;
 }
 
-.dz-updated-orders-table-footer select {
+.dz-order-list-table-footer select {
     padding : 0px 10px; 
     width : 60px ;
 }
@@ -552,7 +552,7 @@
         flex-direction: column;
     }
 
-    .dz-updated-orders-table-footer{
+    .dz-order-list-table-footer{
         padding : 8px  10px ;
     }
 

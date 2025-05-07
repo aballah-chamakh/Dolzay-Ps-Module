@@ -1,31 +1,30 @@
 <?php
 
-namespace Dolzay\Apps\OrderSubmitProcess\Entities;
+namespace Dolzay\Apps\Common\Entities;
 
 use Dolzay\ModuleConfig;
 use Dolzay\CustomClasses\Db\DzDb;
 
-class OrderToSubmit {
+class OrderWithError {
 
-    public const TABLE_NAME = ModuleConfig::MODULE_PREFIX."order_to_submit";
+    public const TABLE_NAME = ModuleConfig::MODULE_PREFIX."order_with_error";
     
     private static $db;
 
     public static function init(DzDb $db) {
         self::$db = $db;
     }
-    
+
+    // START DEFINING get_create_table_sql
     public static function get_create_table_sql() {
         return 'CREATE TABLE IF NOT EXISTS `'.self::TABLE_NAME.'` (
             `order_id` INT(10) UNSIGNED NOT NULL,
             `process_id` INT(10) UNSIGNED NOT NULL,
             `error_type` VARCHAR(60) NULL,
-            `error_detail` JSON NULL,
-            PRIMARY KEY(`order_id`, `process_id`),
-            FOREIGN KEY (`order_id`) REFERENCES `' . _DB_PREFIX_.\OrderCore::$definition['table'] . '` (`id_order`),
-            FOREIGN KEY (`process_id`) REFERENCES `'.OrderSubmitProcess::TABLE_NAME.'` (`id`)
+            `error_detail` JSON NULL
         );';
     }
+    // END DEFINING get_create_table_sql
     
     public const DROP_TABLE_SQL = 'DROP TABLE IF EXISTS `'.self::TABLE_NAME.'`;';
 
