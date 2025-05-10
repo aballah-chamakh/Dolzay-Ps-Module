@@ -138,12 +138,13 @@ class BaseCarrier {
         return (int)self::$db->lastInsertId();
     }
     
-    public static function addAnOrderWithError($order_id, $error_type, $error_detail): int {
-        $query = "INSERT INTO " . _MODULE_PREFIX_ . "order_with_error (process_id, order_id, error_type, error_detail)
-                  VALUES (:process_id, :order_id, :error_type, :error_detail)";
+    public static function addAnOrderWithError($process_type,$order_id, $error_type, $error_detail): int {
+        $query = "INSERT INTO " . _MODULE_PREFIX_ . "order_with_error (process_type,process_id, order_id, error_type, error_detail)
+                  VALUES (:process_type,:process_id, :order_id, :error_type, :error_detail)";
         
         $stmt = self::$db->prepare($query);
         $stmt->execute([
+            ':process_type' => $process_type,
             ':process_id' => self::$process_id,
             ':order_id' => $order_id,
             ':error_type' => $error_type,

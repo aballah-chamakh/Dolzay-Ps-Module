@@ -19,7 +19,7 @@ use Dolzay\Apps\Settings\Entities\Settings ;
 
 class OrderSubmitProcessController extends FrameworkBundleAdminController
 {   
-    private const BATCH_SIZES = [20,50,100] ;
+    private const BATCH_SIZES = [2,3,100] ;
 
     public function launchObsScript($order_submit_process_id, $carrier, $employee_id) {
         // Path to the PHP script
@@ -123,6 +123,8 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         $submitted_orders_qp = [
             "order_id" => $request->query->get('submitted_orders__order_id'),
             "client" => $request->query->get('submitted_orders__client'),
+            "old_status" => $request->query->get('submitted_orders__old_status'),
+            "new_status" => $request->query->get('submitted_orders__new_status'),
             "page_nb" =>  $request->query->get('submitted_orders__page_nb') ?? 1,
             "batch_size" => $request->query->get('submitted_orders__batch_size') ?? self::BATCH_SIZES[0]
         ];

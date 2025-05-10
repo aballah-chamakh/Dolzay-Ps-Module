@@ -786,7 +786,7 @@ class Dolzay extends Module
             ]);
             
             // add fontawesome
-            $this->context->controller->addJS($this->_path . 'views/js/icons/font_awesome.js');
+            //$this->context->controller->addJS($this->_path . 'views/js/icons/font_awesome.js');
             // add the js and the css of the order submit process
             $this->context->controller->addCSS($this->_path . 'views/css/order_submit_process.css');
             $this->context->controller->addJS($this->_path . 'views/js/order_submit_process.js');

@@ -129,7 +129,7 @@ class OrderMonitoringProcess {
 
         $order_monitoring_process_detail['status_color'] = self::STATUS_COLORS[$order_monitoring_process_detail['status']] ;
         $order_monitoring_process_detail['updated_orders'] = self::get_updated_orders($process_id,$updated_orders_qp,$id_lang) ;
-        $order_monitoring_process_detail['orders_with_errors'] = self::get_orders_with_errors($process_id,$orders_with_errors_qp,$id_lang) ;
+        $order_monitoring_process_detail['orders_with_errors'] = self::get_orders_with_errors($process_id,$orders_with_errors_qp) ;
 
         return $order_monitoring_process_detail ;
     }
@@ -138,13 +138,13 @@ class OrderMonitoringProcess {
         // fetch the updated_orders of order_monitoring_process and add them to it
         $updated_orders = [];
         $values = ['limit'=>$query_parameter['batch_size'],'offset'=>($query_parameter['page_nb'] - 1) * $query_parameter['batch_size']] ;
-        $query  = "SELECT Uord.order_id,Addr.firstname,Addr.lastname,OldStatusLang.name AS old_status,OldStatus.color AS old_status_color,NewStatusLang.name AS new_status,NewStatus.color AS new_status_color,COUNT(*) OVER() as total_count FROM ".UpdatedOrder::TABLE_NAME." AS Uord " ;
+        $query  = "SELECT Ord.id_order,Addr.firstname,Addr.lastname,OldStatusLang.name AS old_status,OldStatus.color AS old_status_color,NewStatusLang.name AS new_status,NewStatus.color AS new_status_color,COUNT(*) OVER() as total_count FROM ".UpdatedOrder::TABLE_NAME." AS Uord " ;
         $query .= "INNER JOIN "._DB_PREFIX_.\OrderCore::$definition['table']. " AS Ord ON Ord.id_order=Uord.order_id " ;
         $query .= "LEFT JOIN "._DB_PREFIX_.\AddressCore::$definition['table']." As Addr ON Ord.id_address_delivery=Addr.id_address ";
-        $query .= "LEFT JOIN "._DB_PREFIX_."order_state AS OldStatus ON Uord.old_status = OldStatus.id_order_state ";
-        $query .= "LEFT JOIN "._DB_PREFIX_."order_state_lang AS OldStatusLang ON OldStatus.id_order_state = OldStatusLang.id_order_state AND OldStatusLang.id_lang = ".(int)$id_lang." ";
         $query .= "LEFT JOIN "._DB_PREFIX_."order_state AS NewStatus ON Uord.new_status = NewStatus.id_order_state ";
         $query .= "LEFT JOIN "._DB_PREFIX_."order_state_lang AS NewStatusLang ON NewStatus.id_order_state = NewStatusLang.id_order_state AND NewStatusLang.id_lang = ".(int)$id_lang." ";
+        $query .= "LEFT JOIN "._DB_PREFIX_."order_state AS OldStatus ON Uord.old_status = OldStatus.id_order_state ";
+        $query .= "LEFT JOIN "._DB_PREFIX_."order_state_lang AS OldStatusLang ON OldStatus.id_order_state = OldStatusLang.id_order_state AND OldStatusLang.id_lang = ".(int)$id_lang." ";
         $query .= "WHERE Uord.omp_id=$process_id" ;
 
         if($query_parameter['order_id']){
@@ -170,7 +170,9 @@ class OrderMonitoringProcess {
         $query .= " LIMIT :limit OFFSET :offset ;" ;
         $stmt = self::$db->prepare($query);
         $stmt->execute($values);
+        
         $updated_orders = $stmt->fetchAll();
+
         if(count($updated_orders) == 0){
             $values['offset'] = 0 ;
             $values['limit'] = $query_parameter['batch_size'] ;
@@ -181,12 +183,12 @@ class OrderMonitoringProcess {
         return $updated_orders;
     }
 
-    static function get_orders_with_errors($process_id,$query_parameters,$id_lang){
+    static function get_orders_with_errors($process_id,$query_parameters){
 
         $values = ['limit'=>$query_parameters['batch_size'],'offset'=>($query_parameters['page_nb'] - 1) * $query_parameters['batch_size']] ;
         $query  = "SELECT Ord.id_order,Addr.firstname,Addr.lastname,Owe.error_type,Owe.error_detail,COUNT(*) OVER() as total_count FROM " . OrderWithError::TABLE_NAME . " AS Owe " ;
         $query .= "INNER JOIN ". _DB_PREFIX_.\OrderCore::$definition['table']." As Ord ON Owe.order_id=Ord.id_order " ;
-        $query .= "LEFT JOIN "._DB_PREFIX_.\AddressCore::$definition['table']. " AS Addr ON Ord.id_address_delivery=Addr.id_address WHERE Owe.process_id=$process_id " ;
+        $query .= "LEFT JOIN "._DB_PREFIX_.\AddressCore::$definition['table']. " AS Addr ON Ord.id_address_delivery=Addr.id_address WHERE Owe.process_id=$process_id AND Owe.process_type='omp' " ;
         
 
         if($query_parameters['order_id']){
@@ -219,3 +221,4 @@ class OrderMonitoringProcess {
     }
 
 }
+

@@ -40,8 +40,8 @@ const eventPopupTypesData = {
     info : {icon:`<i class="material-icons" style="color:#101B82" >info</i>`,color:'#101B82'},
     restricted : {icon:`<i class='fas fa-minus-circle' style="color:#D81010" ></i>`,color:'#D81010'},
     error : {icon : `<i class="material-icons" style="color:#D81010" >error</i>`,color:'#D81010'},
-    success : {icon:`<i class="fas fa-check-circle" style="color:#28C20F" ></i>`,color:'#28C20F'},
-    error_detail : {icon : '',color:'#D81010'}
+    success : {icon:'',color:'#28C20F'},
+    error_detail : {icon : '',color:'#D81010'},
 }
 
 const eventPopupOverlay = {
@@ -103,11 +103,12 @@ const eventPopup = {
 
             this.popupHeaderEl.firstElementChild.innerText = title ;
             this.popupHeaderEl.style.backgroundColor = eventPopupTypesData[type].color ;
-           
-            this.popupBodyEl.innerHTML = ` 
-                ${eventPopupTypesData[type].icon}
-                <p>${message}</p>
-            `
+            if (eventPopupTypesData[type].icon){
+                this.popupBodyEl.innerHTML += eventPopupTypesData[type].icon
+            }
+
+            this.popupBodyEl.innerHTML += message
+            
 
             this.addButtons(buttons,eventPopupTypesData[type].color)
         }, 600);
@@ -145,13 +146,14 @@ function monitorOrderMonitoringProcess(){
     let query_parameters = {
         updated_orders__order_id : $(`.dz-updated-orders-container .dz-filter-form input[name='order_id']`).val(),
         updated_orders__client : $(`.dz-updated-orders-container .dz-filter-form input[name='client']`).val(),
-        old_status : $(`.dz-updated-orders-container .dz-filter-form select[name='old_status']`).val(),
-        new_status : $(`.dz-updated-orders-container .dz-filter-form select[name='new_status']`).val(),
+        updated_orders__old_status : $(`.dz-updated-orders-container .dz-filter-form select[name='old_status']`).val(),
+        updated_orders__new_status : $(`.dz-updated-orders-container .dz-filter-form select[name='new_status']`).val(),
         updated_orders__page_nb : $(`.dz-updated-orders-container .dz-page-nb-select`).val(),
         updated_orders__batch_size : $(`.dz-updated-orders-container .dz-batch-size-select`).val(),
 
         orders_with_errors__order_id : $(`.dz-orders-with-errors-container .dz-filter-form input[name='order_id']`).val(),
         orders_with_errors__client : $(`.dz-orders-with-errors-container .dz-filter-form input[name='client']`).val(),
+        orders_with_errors__error_type : $(`.dz-orders-with-errors-container .dz-filter-form select[name='error_type']`).val(),
         orders_with_errors__page_nb : $(`.dz-orders-with-errors-container .dz-page-nb-select`).val(),
         orders_with_errors__batch_size : $(`.dz-orders-with-errors-container .dz-batch-size-select`).val(),
        
@@ -231,13 +233,13 @@ function monitorOrderMonitoringProcess(){
 
 
             // update the table and the pagination of the updated orders 
-            let updated_orders = order_submit_process.updated_orders
+            let updated_orders = order_monitoring_process.updated_orders
             let updated_orders_total_count = updated_orders.length ? updated_orders[0].total_count : 0
             updateTable("dz-updated-orders-container",updated_orders);
             updatePagination("dz-updated-orders-container",updated_orders_total_count);
 
             // update the table and the pagination of the orders with errors 
-            let orders_with_errors = order_submit_process.orders_with_errors
+            let orders_with_errors = order_monitoring_process.orders_with_errors
             let orders_with_errors_total_count = orders_with_errors.length ? orders_with_errors[0].total_count : 0
             updateTable("dz-orders-with-errors-container",orders_with_errors);
             updatePagination("dz-orders-with-errors-container",orders_with_errors_total_count);
@@ -255,7 +257,19 @@ function monitorOrderMonitoringProcess(){
                     }
                 ]
 
-                let message = `${order_monitoring_process.processed_items_cnt}/${order_monitoring_process.items_to_process_cnt} commandes ont été suivies avec succès .`
+                let message = `
+                    <div class="dz-event-popup-result-content">
+                        <div class="dz-event-popup-result-content-row"> 
+                            <span class="dz-success-icon material-symbols-outlined">check_circle</span>
+                            <p><span class="dz-bold-success" >${updated_orders.length}/${order_monitoring_process.items_to_process_cnt}</span> commandes ont été mise à jour.</p>
+                        </div>
+                        <div class="dz-event-popup-result-content-row"> 
+                            <span class="dz-error-icon material-symbols-outlined">cancel</span>
+                            <p><span class="dz-bold-error" >${orders_with_errors.length}/${order_monitoring_process.items_to_process_cnt}</span> commandes ont des erreurs.</p>
+                        </div>
+                    </div>
+
+                `
                 eventPopup.open("success","Succés",message,buttons)
 
                 // hide the the fixed footer
@@ -293,7 +307,26 @@ function goToOrder(orderId){
     window.location = current_link.replace("/dz/order_monitoring_process/"+process_id+"/","/sell/orders/"+orderId+"/view")
 }
 
-function updateTheOrderList(trigger) {
+function openErrorDetailEventPopup(error_detail){
+    //error_detail = JSON.parse(error_detail)
+    console.log(error_detail)
+    eventPopup.create()
+    eventPopupOverlay.create();
+    buttons = [
+        {
+            'name' : 'Ok',
+            'clickHandler' : function(){
+                            eventPopup.close();
+            }
+        }
+    ]
+
+    error_detail = "<pre class='dz-error-message-container'>" + JSON.stringify(error_detail, null, 2) + "</pre>"
+    console.log(error_detail)
+    eventPopup.open("error_detail","Détail d'erreur",error_detail,buttons)
+}
+
+function updateTheOrderList(container,trigger) {
     // show the loading spinner 
     $(`.${container} .dz-loading-overlay`).css('display', 'flex')
 
@@ -384,12 +417,12 @@ function updateTable(container,orders) {
         // id,carrier,started_at,processed_items_cnt,items_to_process_cnt,status
         let table_row = `
             <tr>
-                <td>${order.order_id}</td>
+                <td>${order.id_order}</td>
                 <td>${order.firstname} ${order.lastname}</td>
             `
         if (container == "dz-orders-with-errors-container"){
             table_row += `
-                <td><button class="dz-order-error-type-btn" onClick='openErrorDetailEventPopup(${JSON.stringify(order.error_detail).replace(/'/g, "\\'")})'${order.error_type}</button></td>
+                <td><button class="dz-order-error-type-btn" onClick='openErrorDetailEventPopup(${order.error_detail})'>${order.error_type}</button></td>
             `
         }else{
             table_row += `
@@ -400,6 +433,7 @@ function updateTable(container,orders) {
         table_row += `
             <td><span class="dz-order-detail-link" onClick="goToOrder(${order.id_order})" ><i class="material-icons">remove_red_eye</i></span></td>
         </tr>`
+        console.log(table_row)
 
         tbody.append(table_row)
     });

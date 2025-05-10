@@ -20,8 +20,11 @@ class OrderWithError {
         return 'CREATE TABLE IF NOT EXISTS `'.self::TABLE_NAME.'` (
             `order_id` INT(10) UNSIGNED NOT NULL,
             `process_id` INT(10) UNSIGNED NOT NULL,
+            `process_type` ENUM("omp","osp") NOT NULL,
             `error_type` VARCHAR(60) NULL,
-            `error_detail` JSON NULL
+            `error_detail` JSON NULL,
+            PRIMARY KEY (order_id,process_id,process_type)
+
         );';
     }
     // END DEFINING get_create_table_sql

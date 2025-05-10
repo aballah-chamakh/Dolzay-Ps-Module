@@ -18,7 +18,7 @@ use Dolzay\Apps\Settings\Entities\Settings ;
 
 class OrderMonitoringProcessController extends FrameworkBundleAdminController
 {   
-    private const BATCH_SIZES = [20,50,100] ;
+    private const BATCH_SIZES = [2,3,100] ;
 
     public function launchOmpScript($order_monitoring_process_id, $employee_id) {
         // Path to the PHP script
@@ -131,10 +131,11 @@ class OrderMonitoringProcessController extends FrameworkBundleAdminController
         $updated_orders_qp = [
             "order_id" => $request->query->get('updated_orders__order_id'),
             "client" => $request->query->get('updated_orders__client'),
+            "new_status" => $request->query->get('updated_orders__new_status'),
+            "old_status" => $request->query->get('updated_orders__old_status'),
             "page_nb" =>  $request->query->get('updated_orders__page_nb') ?? 1,
             "batch_size" => $request->query->get('updated_orders__batch_size') ?? self::BATCH_SIZES[0],
-            "new_status" => $request->query->get('updated_orders__new_status'),
-            "old_status" => $request->query->get('updated_orders__old_status')
+
         ];
 
         $orders_with_errors_qp = [
@@ -161,19 +162,38 @@ class OrderMonitoringProcessController extends FrameworkBundleAdminController
         
         // handle the template request 
         if($order_monitoring_process_detail){
-            // setup the variables of the pagination
-            $updated_orders = $order_monitoring_process_detail['updated_orders'] ;
+            // setup the pagination attributes of the updated orders 
+            $pagination_attributes_of_updated_orders = [
+                "total_pages" => 1,
+                "total_count" => 0,
+                "first_end"  => 0,
+                "last_end" => 0 
+            ];
 
-            $total_pages = 1 ;
-            $total_count = 0 ;
-            $first_end = 0 ;
-            $last_end = 0 ;
+            $updated_orders = $order_monitoring_process_detail['updated_orders'] ;
     
             if(count($updated_orders)){
-                $total_count = $updated_orders[0]['total_count'] ;
-                $total_pages = ceil($total_count / self::BATCH_SIZES[0]) ;
-                $first_end = 1 ;
-                $last_end = $total_count >= self::BATCH_SIZES[0] ? self::BATCH_SIZES[0] : $total_count ;
+                $pagination_attributes_of_updated_orders['total_count'] = $updated_orders[0]['total_count'] ;
+                $pagination_attributes_of_updated_orders['total_pages'] = ceil($updated_orders[0]['total_count'] / self::BATCH_SIZES[0]) ;
+                $pagination_attributes_of_updated_orders['first_end'] = 1 ;
+                $pagination_attributes_of_updated_orders['last_end'] = $updated_orders[0]['total_count'] >= self::BATCH_SIZES[0] ? self::BATCH_SIZES[0] : $updated_orders[0]['total_count'] ;
+            }
+
+            // setup the pagination attribute of the orders with errors 
+            $pagination_attributes_of_orders_with_errors = [
+                "total_pages" => 1,
+                "total_count" => 0,
+                "first_end"  => 0,
+                "last_end" => 0 
+            ];
+
+            $orders_width_errors = $order_monitoring_process_detail['orders_with_errors'] ;
+    
+            if(count($orders_width_errors)){
+                $pagination_attributes_of_orders_with_errors['total_count'] = $orders_width_errors[0]['total_count'] ;
+                $pagination_attributes_of_orders_with_errors['total_pages'] = ceil($orders_width_errors[0]['total_count'] / self::BATCH_SIZES[0]) ;
+                $pagination_attributes_of_orders_with_errors['first_end'] = 1 ;
+                $pagination_attributes_of_orders_with_errors['last_end'] = $orders_width_errors[0]['total_count'] >= self::BATCH_SIZES[0] ? self::BATCH_SIZES[0] : $orders_width_errors[0]['total_count'] ;
             }
 
             // ps_order_state
@@ -187,33 +207,34 @@ class OrderMonitoringProcessController extends FrameworkBundleAdminController
                                  ["process"=>$order_monitoring_process_detail,
                                  "order_state_options"=>$order_state_options,
                                  'batch_sizes'=>self::BATCH_SIZES,
-                                 'total_pages'=>$total_pages,
-                                 'first_end'=>$first_end,
-                                 'last_end'=>$last_end,
-                                 'total_count'=>$total_count]) ;
+                                 'pagination_attributes_of_updated_orders'=>$pagination_attributes_of_updated_orders,
+                                 'pagination_attributes_of_orders_with_errors'=>$pagination_attributes_of_orders_with_errors
+                            ]) ;
         }
 
         $this->redirectToRoute('dz_order_monitoring_process_list');
     }
 
-    public function getUpdatedOrdersOfAnOsp($process_id,Request $request){
+    public function getUpdatedOrdersOfAnOmp($process_id,Request $request){
         $updated_orders_qp = [
             "order_id" => $request->query->get('order_id'),
             "client" => $request->query->get('client'),
+            "new_status" => $request->query->get('new_status'),
+            "old_status" => $request->query->get('old_status'),
             "page_nb" =>  (int)$request->query->get('page_nb') ?? 1,
             "batch_size" => (int)$request->query->get('batch_size') ?? self::BATCH_SIZES[0]
         ];
-
+        $defaultLanguageId = $this->getContext()->language->id;
         $db = DzDb::getInstance();
         OrderMonitoringProcess::init($db);
 
-        $updated_orders = OrderMonitoringProcess::get_updated_orders($process_id,$updated_orders_qp);
+        $updated_orders = OrderMonitoringProcess::get_updated_orders($process_id,$updated_orders_qp,$defaultLanguageId);
 
         return new JsonResponse(['status'=>"success",
                                  'orders'=>$updated_orders],200, ['json_options' => JSON_UNESCAPED_UNICODE]);
     }
 
-    public function getOrdersWithErrorsOfAnOsp($process_id,Request $request){
+    public function getOrdersWithErrorsOfAnOmp($process_id,Request $request){
 
         $orders_with_errors_qp = [
             "order_id" => $request->query->get('order_id'),

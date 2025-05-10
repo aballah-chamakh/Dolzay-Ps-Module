@@ -365,9 +365,8 @@ class OrderSubmitProcess {
         $values = ['limit'=>$query_parameters['batch_size'],'offset'=>($query_parameters['page_nb'] - 1) * $query_parameters['batch_size']] ;
         $query  = "SELECT Ord.id_order,Addr.firstname,Addr.lastname,Owe.error_type,Owe.error_detail,COUNT(*) OVER() as total_count FROM " . OrderWithError::TABLE_NAME . " AS Owe " ;
         $query .= "INNER JOIN ". _DB_PREFIX_.\OrderCore::$definition['table']." As Ord ON Owe.order_id=Ord.id_order " ;
-        $query .= "LEFT JOIN "._DB_PREFIX_.\AddressCore::$definition['table']. " AS Addr ON Ord.id_address_delivery=Addr.id_address WHERE Owe.process_id=$process_id " ;
+        $query .= "LEFT JOIN "._DB_PREFIX_.\AddressCore::$definition['table']. " AS Addr ON Ord.id_address_delivery=Addr.id_address WHERE Owe.process_id=$process_id AND Owe.process_type='osp' " ;
         
-
 
         if($query_parameters['order_id']){
             $query .= "AND Ord.id_order=:order_id " ;

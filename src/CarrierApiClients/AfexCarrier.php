@@ -127,7 +127,7 @@ class AfexCarrier extends BaseCarrier {
 
                     self::$db->beginTransaction();
                     // add an submittedOrder
-                    self::addAnOrderWithError($order['id_order'],"Champ(s) invalide(s)",$error_details); 
+                    self::addAnOrderWithError("osp",$order['id_order'],"Champ(s) invalide(s)",$error_details); 
                     // update the progress of the Osp 
                     self::updateOrderSubmitProcess(["processed_items_cnt"=>$index]);
                     self::$db->commit();
@@ -148,7 +148,7 @@ class AfexCarrier extends BaseCarrier {
                         echo "THE ORDER WITH THE ID : ".$remaining_order['id_order']." GOT 401 STATUS CODE | PROGRESS : $index / $orders_cnt  \n\n";
 
                         self::$db->beginTransaction();
-                        self::addAnOrderWithError($remaining_order['id_order'],"Token invalide",$error_details);  
+                        self::addAnOrderWithError("osp",$remaining_order['id_order'],"Token invalide",$error_details);  
                         // increase the counter of the osp 
                         self::updateOrderSubmitProcess(["processed_items_cnt"=>$index]);
                         self::$db->commit();
@@ -167,7 +167,7 @@ class AfexCarrier extends BaseCarrier {
                             ,JSON_UNESCAPED_UNICODE);
 
                     self::$db->beginTransaction();
-                    self::addAnOrderWithError($order['id_order'],"Erreur inattendue",$error_details);  
+                    self::addAnOrderWithError("osp",$order['id_order'],"Erreur inattendue",$error_details);  
                     self::updateOrderSubmitProcess(["processed_items_cnt"=>$index ]);
                     self::$db->commit();
 
@@ -262,7 +262,6 @@ class AfexCarrier extends BaseCarrier {
             $status_code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE); // Get status code
             $afex_orders_to_monitor_count = count($afex_orders_to_monitor);
             if ($status_code == 200){
-
                 $response = str_replace("'", '"', $response);
                 $response = json_decode($response,true);
                 foreach($afex_orders_to_monitor as $index => $order_to_monitor){
@@ -314,7 +313,8 @@ class AfexCarrier extends BaseCarrier {
 
                 return true ;
             }else if ($status_code == 401 || !$token){
-
+                $response = str_replace("'", '"', $response);
+                $response = json_decode($response,true);
                 // add an Order with error for all of the orders to monitor
                 foreach($afex_orders_to_monitor as $index => $order_to_monitor){
                     self::$db->beginTransaction();
@@ -324,7 +324,7 @@ class AfexCarrier extends BaseCarrier {
                             'response'=>$response
                         ]
                     ,JSON_UNESCAPED_UNICODE);
-                    self::addAnOrderWithError($order_to_monitor['order_id'], "Token invalide", $error_detail);
+                    self::addAnOrderWithError("omp",$order_to_monitor['order_id'], "Token invalide", $error_details);
                     self::updateOrderMonitoringProcess([
                         "processed_items_cnt"=>$index + 1,
                     ]);
@@ -365,7 +365,7 @@ class AfexCarrier extends BaseCarrier {
                             'response'=>$response
                         ]
                     ,JSON_UNESCAPED_UNICODE);
-                    self::addAnOrderWithError($order_to_monitor['order_id'], "Champ(s) invalide(s)", $error_detail);
+                    self::addAnOrderWithError("omp",$order_to_monitor['order_id'], "Champ(s) invalide(s)", $error_details);
                     self::updateOrderMonitoringProcess([
                         "processed_items_cnt"=>$index + 1,
                     ]);

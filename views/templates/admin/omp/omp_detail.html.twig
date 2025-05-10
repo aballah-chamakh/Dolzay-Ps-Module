@@ -3,7 +3,7 @@
 {% block stylesheets %}
     {{ parent() }}
     <link rel="stylesheet" href="{{ asset('../modules/dolzay/views/css/omp/omp_detail.css') }}">
-    
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=cancel,check_circle" />
 {% endblock %}
 
 {% block content %}
@@ -81,7 +81,7 @@
                             <input class="form-control" name="client" placeholder="client" />
                         </div>
                     </div>
-                    <div class="dz-filter-form-second-row">
+                    <div class="dz-filter-form-first-row">
                         <div class="dz-form-group">
                             <label>Ancien status</label>
                             <select class="dz-status-select form-control" name="old_status">
@@ -150,22 +150,22 @@
                         </thead>
                         <tbody class="dz-order-list-table-body" >
                             {% for order in process.updated_orders %}
-                                <td>{{order.order_id}}</td>
+                                <td>{{order.id_order}}</td>
                                 <td>{{order.firstname}} {{order.lastname}}</td>
                                 <td><span class="dz-badge" style="background-color:{{order.old_status_color}}" >{{order.old_status}}</span></td>
                                 <td><span class="dz-badge" style="background-color:{{order.new_status_color}}" >{{order.new_status}}</span></td>
-                                <td><span class="dz-order-detail-link" onClick="goToOrder({{order.order_id}})" ><i class="material-icons">remove_red_eye</i></span></td>
+                                <td><span class="dz-order-detail-link" onClick="goToOrder({{order.id_order}})" ><i class="material-icons">remove_red_eye</i></span></td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
                 <div class="dz-order-list-table-footer">
-                    <p class="dz-pagination-range">{{first_end}} to {{last_end}} / {{total_count}}</p>
+                    <p class="dz-pagination-range">{{pagination_attributes_of_updated_orders.first_end}} to {{pagination_attributes_of_updated_orders.last_end}} / {{pagination_attributes_of_updated_orders.total_count}}</p>
                     <div class="dz-page-number" >
                         <label>page : </label>
                         <select  class="dz-page-nb-select form-control" >
-                            {% for i in range(1, total_pages) %}
+                            {% for i in range(1, pagination_attributes_of_updated_orders.total_pages) %}
                                 <option value={{i}} >{{i}}</option>
                             {% endfor %}
                         </select>

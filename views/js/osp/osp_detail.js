@@ -173,6 +173,7 @@ function monitorOrderSubmitProcess(){
 
         orders_with_errors__order_id : $(`.dz-orders-with-errors-container .dz-filter-form input[name='order_id']`).val(),
         orders_with_errors__client : $(`.dz-orders-with-errors-container .dz-filter-form input[name='client']`).val(),
+        orders_with_errors__error_type : $(`.dz-orders-with-errors-container .dz-filter-form select[name='error_type']`).val(),
         orders_with_errors__page_nb : $(`.dz-orders-with-errors-container .dz-page-nb-select`).val(),
         orders_with_errors__batch_size : $(`.dz-orders-with-errors-container .dz-batch-size-select`).val(),
        
@@ -332,7 +333,7 @@ function goToOrder(orderId){
 }
 
 function openErrorDetailEventPopup(error_detail){
-    error_detail = JSON.parse(error_detail)
+    //error_detail = JSON.parse(error_detail)
     console.log(error_detail)
     eventPopup.create()
     eventPopupOverlay.create();
@@ -422,7 +423,7 @@ function updateTable(container,orders) {
             `
 
         if(container == "dz-orders-with-errors-container"){
-            table_row += `<td><button class="dz-order-error-type-btn" onClick='openErrorDetailEventPopup(${JSON.stringify(order.error_detail).replace(/'/g, "\\'")})'>${order.error_type}</button></td>`;
+            table_row += `<td><button class="dz-order-error-type-btn" onClick='openErrorDetailEventPopup(${order.error_detail})'>${order.error_type}</button></td>`;
         }
 
         table_row += `
