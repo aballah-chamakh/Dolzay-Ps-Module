@@ -14,13 +14,14 @@ use Dolzay\Apps\OrderMonitoringProcess\Entities\OrderMonitoringProcess ;
 use Dolzay\Apps\OrderMonitoringProcess\Entities\OrderToMonitor ;
 use Dolzay\Apps\Settings\Entities\Carrier ;
 use Dolzay\Apps\Settings\Entities\Settings ;
-
+use Dolzay\CarrierApiClients\AfexCarrier ;
 
 class OrderMonitoringProcessController extends FrameworkBundleAdminController
 {   
     private const BATCH_SIZES = [2,3,100] ;
 
     public function launchOmpScript($order_monitoring_process_id, $employee_id) {
+        /*
         // Path to the PHP script
         $script_path = dirname(__DIR__, 1) . '/order_monitoring_process.php';
         $logFilePath = _PS_MODULE_DIR_ . "dolzay/data/osomp.txt";
@@ -35,6 +36,27 @@ class OrderMonitoringProcessController extends FrameworkBundleAdminController
             $command = "php $script_path $order_monitoring_process_id $employee_id >> $logFilePath 2>&1 &";
             exec($command);
         }
+        */
+
+        AfexCarrier::init($order_monitoring_process_id,$employee_id) ;
+        $result = AfexCarrier::monitor_orders();
+        if(!array_key_exists('error_message', $result)){
+            // note : 
+            // 1- im terminating the the Omp process here and not in the "monitor_orders" method because the plugin 
+            //    can have many carriers.
+            // 2- i terminate the Omp process only if the "monitor_orders" method returns true beccause
+            //    when it returns false it means that the Omp was interrupted and i don't want to override the 
+            //    the "Interronpu" status of the Omp.
+            AfexCarrier::updateOrderMonitoringProcess(
+                [
+                    "status"=>"Terminé",
+                    "ended_at"=>date('Y-m-d H:i:s')
+                ]
+            );
+            
+        } 
+        return $result;
+
     }
 
 
@@ -59,8 +81,8 @@ class OrderMonitoringProcessController extends FrameworkBundleAdminController
         $order_monitoring_process_id = OrderMonitoringProcess::insert($orders_to_monitor_cnt); 
 
         // launch the order monitoring process 
-        $this->launchOmpScript($order_monitoring_process_id,$employee_id) ;
-        return new JsonResponse(["status"=>"success","process"=>["id"=>$order_monitoring_process_id,"items_to_process_cnt"=>$orders_to_monitor_cnt]],200, ['json_options' => JSON_UNESCAPED_UNICODE]);
+        $result = $this->launchOmpScript($order_monitoring_process_id,$employee_id) ;
+        return new JsonResponse(["status"=>"success","process"=>["id"=>$order_monitoring_process_id,"items_to_process_cnt"=>$orders_to_monitor_cnt,"result"=>$result]],200, ['json_options' => JSON_UNESCAPED_UNICODE]);
     }
 
 

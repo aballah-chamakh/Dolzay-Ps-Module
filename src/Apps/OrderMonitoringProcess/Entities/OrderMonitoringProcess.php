@@ -125,8 +125,7 @@ class OrderMonitoringProcess {
         }*/
 
         // add the error to the order_submit_process_detail
-        $order_submit_process_detail["error"] = json_decode($order_monitoring_process_detail["error"],true);
-
+        $order_monitoring_process_detail["error"] = json_decode($order_monitoring_process_detail["error"],true);
         $order_monitoring_process_detail['status_color'] = self::STATUS_COLORS[$order_monitoring_process_detail['status']] ;
         $order_monitoring_process_detail['updated_orders'] = self::get_updated_orders($process_id,$updated_orders_qp,$id_lang) ;
         $order_monitoring_process_detail['orders_with_errors'] = self::get_orders_with_errors($process_id,$orders_with_errors_qp) ;

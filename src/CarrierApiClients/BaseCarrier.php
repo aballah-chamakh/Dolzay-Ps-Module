@@ -1,6 +1,15 @@
 <?php
 
+namespace Dolzay\CarrierApiClients;
+
+use PDO;
+
+define('_MODULE_PREFIX_','dz_') ;
+define('_SUPPORT_PHONE_','58671414') ;
+
 class BaseCarrier {
+
+    const LOG_FILE = _PS_MODULE_DIR_ . "dolzay/data/process_logs.txt";
 
     protected static $db ;
     protected static $process_id ;
@@ -165,7 +174,6 @@ class BaseCarrier {
         $setClause = implode(', ', $setParts);
 
         $query = "UPDATE "._MODULE_PREFIX_."order_submit_process SET $setClause WHERE id=".self::$process_id ;
-        echo $query ;
         $stmt = self::$db->prepare($query);
         $stmt->execute($params);
         

@@ -15,17 +15,16 @@ use Dolzay\CustomClasses\Constraints\All;
 use Dolzay\Apps\OrderSubmitProcess\Entities\OrderSubmitProcess ;
 use Dolzay\Apps\Settings\Entities\Carrier ;
 use Dolzay\Apps\Settings\Entities\Settings ;
-
+use Dolzay\CarrierApiClients\AfexCarrier;
 
 class OrderSubmitProcessController extends FrameworkBundleAdminController
 {   
     private const BATCH_SIZES = [2,3,100] ;
 
     public function launchObsScript($order_submit_process_id, $carrier, $employee_id) {
-        // Path to the PHP script
+        /* Path to the PHP script
         $script_path = dirname(__DIR__, 1) . '/order_submit_process.php';
         $logFilePath = _PS_MODULE_DIR_ . "dolzay/data/osp.txt";
-    
         // Determine the operating system
         if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
             // Windows command
@@ -35,7 +34,11 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
             // Linux/Unix command
             $command = "php $script_path $order_submit_process_id $carrier $employee_id >> $logFilePath 2>&1 &";
             exec($command);
-        }
+        }*/
+
+        AfexCarrier::init($order_submit_process_id,$employee_id) ;
+        $result = AfexCarrier::submit_orders(); 
+        return $result ;
     }
 
     public function validateData($data, $constraints)
@@ -302,7 +305,11 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         }
 
         // launch the order submit process 
-        $this->launchObsScript($order_submit_process_id,$carrier,$employee_id) ;
+        $result = $this->launchObsScript($order_submit_process_id,$carrier,$employee_id) ;
+        if($result){
+            $response['process']['result'] = $result ;
+            $response['process']['carrier'] = $carrier ;
+        }
         return new JsonResponse($response,200, ['json_options' => JSON_UNESCAPED_UNICODE]);
     }
 
@@ -363,7 +370,7 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         [$items_to_process_cnt,$osp_status] = OrderSubmitProcess::add_orders_to_resubmit_and_activate_the_process($process,$order_to_resubmit_ids);
         $db->commit() ;
         if ($items_to_process_cnt != 0){
-            $this->launchObsScript($process['id'],$process['carrier'],$employee_id) ;
+            $process['result'] = $this->launchObsScript($process['id'],$process['carrier'],$employee_id) ;
         }
         $process['items_to_process_cnt'] = $items_to_process_cnt ;
         $process['status'] = $osp_status ;

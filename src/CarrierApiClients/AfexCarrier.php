@@ -1,6 +1,7 @@
 <?php
 
-require_once __DIR__."/BaseCarrier.php" ;
+
+namespace Dolzay\CarrierApiClients;
 
 class AfexCarrier extends BaseCarrier {
     
@@ -25,7 +26,7 @@ class AfexCarrier extends BaseCarrier {
     public static function submit_orders(){
         try {
             $current_datetime = date("H:i:s d/m/Y");
-            echo "=======  THE OSP HOLDING THE ID : " . self::$process_id . " STARTED AT : $current_datetime WITH FOLLOWING ARGS : carrier : Afex , employee_id : " . self::$employee_id . "  =======\n\n";
+            file_put_contents(self::LOG_FILE, "=======  THE OSP HOLDING THE ID : " . self::$process_id . " STARTED AT : $current_datetime WITH FOLLOWING ARGS : carrier : Afex , employee_id : " . self::$employee_id . "  =======\n\n", FILE_APPEND);
 
             $post_submit_status_id = AfexCarrier::get_post_submit_status_id() ;
             $orders = AfexCarrier::get_the_orders_to_submit();
@@ -51,7 +52,10 @@ class AfexCarrier extends BaseCarrier {
                 "Content-Type: application/text",
             ]);
 
-
+            throw new \Exception("Error Processing Request", 1);
+            
+            $submitted_orders_cnt = 0 ;
+            $orders_with_errors_cnt = 0 ;
             
             foreach($orders as $index => $order){
                 // prepare the goods 
@@ -87,8 +91,9 @@ class AfexCarrier extends BaseCarrier {
                 $response = str_replace("'", '"', $response);
                 $response = json_decode($response, true);
                 if ($status_code == 200){
+                    $submitted_orders_cnt += 1 ;
                     $index += 1 ;
-                    echo "THE ORDER WITH THE ID : $order_id WAS SUBMITTED | PROGRESS : $index / $orders_cnt  \n\n" ;
+                    file_put_contents(self::LOG_FILE, "THE ORDER WITH THE ID : $order_id WAS SUBMITTED | PROGRESS : $index / $orders_cnt  \n\n", FILE_APPEND);
                     
                     self::$db->beginTransaction();
 
@@ -114,9 +119,10 @@ class AfexCarrier extends BaseCarrier {
 
                 }else if ($status_code == 422){
                     
+                    $orders_with_errors_cnt += 1 ;
                     $index += 1 ;
                     // 422 means invalid data were sent
-                    echo "THE ORDER WITH THE ID : $order_id GOT THE 422 STATUS CODE | PROGRESS : $index / $orders_cnt  \n\n";
+                    file_put_contents(self::LOG_FILE, "THE ORDER WITH THE ID : $order_id GOT THE 422 STATUS CODE | PROGRESS : $index / $orders_cnt  \n\n", FILE_APPEND);
 
                     $error_details = json_encode(
                                     [
@@ -144,8 +150,9 @@ class AfexCarrier extends BaseCarrier {
                     $remaining_orders = array_slice($orders, $index);
                     
                     foreach($remaining_orders as $remaining_order){
+                        $orders_with_errors_cnt += 1 ;
                         $index += 1 ;
-                        echo "THE ORDER WITH THE ID : ".$remaining_order['id_order']." GOT 401 STATUS CODE | PROGRESS : $index / $orders_cnt  \n\n";
+                        file_put_contents(self::LOG_FILE, "THE ORDER WITH THE ID : ".$remaining_order['id_order']." GOT 401 STATUS CODE | PROGRESS : $index / $orders_cnt  \n\n", FILE_APPEND);
 
                         self::$db->beginTransaction();
                         self::addAnOrderWithError("osp",$remaining_order['id_order'],"Token invalide",$error_details);  
@@ -155,8 +162,9 @@ class AfexCarrier extends BaseCarrier {
                     }
                     break ;
                 }else{
+                    $orders_with_errors_cnt += 1 ;
                     $index += 1 ;
-                    echo "THE ORDER WITH THE ID : $order_id GOT AN UNEXPECTED ERROR | PROGRESS : $index / $orders_cnt  \n\n";
+                    file_put_contents(self::LOG_FILE, "THE ORDER WITH THE ID : $order_id GOT AN UNEXPECTED ERROR | PROGRESS : $index / $orders_cnt  \n\n", FILE_APPEND);
                     // set for the order submit process the status and the error data 
         
                     $error_details = json_encode(
@@ -181,13 +189,18 @@ class AfexCarrier extends BaseCarrier {
             );
 
             $current_datetime = date("H:i:s d/m/Y");
-            echo "=======  THE OSP HOLDING THE ID : " . self::$process_id . " ENDED AT : $current_datetime AFTER SUBMITTING $index/$orders_cnt =======\n\n\n\n";
+            file_put_contents(self::LOG_FILE, "=======  THE OSP HOLDING THE ID : " . self::$process_id . " ENDED AT : $current_datetime AFTER SUBMITTING $index/$orders_cnt =======\n\n\n\n", FILE_APPEND);
 
             // Close cURL session
             curl_close($ch);   
-        }catch(Throwable $e){
+            return [
+                "submitted_orders_cnt"=>$submitted_orders_cnt,
+                "orders_with_errors_cnt"=>$orders_with_errors_cnt
+            ];
+        }catch(\Throwable $e){
 
-            echo "=======  THE OSP HOLDING THE ID : " . self::$process_id . " ENDED AT : $current_datetime AFTER SUBMITTING $index/$orders_cnt WITH AN EXCEPTION ======= \n\n\n\n";
+            $current_datetime = date("H:i:s d/m/Y");
+            file_put_contents(self::LOG_FILE, "=======  THE OSP HOLDING THE ID : " . self::$process_id . " ENDED AT : $current_datetime AFTER SUBMITTING $index/$orders_cnt WITH AN EXCEPTION ======= \n\n\n\n", FILE_APPEND);
 
             $error = json_encode([
                 'message' => $e->getMessage(),
@@ -203,6 +216,7 @@ class AfexCarrier extends BaseCarrier {
             );
             // i have to commit here to handle the case of having an active transaction
             self::$db->commit();
+            return ["error_message"=>"Une erreur inattendue est survenue lors de la soumission des commandes."] ;
         }
 
     }
@@ -214,12 +228,17 @@ class AfexCarrier extends BaseCarrier {
 
     public static function monitor_orders(){
         try {
+            $monitored_orders_cnt = 0 ;
+            $orders_with_errors_cnt = 0 ;
             // collect the afex orders in the monitoring phase 
             
             $afex_orders_to_monitor = self::getOrdersToMonitorByCarrier("Afex");
             
             if(count($afex_orders_to_monitor) == 0){
-                return true;
+                return [
+                    "monitored_orders_cnt"=>0,
+                    "orders_with_errors_cnt"=>0
+                ];
             }
 
             // prepare the payload / shipement ids
@@ -256,15 +275,17 @@ class AfexCarrier extends BaseCarrier {
 
             // Handle cURL errors
             if ($response === false) {
-                throw new Exception("!!!!cURL Error: " . curl_error($ch));
+                throw new \Exception("!!!!cURL Error: " . curl_error($ch));
             }
             // get the response status code 
             $status_code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE); // Get status code
             $afex_orders_to_monitor_count = count($afex_orders_to_monitor);
+            throw new \Exception("The status code is : $status_code");
             if ($status_code == 200){
                 $response = str_replace("'", '"', $response);
                 $response = json_decode($response,true);
                 foreach($afex_orders_to_monitor as $index => $order_to_monitor){
+                    $monitored_orders_cnt += 1 ;
                     self::$db->beginTransaction();
                     // check if the current afex order to monitor is in the response
                     $shipments = array_values(array_filter($response['shipments'], fn($shipment) => $shipment['barcode'] == (int)$order_to_monitor["carrier_order_ref"]));
@@ -311,12 +332,16 @@ class AfexCarrier extends BaseCarrier {
                     self::$db->commit();
                 }
 
-                return true ;
+                return [
+                    "monitored_orders_cnt"=>$monitored_orders_cnt,
+                    "orders_with_errors_cnt"=>$orders_with_errors_cnt
+                ];
             }else if ($status_code == 401 || !$token){
                 $response = str_replace("'", '"', $response);
                 $response = json_decode($response,true);
                 // add an Order with error for all of the orders to monitor
                 foreach($afex_orders_to_monitor as $index => $order_to_monitor){
+                    $orders_with_errors_cnt += 1 ;
                     self::$db->beginTransaction();
                     $error_details = json_encode(
                         [
@@ -332,9 +357,13 @@ class AfexCarrier extends BaseCarrier {
                 }
 
                 
-                return true ;
+                return [
+                    "monitored_orders_cnt"=>$monitored_orders_cnt,
+                    "orders_with_errors_cnt"=>$orders_with_errors_cnt
+                ];
             }else if($status_code == 404){
                 foreach($afex_orders_to_monitor as $index => $order_to_monitor){
+                    $monitored_orders_cnt += 1 ;
                     self::$db->beginTransaction();
                     // update the order state to pre-shipping canceling
                     self::updateOrder($order_to_monitor['order_id'],["current_state=".self::afexToPrestaState["pre_shipping_canceling"]]);
@@ -353,11 +382,15 @@ class AfexCarrier extends BaseCarrier {
                     self::$db->commit();
                 }
                 
-                return true ;
+                return [
+                    "monitored_orders_cnt"=>$monitored_orders_cnt,
+                    "orders_with_errors_cnt"=>$orders_with_errors_cnt
+                ];
             }
             else{
                 // add an Order with error for all of the orders to monitor
                 foreach($afex_orders_to_monitor as $index => $order_to_monitor){
+                    $orders_with_errors_cnt += 1 ;
                     self::$db->beginTransaction();
                     $error_details = json_encode(
                         [
@@ -371,10 +404,15 @@ class AfexCarrier extends BaseCarrier {
                     ]);
                     self::$db->commit();
                 }
-                return true ;
+                return [
+                    "monitored_orders_cnt"=>$monitored_orders_cnt,
+                    "orders_with_errors_cnt"=>$orders_with_errors_cnt
+                ];
             }
-        }catch(Throwable $e){
-            echo "=======  THE OMP HOLDING THE ID : " . self::$process_id . " ENDED AT : $current_datetime AFTER SUBMITTING $index/$orders_cnt WITH AN EXCEPTION ======= \n\n\n\n";
+
+        }catch(\Throwable $e){
+            $current_datetime = date("H:i:s d/m/Y");
+            file_put_contents(self::LOG_FILE, "=======  THE OMP HOLDING THE ID : " . self::$process_id . " ENDED AT : $current_datetime \n\n\n\n", FILE_APPEND);
 
             $error = json_encode([
                 'message' => $e->getMessage(),
@@ -390,8 +428,10 @@ class AfexCarrier extends BaseCarrier {
                 ]
             );
             // i have to commit here to handle the case of having an active transaction
-            self::$db->commit();
-            return false ;
+            if(self::$db->inTransaction()){
+                self::$db->commit();
+            }
+            return ["error_message"=>"Une erreur inattendue est survenue lors du suivi des commandes."];
         }
 
     }
