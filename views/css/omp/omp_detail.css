@@ -93,7 +93,7 @@
     border-radius: 4px; 
 }
 
-.dz-process-orders-to-submit,.dz-process-submitted-orders{
+.dz-process-orders-to-monitor,.dz-process-monitored-orders{
     position : absolute ;
     font-weight: 600;
     right: -5px;

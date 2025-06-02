@@ -9,9 +9,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const eventPopupTypesData = {
         info : {icon:`<i class="material-icons" style="color:#101B82" >info</i>`,color:'#101B82'},
-        restricted : {icon:`<i class='fas fa-minus-circle' style="color:#D81010" ></i>`,color:'#D81010'},
+        restricted : {icon:`<i class='material-icons' style="color:#D81010" >do_not_disturb_on</i>`,color:'#D81010'},
         error : {icon : `<i class="material-icons" style="color:#D81010" >error</i>`,color:'#D81010'},
-        result : {icon:`<i class="fas fa-check-circle" style="color:#28C20F" ></i>`,color:'#28C20F'},
+        result : {icon:`<i class="material-icons" style="color:#28C20F" >bar_chart</i>`,color:'#28C20F'},
         expired : {icon:`<img src='${dz_module_base_url}/uploads/expired.png' />`,color:'#D81010'}
     }
 
@@ -111,8 +111,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                         ]
                         eventPopup.open("result", 
-                                        "Resultat",
-                                        `${process.result.submitted_orders_cnt}/${process.items_to_process_cnt} commandes ont été soumises avec succès à ${process.carrier} et ${process.result.orders_with_errors_cnt}/${process.items_to_process_cnt} ont des erreurs.`,
+                                        "Résultat",
+                                        `<span class="dz-success-badge">${process.result.submitted_orders_cnt}/${process.items_to_process_cnt}</span> commandes ont été soumises avec succès à ${process.carrier} et <span class="dz-error-badge">${process.result.orders_with_errors_cnt}/${process.items_to_process_cnt}</span> commandes ont des erreurs.`,
                                         buttons)
                     }else{
                         popup.close()
@@ -227,7 +227,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     }
                                 }
                             ]
-                            eventPopup.open("result","Resultat",`${process.result.submitted_orders_cnt}/${process.items_to_process_cnt} commandes ont été soumises avec succès à ${process.carrier} et ${process.result.orders_with_errors_cnt}/${process.items_to_process_cnt} ont des erreurs.`,buttons)
+                            eventPopup.open("result","Résultat",`<span class="dz-success-badge">${process.result.submitted_orders_cnt}/${process.items_to_process_cnt}</span> commandes ont été soumises avec succès à ${process.carrier} et <span class="dz-error-badge">${process.result.orders_with_errors_cnt}/${process.items_to_process_cnt}</span> commandes ont des erreurs.`,buttons)
                         }else{
                             popup.close()
                             buttons = [
@@ -386,8 +386,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                         ]
     
-                        let message = `${process.processed_items_cnt}/${process.items_to_process_cnt} commandes ont été soumises avec succès à ${process.carrier}.`
-                        eventPopup.open("success","Succés",message,buttons)
+                        let message = `<span class="dz-success-badge">${process.processed_items_cnt}/${process.items_to_process_cnt}</span> commandes ont été soumises avec succès à ${process.carrier} et <span class="dz-error-badge">${process.items_to_process_cnt-process.processed_items_cnt}/${process.items_to_process_cnt}</span> commandes ont des erreurs.`
+                        eventPopup.open("result","Résultat",message,buttons)
                     }else if(process.status == "Terminé par l'utilisateur"){
                         popup.close()
 
@@ -408,7 +408,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         if(process.processed_items_cnt > 0){
                             message =`Le processus de soumission des commandes a bien été arrêté après la soumission de ${process.processed_items_cnt}/${process.items_to_process_cnt} commandes à ${process.carrier}.`
                         }
-                        eventPopup.open("success","Succés",message,buttons)
+                        eventPopup.open("result","Résultat",message,buttons)
                     }else if (process.status == "Interrompu"){
                         popup.close()
                         console.log(process)
@@ -459,7 +459,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     }
                                 }
                             ]
-                            eventPopup.open("result","Resultat",`${process.result.monitored_orders_cnt}/${process.items_to_process_cnt} commandes ont été suivies avec succès et ${process.result.orders_with_errors_cnt}/${process.items_to_process_cnt} commandes ont des erreurs.`,buttons)
+                            eventPopup.open("result","Résultat",`<span class="dz-success-badge">${process.result.monitored_orders_cnt}/${process.items_to_process_cnt}</span> commandes ont été suivies avec succès et <span class="dz-error-badge">${process.result.orders_with_errors_cnt}/${process.items_to_process_cnt}</span> commandes ont des erreurs.`,buttons)
                         }else {
                             popup.close()
                             console.log(process)
@@ -544,8 +544,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                         ]
     
-                        let message = `${process.processed_items_cnt}/${process.items_to_process_cnt} commandes ont été suivies avec succès.`
-                        eventPopup.open("success","Succés",message,buttons)
+                        let message = `<span class="dz-success-badge">${process.processed_items_cnt}/${process.items_to_process_cnt}</span> commandes ont été suivies avec succès et <span class="dz-error-badge">${process.items_to_process_cnt-process.processed_items_cnt}/${process.items_to_process_cnt}</span> commandes ont des erreurs.`
+                        eventPopup.open("result","Résultat",message,buttons)
                     }else if (process.status == "Interrompu"){
                         popup.close()
                         console.log(process)
@@ -1104,6 +1104,21 @@ document.addEventListener('DOMContentLoaded', function() {
     eventPopup.create()
     popupOverlay.create();
     Server.monitorNotifications()
+
+
+    buttons = [
+        {
+            'name' : 'Détails',
+            'className' : "dz-event-popup-btn",
+            'clickHandler' : function(){
+                let process_detail_url = dz_module_controller_base_url+"/order_submit_process/"+process.id+"/?_token="+_token
+                window.open(process_detail_url,"_blank")
+                eventPopup.close();
+            }
+        }
+    ]
+
+
 
     
 })

@@ -99,6 +99,20 @@
     font-size:16px ;
 }
 
+.dz-success-badge{
+    background-color: #28C20F;
+    color : white ;
+    border-radius: 5px;
+    padding : 2px 5px ;
+}
+
+.dz-error-badge{
+    background-color: #D81010;
+    color : white ;
+    border-radius: 5px;
+    padding : 2px 5px ;
+}
+
 .dz-popup-overlay {
     display : none ;
     position: fixed;

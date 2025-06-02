@@ -52,12 +52,13 @@ class AfexCarrier extends BaseCarrier {
                 "Content-Type: application/text",
             ]);
 
-            throw new \Exception("Error Processing Request", 1);
+            //throw new \Exception("Error Processing Request", 1);
             
             $submitted_orders_cnt = 0 ;
             $orders_with_errors_cnt = 0 ;
             
             foreach($orders as $index => $order){
+                
                 // prepare the goods 
                 $goods = self::get_cart_products_str($order['cart_products']);
 
@@ -200,10 +201,10 @@ class AfexCarrier extends BaseCarrier {
         }catch(\Throwable $e){
 
             $current_datetime = date("H:i:s d/m/Y");
-            file_put_contents(self::LOG_FILE, "=======  THE OSP HOLDING THE ID : " . self::$process_id . " ENDED AT : $current_datetime AFTER SUBMITTING $index/$orders_cnt WITH AN EXCEPTION ======= \n\n\n\n", FILE_APPEND);
+            file_put_contents(self::LOG_FILE, "=======  THE OSP HOLDING THE ID : " . self::$process_id . " ENDED AT : $current_datetime WITH AN UNEXPECTED EXCEPTION ======= \n\n\n\n", FILE_APPEND);
 
             $error = json_encode([
-                'message' => $e->getMessage(),
+                'message' => "Une erreur inattendue est survenue lors de la soumission des commandes : ". $e->getMessage(),
                 'detail' => $e->getTraceAsString()
             ],JSON_UNESCAPED_UNICODE);
             //$error = addslashes($error) ;
@@ -215,8 +216,10 @@ class AfexCarrier extends BaseCarrier {
                 ]
             );
             // i have to commit here to handle the case of having an active transaction
-            self::$db->commit();
-            return ["error_message"=>"Une erreur inattendue est survenue lors de la soumission des commandes."] ;
+            if(self::$db->inTransaction()){
+                self::$db->commit();
+            }
+            return ["error_message"=>"Une erreur inattendue est survenue lors de la soumission des commandes : ". $e->getMessage()] ;
         }
 
     }
@@ -228,6 +231,7 @@ class AfexCarrier extends BaseCarrier {
 
     public static function monitor_orders(){
         try {
+            sleep(60);
             $monitored_orders_cnt = 0 ;
             $orders_with_errors_cnt = 0 ;
             // collect the afex orders in the monitoring phase 
@@ -280,7 +284,7 @@ class AfexCarrier extends BaseCarrier {
             // get the response status code 
             $status_code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE); // Get status code
             $afex_orders_to_monitor_count = count($afex_orders_to_monitor);
-            throw new \Exception("The status code is : $status_code");
+            //throw new \Exception("The status code is : $status_code");
             if ($status_code == 200){
                 $response = str_replace("'", '"', $response);
                 $response = json_decode($response,true);
@@ -412,10 +416,10 @@ class AfexCarrier extends BaseCarrier {
 
         }catch(\Throwable $e){
             $current_datetime = date("H:i:s d/m/Y");
-            file_put_contents(self::LOG_FILE, "=======  THE OMP HOLDING THE ID : " . self::$process_id . " ENDED AT : $current_datetime \n\n\n\n", FILE_APPEND);
+            file_put_contents(self::LOG_FILE, "=======  THE OMP HOLDING THE ID : " . self::$process_id . " ENDED AT : $current_datetime WITH AN UNEXPECTED EXCEPTION \n\n\n\n", FILE_APPEND);
 
             $error = json_encode([
-                'message' => $e->getMessage(),
+                'message' => "Une erreur inattendue est survenue lors du suivi des commandes : ".$e->getMessage(),
                 'detail' => $e->getTraceAsString()
             ],JSON_UNESCAPED_UNICODE);
             //$error = addslashes($error) ;
@@ -431,7 +435,7 @@ class AfexCarrier extends BaseCarrier {
             if(self::$db->inTransaction()){
                 self::$db->commit();
             }
-            return ["error_message"=>"Une erreur inattendue est survenue lors du suivi des commandes."];
+            return ["error_message"=>"Une erreur inattendue est survenue lors du suivi des commandes : ". $e->getMessage()];
         }
 
     }

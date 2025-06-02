@@ -38,9 +38,9 @@ const process_end_statuses = [
 
 const eventPopupTypesData = {
     info : {icon:`<i class="material-icons" style="color:#101B82" >info</i>`,color:'#101B82'},
-    restricted : {icon:`<i class='fas fa-minus-circle' style="color:#D81010" ></i>`,color:'#D81010'},
+    restricted : {icon:`<i class='material-icons' style="color:#D81010" >do_not_disturb_on</i>`,color:'#D81010'},
     error : {icon : `<i class="material-icons" style="color:#D81010" >error</i>`,color:'#D81010'},
-    success : {icon:'',color:'#28C20F'},
+    result : {icon:`<i class="material-icons" style="color:#28C20F" >bar_chart</i>`,color:'#28C20F'},
     error_detail : {icon : '',color:'#D81010'},
 }
 
@@ -257,20 +257,8 @@ function monitorOrderMonitoringProcess(){
                     }
                 ]
 
-                let message = `
-                    <div class="dz-event-popup-result-content">
-                        <div class="dz-event-popup-result-content-row"> 
-                            <span class="dz-success-icon material-symbols-outlined">check_circle</span>
-                            <p><span class="dz-bold-success" >${updated_orders.length}/${order_monitoring_process.items_to_process_cnt}</span> commandes ont été mise à jour.</p>
-                        </div>
-                        <div class="dz-event-popup-result-content-row"> 
-                            <span class="dz-error-icon material-symbols-outlined">cancel</span>
-                            <p><span class="dz-bold-error" >${orders_with_errors.length}/${order_monitoring_process.items_to_process_cnt}</span> commandes ont des erreurs.</p>
-                        </div>
-                    </div>
-
-                `
-                eventPopup.open("success","Succés",message,buttons)
+                let message = `<span class="dz-success-badge">${process.processed_items_cnt}/${process.items_to_process_cnt}</span> commandes ont été suivies avec succès et <span class="dz-error-badge">${orders_with_errors_total_count}/${process.items_to_process_cnt}</span> commandes ont des erreurs.`
+                eventPopup.open("result","Résultat",message,buttons)
 
                 // hide the the fixed footer
                 $(".dz-fixed-footer").hide()

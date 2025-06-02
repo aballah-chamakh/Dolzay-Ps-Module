@@ -36,7 +36,8 @@ function updateTheProcessList(trigger) {
         start_date: start_date,
         end_date: end_date,
         page_nb: $('.dz-page-nb-select').val(),
-        batch_size: $(".dz-batch-size-select").val()
+        batch_size: $(".dz-batch-size-select").val(),
+        is_json : true
     }
     console.log(query_parameters)
     const params = new URLSearchParams(query_parameters);

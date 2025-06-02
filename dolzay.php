@@ -790,7 +790,8 @@ class Dolzay extends Module
             // add the js and the css of the order submit process
             $this->context->controller->addCSS($this->_path . 'views/css/order_submit_process.css');
             $this->context->controller->addJS($this->_path . 'views/js/order_submit_process.js');
-                
+            $this->context->controller->addCSS("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=bar_chart,do_not_disturb_on,error,info");
+            
         }
     }
 
