@@ -34,10 +34,13 @@ class OrderMonitoringProcess {
 
         return 'CREATE TABLE IF NOT EXISTS `'.self::TABLE_NAME.'` (
             `id` INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+            `employee_id` INT(10) UNSIGNED NOT NULL,
             `started_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
             `ended_at` DATETIME NULL,
             `processed_items_cnt` SMALLINT UNSIGNED DEFAULT 0,
             `items_to_process_cnt` SMALLINT UNSIGNED  NULL,
+            `monitored_orders_cnt` SMALLINT UNSIGNED DEFAULT 0,
+            `orders_with_errors_cnt` SMALLINT UNSIGNED DEFAULT 0,
             `status` ENUM('.$status_types_str.') DEFAULT "Actif",
             `error` JSON NULL,
              PRIMARY KEY(`id`)
@@ -46,14 +49,14 @@ class OrderMonitoringProcess {
     // END DEFINING get_create_table_sql
     public const DROP_TABLE_SQL = 'DROP TABLE IF EXISTS `'.self::TABLE_NAME.'`;';
 
-    public static function insert($items_to_process_cnt): int {
-        $query = "INSERT INTO ".self::TABLE_NAME." (items_to_process_cnt) VALUES($items_to_process_cnt);";
+    public static function insert($items_to_process_cnt,$employee_id): int {
+        $query = "INSERT INTO ".self::TABLE_NAME." (items_to_process_cnt,employee_id) VALUES ($items_to_process_cnt,$employee_id);";
         self::$db->query($query);
         return (int)self::$db->lastInsertId();
     }
 
     public static function get_process_status(int $process_id){
-        $query = "SELECT processed_items_cnt,items_to_process_cnt,status,error FROM ".self::TABLE_NAME." WHERE id=".$process_id ;
+        $query = "SELECT processed_items_cnt,items_to_process_cnt,monitored_orders_cnt,orders_with_errors_cnt,status,error FROM ".self::TABLE_NAME." WHERE id=".$process_id ;
         $stmt = self::$db->query($query) ;
         $process = $stmt->fetch();
         if ($process['error']){

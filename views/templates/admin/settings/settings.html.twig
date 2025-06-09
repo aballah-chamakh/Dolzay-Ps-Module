@@ -31,6 +31,14 @@
                         {% endfor %}
                     </select>
                 </div>
+                <div class="dz-form-group">
+                    <label>Le type d'exécution des processus ?</label>
+                    <select class="form-control" name="process_execution_type" value={{settings.process_execution_type}}>
+                        <option value="sync" {% if settings.process_execution_type == 'sync' %} selected {% endif %}>Synchrone</option>
+                        <option value="async" {% if settings.process_execution_type == 'async' %} selected {% endif %}>Asynchrone</option>
+                        <option value="cron" {% if settings.process_execution_type == 'cron' %} selected {% endif %}>Cron</option>
+                    </select>
+                </div>
                 <div class="dz-carriers-card">
                     <div class="dz-carriers-card-header">
                         <p>LES TRANSPORTEURS</p>

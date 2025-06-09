@@ -19,26 +19,28 @@ use Dolzay\CarrierApiClients\AfexCarrier;
 
 class OrderSubmitProcessController extends FrameworkBundleAdminController
 {   
-    private const BATCH_SIZES = [2,3,100] ;
+    private const BATCH_SIZES = [20,50,100] ;
 
-    public function launchObsScript($order_submit_process_id, $carrier, $employee_id) {
-        /* Path to the PHP script
-        $script_path = dirname(__DIR__, 1) . '/order_submit_process.php';
-        $logFilePath = _PS_MODULE_DIR_ . "dolzay/data/osp.txt";
-        // Determine the operating system
-        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-            // Windows command
-            $command = "start /B php $script_path $order_submit_process_id $carrier $employee_id >> $logFilePath 2>&1";
-            pclose(popen($command, 'r'));
-        } else {
-            // Linux/Unix command
-            $command = "php $script_path $order_submit_process_id $carrier $employee_id >> $logFilePath 2>&1 &";
-            exec($command);
-        }*/
-
-        AfexCarrier::init($order_submit_process_id,$employee_id) ;
-        $result = AfexCarrier::submit_orders(); 
-        return $result ;
+    public function launchObsScript($order_submit_process_id, $carrier, $employee_id,$process_execution_type) {
+        if($process_execution_type == "sync"){
+            AfexCarrier::init($order_submit_process_id,$employee_id) ;
+            $result = AfexCarrier::submit_orders(); 
+            return $result ;
+        }else{
+            $script_path = dirname(__DIR__, 1) . '/order_submit_process.php';
+            $logFilePath = _PS_MODULE_DIR_ . "dolzay/data/process_logs.txt";
+            // Determine the operating system
+            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                // Windows command
+                $command = "start /B php $script_path $order_submit_process_id $carrier $employee_id >> $logFilePath 2>&1";
+                pclose(popen($command, 'r'));
+            } else {
+                // Linux/Unix command
+                $command = "php $script_path $order_submit_process_id $carrier $employee_id >> $logFilePath 2>&1 &";
+                exec($command);
+            }
+            return null ;
+        }
     }
 
     public function validateData($data, $constraints)
@@ -62,6 +64,8 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
                 , JsonResponse::HTTP_BAD_REQUEST, ['json_options' => JSON_UNESCAPED_UNICODE]);
         }
     }
+
+
 
     // ACID FRIENDLY
     public function isThereAProcessRunning(Request $request){
@@ -257,12 +261,12 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         // define the constraints for the request body
         $constraints = new Assert\Collection([
             'order_ids' => [
-            new Assert\NotBlank(),
-            new Assert\Type('array'),
-            new All([
                 new Assert\NotBlank(),
-                new IsIntegerAndGreaterThanZero()
-            ])],
+                new Assert\Type('array'),
+                new All([
+                    new Assert\NotBlank(),
+                    new IsIntegerAndGreaterThanZero()
+                ])],
             'carrier' =>[
                 new Assert\NotBlank(),
                 new Assert\Type('string')
@@ -288,7 +292,7 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
             return new JsonResponse(['status'=>'conflict','process'=>$process],JsonResponse::HTTP_CONFLICT,['json_options' => JSON_UNESCAPED_UNICODE]);
         } 
 
-        $order_submit_process_id = OrderSubmitProcess::insert($carrier); 
+        $order_submit_process_id = OrderSubmitProcess::insert($carrier,$employee_id); 
         $db->query("UNLOCK TABLES");
         
         
@@ -305,11 +309,16 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         }
 
         // launch the order submit process 
-        $result = $this->launchObsScript($order_submit_process_id,$carrier,$employee_id) ;
-        if($result){
-            $response['process']['result'] = $result ;
-            $response['process']['carrier'] = $carrier ;
+        $process_execution_type = Settings::get_process_execution_type($db);
+        if($process_execution_type == "sync" || $process_execution_type == "async"){
+            $result = $this->launchObsScript($order_submit_process_id,$carrier,$employee_id,$process_execution_type) ;
+            if($result){
+                $response['process']['result'] = $result ;
+                $response['process']['carrier'] = $carrier ;
+            }
         }
+        $response['process']['process_execution_type'] = $process_execution_type ;
+
         return new JsonResponse($response,200, ['json_options' => JSON_UNESCAPED_UNICODE]);
     }
 
@@ -369,11 +378,15 @@ class OrderSubmitProcessController extends FrameworkBundleAdminController
         // the orders to resubmit, check if the invalid orders were fixed and activate the process
         [$items_to_process_cnt,$osp_status] = OrderSubmitProcess::add_orders_to_resubmit_and_activate_the_process($process,$order_to_resubmit_ids);
         $db->commit() ;
-        if ($items_to_process_cnt != 0){
-            $process['result'] = $this->launchObsScript($process['id'],$process['carrier'],$employee_id) ;
-        }
+        $process_execution_type = Settings::get_process_execution_type($db);
         $process['items_to_process_cnt'] = $items_to_process_cnt ;
         $process['status'] = $osp_status ;
+        $process['process_execution_type'] = $process_execution_type ;
+        if ($items_to_process_cnt != 0){
+            if ($process_execution_type == "sync" || $process_execution_type == "async") {
+                $process['result'] = $this->launchObsScript($process['id'],$process['carrier'],$employee_id,$process_execution_type) ;
+            }
+        }
         // launch the order submit process 
         return new JsonResponse(['status'=>'success','process' => $process], 200, ['json_options' => JSON_UNESCAPED_UNICODE]);         
     }

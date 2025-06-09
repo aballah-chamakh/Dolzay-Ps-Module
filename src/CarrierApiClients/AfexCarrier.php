@@ -3,6 +3,8 @@
 
 namespace Dolzay\CarrierApiClients;
 
+require_once __DIR__ . '/BaseCarrier.php';
+
 class AfexCarrier extends BaseCarrier {
     
     const name = "Afex" ;
@@ -114,7 +116,8 @@ class AfexCarrier extends BaseCarrier {
                     self::addAsubmittedOrder($order['id_order']);  
                     
                     // update the progress of the order submit process
-                    self::updateOrderSubmitProcess(["processed_items_cnt"=>$index]);
+                    self::updateOrderSubmitProcess(["processed_items_cnt"=>$index,
+                                                    "submitted_orders_cnt"=>$submitted_orders_cnt]);
 
                     self::$db->commit();
 
@@ -136,7 +139,8 @@ class AfexCarrier extends BaseCarrier {
                     // add an submittedOrder
                     self::addAnOrderWithError("osp",$order['id_order'],"Champ(s) invalide(s)",$error_details); 
                     // update the progress of the Osp 
-                    self::updateOrderSubmitProcess(["processed_items_cnt"=>$index]);
+                    self::updateOrderSubmitProcess(["processed_items_cnt"=>$index,
+                                                    "orders_with_errors_cnt"=>$orders_with_errors_cnt]);
                     self::$db->commit();
 
                 }else if ($status_code == 401 || !$token){
@@ -158,7 +162,8 @@ class AfexCarrier extends BaseCarrier {
                         self::$db->beginTransaction();
                         self::addAnOrderWithError("osp",$remaining_order['id_order'],"Token invalide",$error_details);  
                         // increase the counter of the osp 
-                        self::updateOrderSubmitProcess(["processed_items_cnt"=>$index]);
+                        self::updateOrderSubmitProcess(["processed_items_cnt"=>$index,
+                                                        "orders_with_errors_cnt"=>$orders_with_errors_cnt]);
                         self::$db->commit();
                     }
                     break ;
@@ -177,7 +182,8 @@ class AfexCarrier extends BaseCarrier {
 
                     self::$db->beginTransaction();
                     self::addAnOrderWithError("osp",$order['id_order'],"Erreur inattendue",$error_details);  
-                    self::updateOrderSubmitProcess(["processed_items_cnt"=>$index ]);
+                    self::updateOrderSubmitProcess(["processed_items_cnt"=>$index,
+                                                    "orders_with_errors_cnt"=>$orders_with_errors_cnt ]);
                     self::$db->commit();
 
                 }
@@ -231,7 +237,6 @@ class AfexCarrier extends BaseCarrier {
 
     public static function monitor_orders(){
         try {
-            sleep(60);
             $monitored_orders_cnt = 0 ;
             $orders_with_errors_cnt = 0 ;
             // collect the afex orders in the monitoring phase 
@@ -293,8 +298,8 @@ class AfexCarrier extends BaseCarrier {
                     self::$db->beginTransaction();
                     // check if the current afex order to monitor is in the response
                     $shipments = array_values(array_filter($response['shipments'], fn($shipment) => $shipment['barcode'] == (int)$order_to_monitor["carrier_order_ref"]));
-                    dump($shipments);
-                    dump(count($shipments));
+                    //dump($shipments);
+                    //dump(count($shipments));
                     // if the current afex order to monitor is in the response, check if his state has changed and update it accordingly
                     if (count($shipments)){
                         $shipment = $shipments[0];
@@ -329,9 +334,10 @@ class AfexCarrier extends BaseCarrier {
 
                     // increase the counter of order monitoring process 
                     $index += 1 ;
-
+                    echo "processed_items_cnt : $index\n";
                     self::updateOrderMonitoringProcess([
                         "processed_items_cnt"=>$index,
+                        "monitored_orders_cnt"=>$monitored_orders_cnt,
                     ]);
                     self::$db->commit();
                 }
@@ -356,6 +362,7 @@ class AfexCarrier extends BaseCarrier {
                     self::addAnOrderWithError("omp",$order_to_monitor['order_id'], "Token invalide", $error_details);
                     self::updateOrderMonitoringProcess([
                         "processed_items_cnt"=>$index + 1,
+                        "orders_with_errors_cnt"=>$orders_with_errors_cnt
                     ]);
                     self::$db->commit();
                 }
@@ -382,6 +389,7 @@ class AfexCarrier extends BaseCarrier {
                     $index += 1  ;
                     self::updateOrderMonitoringProcess([
                         "processed_items_cnt"=>$index,
+                        "monitored_orders_cnt"=>$monitored_orders_cnt,
                     ]);
                     self::$db->commit();
                 }
@@ -405,6 +413,7 @@ class AfexCarrier extends BaseCarrier {
                     self::addAnOrderWithError("omp",$order_to_monitor['order_id'], "Champ(s) invalide(s)", $error_details);
                     self::updateOrderMonitoringProcess([
                         "processed_items_cnt"=>$index + 1,
+                        "orders_with_errors_cnt"=>$orders_with_errors_cnt
                     ]);
                     self::$db->commit();
                 }

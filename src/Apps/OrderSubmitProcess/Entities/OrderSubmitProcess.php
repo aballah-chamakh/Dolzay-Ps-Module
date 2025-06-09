@@ -86,11 +86,14 @@ class OrderSubmitProcess {
 
         return 'CREATE TABLE IF NOT EXISTS `'.self::TABLE_NAME.'` (
             `id` INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+            `employee_id` INT(10) UNSIGNED NOT NULL,
             `carrier` VARCHAR(255) NOT NULL,
             `started_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
             `ended_at` DATETIME NULL,
             `processed_items_cnt` SMALLINT UNSIGNED DEFAULT 0,
             `items_to_process_cnt` SMALLINT UNSIGNED  NULL,
+            `submitted_orders_cnt` SMALLINT UNSIGNED DEFAULT 0,
+            `orders_with_errors_cnt` SMALLINT UNSIGNED DEFAULT 0,
             `status` ENUM('.$status_types_str.') DEFAULT "Initié",
             `error` JSON NULL,
             `meta_data` JSON NULL,
@@ -115,7 +118,7 @@ class OrderSubmitProcess {
 
 
     public static function get_process_status(int $process_id){
-        $query = "SELECT processed_items_cnt,items_to_process_cnt,status,error,carrier FROM ".self::TABLE_NAME." WHERE id=".$process_id ;
+        $query = "SELECT processed_items_cnt,items_to_process_cnt,submitted_orders_cnt,orders_with_errors_cnt,status,error,carrier FROM ".self::TABLE_NAME." WHERE id=".$process_id ;
         $stmt = self::$db->query($query) ;
         $process = $stmt->fetch();
         if ($process['error']){
@@ -138,8 +141,8 @@ class OrderSubmitProcess {
         return $process === false ? null : $process;
     }
 
-    public static function insert($carrier): int {
-        $query = "INSERT INTO ".self::TABLE_NAME." (carrier) VALUES ('".$carrier."');";
+    public static function insert($carrier,$employee_id): int {
+        $query = "INSERT INTO ".self::TABLE_NAME." (carrier,employee_id) VALUES ('".$carrier."',".$employee_id.");";
         self::$db->query($query);
         return (int)self::$db->lastInsertId();
     }

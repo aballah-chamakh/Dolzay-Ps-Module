@@ -29,7 +29,8 @@ class SettingsController extends FrameworkBundleAdminController
         // get the settings
         $stmt = $db->query("SELECT license_type,
                                    expiration_date,
-                                   post_submit_state_id FROM ".Settings::TABLE_NAME." LIMIT 1");
+                                   post_submit_state_id,
+                                   process_execution_type FROM ".Settings::TABLE_NAME." LIMIT 1");
         $settings = $stmt->fetch();
         $defaultLanguageId = $this->getContext()->language->id;
 
@@ -81,11 +82,14 @@ class SettingsController extends FrameworkBundleAdminController
         $request_body = is_array($request_body) ? $request_body : [] ;
         
         $order_post_submit_state_id = $request_body['order_post_submit_state_id'];
+        $process_execution_type = $request_body['process_execution_type'];
 
         // update the settings
         $db = DzDb::getInstance();
-        $stmt = $db->prepare("UPDATE ".Settings::TABLE_NAME." SET post_submit_state_id = :post_submit_state_id");
+        $stmt = $db->prepare("UPDATE ".Settings::TABLE_NAME." SET post_submit_state_id = :post_submit_state_id,
+                                                                    process_execution_type = :process_execution_type");
         $stmt->bindParam(':post_submit_state_id', $order_post_submit_state_id, \PDO::PARAM_INT);
+        $stmt->bindParam(':process_execution_type', $process_execution_type, \PDO::PARAM_STR);
         $stmt->execute();
         $db->commit();
         return new JsonResponse(['status'=>"success",'message' => 'Settings updated successfully']);

@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
         info : {icon:`<i class="material-icons" style="color:#101B82" >info</i>`,color:'#101B82'},
         restricted : {icon:`<i class='material-icons' style="color:#D81010" >do_not_disturb_on</i>`,color:'#D81010'},
         error : {icon : `<i class="material-icons" style="color:#D81010" >error</i>`,color:'#D81010'},
+        success : {icon:`<i class="material-icons" style="color:#28C20F" >bar_chart</i>`,color:'#28C20F'},
         result : {icon:`<i class="material-icons" style="color:#28C20F" >bar_chart</i>`,color:'#28C20F'},
         expired : {icon:`<img src='${dz_module_base_url}/uploads/expired.png' />`,color:'#D81010'}
     }
@@ -94,29 +95,53 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if(data.status == "success"){
                     let process = data.process 
+                    process['items_to_process_cnt'] = orderIds.length
+                    // handle the case of invalid orders or already submitted orders
                     if (process.meta_data && (process.meta_data['orders_with_invalid_fields'].length || process.meta_data['already_submitted_orders'].length)){
                         alreadySubmittedAndInvalidOrdersStep.render(process)
-                    }else if(!process.result.error_message){
-                        process['items_to_process_cnt'] = orderIds.length
-                        popup.close()
-                        buttons = [
-                            {
-                                'name' : 'Détails',
-                                'className' : "dz-event-popup-btn",
-                                'clickHandler' : function(){
-                                    let process_detail_url = dz_module_controller_base_url+"/order_submit_process/"+process.id+"/?_token="+_token
-                                    window.open(process_detail_url,"_blank")
-                                    eventPopup.close();
+                    }else if (process.process_execution_type == "sync") {
+                        // handle the case of sync process execution
+                        if(!process.result.error_message){ 
+                            // handle the case of success
+                            popup.close()
+                            buttons = [
+                                {
+                                    'name' : 'Détail',
+                                    'className' : "dz-event-popup-btn",
+                                    'clickHandler' : function(){
+                                        let process_detail_url = dz_module_controller_base_url+"/order_submit_process/"+process.id+"/?_token="+_token
+                                        window.open(process_detail_url,"_blank")
+                                        eventPopup.close();
+                                    }
                                 }
-                            }
-                        ]
-                        eventPopup.open("result", 
-                                        "Résultat",
-                                        `<span class="dz-success-badge">${process.result.submitted_orders_cnt}/${process.items_to_process_cnt}</span> commandes ont été soumises avec succès à ${process.carrier} et <span class="dz-error-badge">${process.result.orders_with_errors_cnt}/${process.items_to_process_cnt}</span> commandes ont des erreurs.`,
-                                        buttons)
+                            ]
+                            eventPopup.open("result", 
+                                            "Résultat",
+                                            `<span class="dz-success-badge">${process.result.submitted_orders_cnt}/${process.items_to_process_cnt}</span> commandes ont été soumises avec succès à ${process.carrier} et <span class="dz-error-badge">${process.result.orders_with_errors_cnt}/${process.items_to_process_cnt}</span> commandes ont des erreurs.`,
+                                            buttons)
+                        }else{
+                            popup.close()
+                            console.log(process)
+                            buttons = [
+                                {
+                                    'name' : 'Détail',
+                                    'className' : "dz-event-popup-btn",
+                                    'clickHandler' : function(){
+                                        let process_detail_url = dz_module_controller_base_url+"/order_submit_process/"+process.id+"/?_token="+_token
+                                        window.open(process_detail_url,"_blank")
+                                        eventPopup.close();
+                                    }
+                                }
+                            ]
+                            eventPopup.open("error","Erreur",process.result.error_message,buttons)
+                        }
+                    } else if (process.process_execution_type == "async") {
+                        // handle async process execution
+                        progressOfSubmittingOrdersStep.render(process)
+
                     }else{
+                        // handle cron process execution
                         popup.close()
-                        console.log(process)
                         buttons = [
                             {
                                 'name' : 'Détail',
@@ -128,7 +153,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                 }
                             }
                         ]
-                        eventPopup.open("error","Erreur",process.result.error_message,buttons)
+                        eventPopup.open("success", 
+                                        "Succés",
+                                        "Le processus de soumission a été lancé avec succès.",
+                                        buttons)
                     }
                 }else if(data.status == 'conflict'){ // handle the case of an exsint osp running
                     let process = data.process
@@ -213,22 +241,44 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         eventPopup.open("info","Information",message,buttons)
                     }else{
-                        // handle the termination of the osp
-                        if(!process.result.error_message){
-                            popup.close()
-                            buttons = [
-                                {
-                                    'name' : 'Détail',
-                                    'className' : "dz-event-popup-btn",
-                                    'clickHandler' : function(){
-                                        let process_detail_url = dz_module_controller_base_url+"/order_submit_process/"+process_id+"/?_token="+_token
-                                        window.open(process_detail_url,"_blank")
-                                        eventPopup.close();
+                        // handle the case of a sync process
+                        if(process.process_execution_type == "sync"){
+                            // handle the case of a successfully finished process
+                            if(!process.result.error_message){
+                                popup.close()
+                                buttons = [
+                                    {
+                                        'name' : 'Détail',
+                                        'className' : "dz-event-popup-btn",
+                                        'clickHandler' : function(){
+                                            let process_detail_url = dz_module_controller_base_url+"/order_submit_process/"+process_id+"/?_token="+_token
+                                            window.open(process_detail_url,"_blank")
+                                            eventPopup.close();
+                                        }
                                     }
-                                }
-                            ]
-                            eventPopup.open("result","Résultat",`<span class="dz-success-badge">${process.result.submitted_orders_cnt}/${process.items_to_process_cnt}</span> commandes ont été soumises avec succès à ${process.carrier} et <span class="dz-error-badge">${process.result.orders_with_errors_cnt}/${process.items_to_process_cnt}</span> commandes ont des erreurs.`,buttons)
+                                ]
+                                eventPopup.open("result","Résultat",`<span class="dz-success-badge">${process.result.submitted_orders_cnt}/${process.items_to_process_cnt}</span> commandes ont été soumises avec succès à ${process.carrier} et <span class="dz-error-badge">${process.result.orders_with_errors_cnt}/${process.items_to_process_cnt}</span> commandes ont des erreurs.`,buttons)
+                            }else{
+                                // handle the case of a failed process
+                                popup.close()
+                                buttons = [
+                                    {
+                                        'name' : 'Détail',
+                                        'className' : "dz-event-popup-btn",
+                                        'clickHandler' : function(){
+                                            let process_detail_url = dz_module_controller_base_url+"/order_submit_process/"+process.id+"/?_token="+_token
+                                            window.open(process_detail_url,"_blank")
+                                            eventPopup.close();
+                                        }
+                                    }
+                                ]
+                                eventPopup.open("error","Erreur",process.result.error_message,buttons)
+                            }
+                        }else if (process.process_execution_type == "async"){
+                            // handle the case of an async process
+                            progressOfSubmittingOrdersStep.render(process)
                         }else{
+                            // handle the case pf cron job process 
                             popup.close()
                             buttons = [
                                 {
@@ -241,8 +291,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                     }
                                 }
                             ]
-                            eventPopup.open("error","Erreur",process.result.error_message,buttons)
+                            eventPopup.open("success","Succès","Le processus de soumission a été lancé avec succès.",buttons)
                         }
+
                     }
                 }else if(data.status == "conflict"){
                     if(process.status == "Actif" || process.status == "Pre-terminé par l'utilisateur"){
@@ -386,7 +437,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                         ]
     
-                        let message = `<span class="dz-success-badge">${process.processed_items_cnt}/${process.items_to_process_cnt}</span> commandes ont été soumises avec succès à ${process.carrier} et <span class="dz-error-badge">${process.items_to_process_cnt-process.processed_items_cnt}/${process.items_to_process_cnt}</span> commandes ont des erreurs.`
+                        let message = `<span class="dz-success-badge">${process.submitted_orders_cnt}/${process.items_to_process_cnt}</span> commandes ont été soumises avec succès à ${process.carrier} et <span class="dz-error-badge">${process.orders_with_errors_cnt}/${process.items_to_process_cnt}</span> commandes ont des erreurs.`
                         eventPopup.open("result","Résultat",message,buttons)
                     }else if(process.status == "Terminé par l'utilisateur"){
                         popup.close()
@@ -424,7 +475,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                         ]
                         eventPopup.open("error","Erreur",process.error.message,buttons)
-                    }else{
+                    }else if (popup.popupEl.classList.contains('dz-show')) {
                         setTimeout(function(){
                             Server.monitorOsp(process_id);
                         },3000)
@@ -446,9 +497,49 @@ document.addEventListener('DOMContentLoaded', function() {
                     if(data.status == "success"){
                         // handle the finish of the omp
                         let process = data.process
-                        if(!process.result.error_message){
+                        // handle the case of the sync execution
+                        if (process.process_execution_type == "sync"){
+                            console.log("synchronous response")
+                            // handle the case of the success
+                            if(!process.result.error_message){
+                                popup.close()
+                                buttons = [
+                                    {
+                                        'name' : 'Détail',
+                                        'className' : "dz-event-popup-btn",
+                                        'clickHandler' : function(){
+                                            let process_detail_url = dz_module_controller_base_url+"/order_monitoring_process/"+process.id+"/?_token="+_token
+                                            window.open(process_detail_url,"_blank")
+                                            eventPopup.close();
+                                        }
+                                    }
+                                ]
+                                eventPopup.open("result","Résultat",`<span class="dz-success-badge">${process.result.monitored_orders_cnt}/${process.items_to_process_cnt}</span> commandes ont été suivies avec succès et <span class="dz-error-badge">${process.result.orders_with_errors_cnt}/${process.items_to_process_cnt}</span> commandes ont des erreurs.`,buttons)
+                            }else {
+                                // handle the case of the error
+                                popup.close()
+                                console.log(process)
+                                buttons = [
+                                    {
+                                        'name' : 'Détail',
+                                        'className' : "dz-event-popup-btn",
+                                        'clickHandler' : function(){
+                                            let process_detail_url = dz_module_controller_base_url+"/order_monitoring_process/"+process.id+"/?_token="+_token
+                                            window.open(process_detail_url,"_blank")
+                                            eventPopup.close();
+                                        }
+                                    }
+                                ]
+                                eventPopup.open("error","Erreur",process.result.error_message,buttons)
+                            }
+                        }else if (process.process_execution_type == "async"){
+                            console.log("asynchronous response")
+                            progressOfMonitoringOrdersStep.render(process)
+                        }else{
+                            console.log("cron job response")
+                            // handle the case of cron job execution
                             popup.close()
-                            buttons = [
+                            let buttons = [
                                 {
                                     'name' : 'Détail',
                                     'className' : "dz-event-popup-btn",
@@ -459,22 +550,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     }
                                 }
                             ]
-                            eventPopup.open("result","Résultat",`<span class="dz-success-badge">${process.result.monitored_orders_cnt}/${process.items_to_process_cnt}</span> commandes ont été suivies avec succès et <span class="dz-error-badge">${process.result.orders_with_errors_cnt}/${process.items_to_process_cnt}</span> commandes ont des erreurs.`,buttons)
-                        }else {
-                            popup.close()
-                            console.log(process)
-                            buttons = [
-                                {
-                                    'name' : 'Détail',
-                                    'className' : "dz-event-popup-btn",
-                                    'clickHandler' : function(){
-                                        let process_detail_url = dz_module_controller_base_url+"/order_monitoring_process/"+process.id+"/?_token="+_token
-                                        window.open(process_detail_url,"_blank")
-                                        eventPopup.close();
-                                    }
-                                }
-                            ]
-                            eventPopup.open("error","Erreur",process.result.error_message,buttons)
+                            popup.open("success","Succès","Le processus de suivi des commandes a bien été lancé.",buttons)
                         }
                     }else if(data.status == "no_orders_to_monitor"){
                         buttons = [
@@ -544,7 +620,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                         ]
     
-                        let message = `<span class="dz-success-badge">${process.processed_items_cnt}/${process.items_to_process_cnt}</span> commandes ont été suivies avec succès et <span class="dz-error-badge">${process.items_to_process_cnt-process.processed_items_cnt}/${process.items_to_process_cnt}</span> commandes ont des erreurs.`
+                        let message = `<span class="dz-success-badge">${process.monitored_orders_cnt}/${process.items_to_process_cnt}</span> commandes ont été suivies avec succès et <span class="dz-error-badge">${process.orders_with_errors_cnt}/${process.items_to_process_cnt}</span> commandes ont des erreurs.`
                         eventPopup.open("result","Résultat",message,buttons)
                     }else if (process.status == "Interrompu"){
                         popup.close()
@@ -1038,7 +1114,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const progressOfSubmittingOrdersStep = {
         interval : null,
         render : function(process,conflict){
-            popup.popupHeaderEl.innerText = "Progrès de la soumission des commandes"        
+            popup.popupHeaderEl.innerHTML = `<p>Progrès de la soumission des commandes</p><i class="material-icons">close</i>`     
+            popup.popupHeaderEl.lastElementChild.addEventListener('click',()=>{popup.close()})
+
             popup.popupBodyEl.innerHTML = `
                 ${conflict ? "<p class='dz-notice-bar'>Cette soumission a été continuée par un autre utilisateur.</p>" : ""}
                 <div class="progress-of-submitting-orders-step" >
@@ -1081,7 +1159,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     }
 
-    const progressOfMonitoringOrders = {
+    const progressOfMonitoringOrdersStep = {
         render : function(process){
             popup.popupHeaderEl.innerText = "Progrès de suivi des commandes"        
             popup.popupBodyEl.innerHTML = `
@@ -1106,17 +1184,6 @@ document.addEventListener('DOMContentLoaded', function() {
     Server.monitorNotifications()
 
 
-    buttons = [
-        {
-            'name' : 'Détails',
-            'className' : "dz-event-popup-btn",
-            'clickHandler' : function(){
-                let process_detail_url = dz_module_controller_base_url+"/order_submit_process/"+process.id+"/?_token="+_token
-                window.open(process_detail_url,"_blank")
-                eventPopup.close();
-            }
-        }
-    ]
 
 
 

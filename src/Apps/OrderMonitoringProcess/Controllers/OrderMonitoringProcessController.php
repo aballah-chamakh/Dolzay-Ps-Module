@@ -18,44 +18,46 @@ use Dolzay\CarrierApiClients\AfexCarrier ;
 
 class OrderMonitoringProcessController extends FrameworkBundleAdminController
 {   
-    private const BATCH_SIZES = [2,3,100] ;
+    private const BATCH_SIZES = [20,50,100] ;
 
-    public function launchOmpScript($order_monitoring_process_id, $employee_id) {
-        /*
+    public function launchOmpScript($order_monitoring_process_id, $employee_id,$process_execution_type) {
+        
         // Path to the PHP script
-        $script_path = dirname(__DIR__, 1) . '/order_monitoring_process.php';
-        $logFilePath = _PS_MODULE_DIR_ . "dolzay/data/osomp.txt";
-    
-        // Determine the operating system
-        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-            // Windows command
-            $command = "start /B php $script_path $order_monitoring_process_id $employee_id >> $logFilePath 2>&1";
-            pclose(popen($command, 'r'));
-        } else {
-            // Linux/Unix command
-            $command = "php $script_path $order_monitoring_process_id $employee_id >> $logFilePath 2>&1 &";
-            exec($command);
+        if ($process_execution_type == "async"){
+            $script_path = dirname(__DIR__, 1) . '/order_monitoring_process.php';
+            $logFilePath = _PS_MODULE_DIR_ . "dolzay/data/process_logs.txt";
+        
+            // Determine the operating system
+            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                // Windows command
+                $command = "start /B php $script_path $order_monitoring_process_id $employee_id >> $logFilePath 2>&1";
+                pclose(popen($command, 'r'));
+            } else {
+                // Linux/Unix command
+                $command = "php $script_path $order_monitoring_process_id $employee_id >> $logFilePath 2>&1 &";
+                exec($command);
+            }
+            return null ;
+        }else{
+            AfexCarrier::init($order_monitoring_process_id,$employee_id) ;
+            $result = AfexCarrier::monitor_orders();
+            if(!array_key_exists('error_message', $result)){
+                // note : 
+                // 1- im terminating the the Omp process here and not in the "monitor_orders" method because the plugin 
+                //    can have many carriers.
+                // 2- i terminate the Omp process only if the "monitor_orders" method returns true beccause
+                //    when it returns false it means that the Omp was interrupted and i don't want to override the 
+                //    the "Interronpu" status of the Omp.
+                AfexCarrier::updateOrderMonitoringProcess(
+                    [
+                        "status"=>"Terminé",
+                        "ended_at"=>date('Y-m-d H:i:s')
+                    ]
+                );
+                
+            } 
+            return $result;
         }
-        */
-
-        AfexCarrier::init($order_monitoring_process_id,$employee_id) ;
-        $result = AfexCarrier::monitor_orders();
-        if(!array_key_exists('error_message', $result)){
-            // note : 
-            // 1- im terminating the the Omp process here and not in the "monitor_orders" method because the plugin 
-            //    can have many carriers.
-            // 2- i terminate the Omp process only if the "monitor_orders" method returns true beccause
-            //    when it returns false it means that the Omp was interrupted and i don't want to override the 
-            //    the "Interronpu" status of the Omp.
-            AfexCarrier::updateOrderMonitoringProcess(
-                [
-                    "status"=>"Terminé",
-                    "ended_at"=>date('Y-m-d H:i:s')
-                ]
-            );
-            
-        } 
-        return $result;
 
     }
 
@@ -78,11 +80,18 @@ class OrderMonitoringProcessController extends FrameworkBundleAdminController
 
         $employee_id = $this->getUser()->getId();
         OrderMonitoringProcess::init($db);
-        $order_monitoring_process_id = OrderMonitoringProcess::insert($orders_to_monitor_cnt); 
+        $order_monitoring_process_id = OrderMonitoringProcess::insert($orders_to_monitor_cnt,$employee_id); 
 
+        $process_execution_type = Settings::get_process_execution_type($db);
+        $process = ["id"=>$order_monitoring_process_id,
+                    "items_to_process_cnt"=>$orders_to_monitor_cnt,
+                    "process_execution_type"=>$process_execution_type];
         // launch the order monitoring process 
-        $result = $this->launchOmpScript($order_monitoring_process_id,$employee_id) ;
-        return new JsonResponse(["status"=>"success","process"=>["id"=>$order_monitoring_process_id,"items_to_process_cnt"=>$orders_to_monitor_cnt,"result"=>$result]],200, ['json_options' => JSON_UNESCAPED_UNICODE]);
+        if($process_execution_type == "sync" || $process_execution_type == "async"){
+            $result = $this->launchOmpScript($order_monitoring_process_id,$employee_id,$process_execution_type) ;
+            $process["result"] = $result;
+        }
+        return new JsonResponse(["status"=>"success","process"=>$process],200, ['json_options' => JSON_UNESCAPED_UNICODE]);
     }
 
 

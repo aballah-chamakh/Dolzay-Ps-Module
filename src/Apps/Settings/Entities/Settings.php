@@ -18,7 +18,8 @@ class Settings {
                 `id` INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 `license_type` VARCHAR(255)  NOT NULL,
                 `expiration_date` DATETIME NOT NULL,
-                `post_submit_state_id` INT(10) UNSIGNED NOT NULL
+                `post_submit_state_id` INT(10) UNSIGNED NOT NULL,
+                `process_execution_type` ENUM("sync","async","cron") DEFAULT "cron"
             );';
 
     }
@@ -39,5 +40,12 @@ class Settings {
             return true;
         }
         return false ;
+    }
+
+    public static function get_process_execution_type($db){
+        $query = "SELECT `process_execution_type` FROM `".self::TABLE_NAME."` LIMIT 1;" ;
+        $stmt = $db->query($query);
+        $settings = $stmt->fetch();
+        return $settings['process_execution_type'];
     }
 }

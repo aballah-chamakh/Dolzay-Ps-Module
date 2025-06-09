@@ -232,7 +232,10 @@ function updateCarrier(carrier_name){
 function saveSettings(saveButton){
     saveButton.disabled = true
     const order_post_submit_state_select = $("select[name='order_post_submit_state'") 
+    const process_execution_type_select = $("select[name='process_execution_type'") 
+    
     order_post_submit_state_select.prop('disabled',true)
+    process_execution_type_select.prop('disabled',true)
     
     saveButton.innerHTML += `<div class="spinner-border dz-btn-spinner-white" role="status" >
         <span class="sr-only">Loading...</span>
@@ -245,18 +248,20 @@ function saveSettings(saveButton){
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({'order_post_submit_state_id':order_post_submit_state_select.val()})
+        body: JSON.stringify({'order_post_submit_state_id':order_post_submit_state_select.val(),'process_execution_type':process_execution_type_select.val()})
     }).then(response=>response.json())
       .then(data=>{
         if(data.status == "success"){
             saveButton.innerHTML = "Enregistrer" ;
             saveButton.disabled = false 
             order_post_submit_state_select.prop('disabled',false)
+            process_execution_type_select.prop('disabled',false)
         }
       }).catch((err)=>{
             saveButton.innerHTML = "Enregistrer" ;
             saveButton.disabled = false 
             order_post_submit_state_select.prop('disabled',false)
+            process_execution_type_select.prop('disabled',false)
       })
 }
 popup.create()

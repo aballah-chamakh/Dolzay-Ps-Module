@@ -209,11 +209,12 @@ class NotificationController extends FrameworkBundleAdminController
         
         // Clean up notification tables
         $notificationTables = [
-            "dz_order_submit_process", "dz_settings", "dz_carrier", "dz_website_credentials", 
-            "dz_api_credentials", "dz_notification_popped_up_by", "dz_notification_viewed_by", 
-            "dz_notification", "dz_employee_permission", "dz_permission"
+            "dz_submitted_order","dz_order_submit_process", "dz_settings","dz_order_to_monitor",
+            "dz_carrier", "dz_website_credentials","dz_api_credentials", "dz_notification_popped_up_by",
+            "dz_notification_viewed_by","dz_notification", "dz_employee_permission", "dz_permission",
+            "dz_order_with_error","dz_updated_order","dz_order_monitoring_process"
         ];
-        
+
         // Remove module registration
         $db->exec("DELETE FROM " . _DB_PREFIX_ . "tab WHERE module = 'dolzay'");
         

@@ -4,8 +4,13 @@ namespace Dolzay\CarrierApiClients;
 
 use PDO;
 
+if (!defined('_MODULE_PREFIX_')) {
 define('_MODULE_PREFIX_','dz_') ;
+}
+
+if (!defined('_SUPPORT_PHONE_')) {
 define('_SUPPORT_PHONE_','58671414') ;
+}
 
 class BaseCarrier {
 
@@ -15,8 +20,8 @@ class BaseCarrier {
     protected static $process_id ;
     protected static $employee_id ;
 
-    public function init($process_id,$employee_id){
-        self::$db = self::connect_to_db() ;
+    public function init($process_id,$employee_id,$db=null){
+        self::$db = $db ?? self::connect_to_db() ;
         self::$process_id = $process_id ;
         self::$employee_id = $employee_id ;
     }

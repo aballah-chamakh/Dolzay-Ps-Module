@@ -2,8 +2,8 @@
 
 require_once dirname(__DIR__, 5) . '/config/config.inc.php'; // Include PrestaShop's configuration
 
-define('_MODULE_PREFIX_','dz_') ;
-define('_SUPPORT_PHONE_','58671414') ;
+//define('_MODULE_PREFIX_','dz_') ;
+//define('_SUPPORT_PHONE_','58671414') ;
 
 // get the process id and the carrier name
 $process_id = (int)$argv[1] ;
@@ -15,10 +15,12 @@ $employee_id = (int)$argv[3] ;
 $carrier_class_name = $carrier."Carrier"; // example "Afex"."Carrier"
 
 // require the file of the class
-require_once dirname(__DIR__, 2) .DIRECTORY_SEPARATOR ."CarrierApiClients".DIRECTORY_SEPARATOR .$carrier_class_name.".php";
+$class_path = dirname(__DIR__, 2) .DIRECTORY_SEPARATOR ."CarrierApiClients".DIRECTORY_SEPARATOR .$carrier_class_name.".php" ;
+require_once $class_path ;
+$carrier_class = "\\Dolzay\\CarrierApiClients\\".$carrier_class_name;
 
-$carrier_class_name::init($process_id,$employee_id) ;
-$carrier_class_name::submit_orders(); 
+$carrier_class::init($process_id,$employee_id) ;
+$carrier_class::submit_orders(); 
 
 
 /*
