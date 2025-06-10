@@ -242,7 +242,9 @@ class AfexCarrier extends BaseCarrier {
             // collect the afex orders in the monitoring phase 
             
             $afex_orders_to_monitor = self::getOrdersToMonitorByCarrier("Afex");
-            
+            self::updateOrderMonitoringProcess([
+                "items_to_process_cnt"=>count($afex_orders_to_monitor),
+            ]);
             if(count($afex_orders_to_monitor) == 0){
                 return [
                     "monitored_orders_cnt"=>0,
@@ -289,7 +291,9 @@ class AfexCarrier extends BaseCarrier {
             // get the response status code 
             $status_code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE); // Get status code
             $afex_orders_to_monitor_count = count($afex_orders_to_monitor);
-            //throw new \Exception("The status code is : $status_code");
+            if (self::$process_id == 43){
+                throw new \Exception("The status code is : $status_code");
+            }
             if ($status_code == 200){
                 $response = str_replace("'", '"', $response);
                 $response = json_decode($response,true);

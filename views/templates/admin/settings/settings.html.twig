@@ -3,6 +3,8 @@
 {% block stylesheets %}
     {{ parent() }}
     <link rel="stylesheet" href="{{ asset('../modules/dolzay/views/css/settings/settings.css') }}">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=bar_chart,do_not_disturb_on,error,info,close,warning" />
+
 {% endblock %}
 
 {% block content %}
@@ -55,19 +57,22 @@
                             </thead>
                             <tbody class="dz-carriers-table-body" >
                                 {% for carrier in carriers %}
-                                    <td>{{loop.index}}</td>
-                                    <td><img src="{{dz_module_media_base_url}}/{{carrier.logo}}"/></td>
-                                    <td>{{carrier.name}}</td>
-                                    <td><button onClick="popup.open('{{carrier.name}}','{{carrier.logo}}')" >modifier</button></td>
-                                </tr>
+                                    <tr>
+                                        <td>{{loop.index}}</td>
+                                        <td><img src="{{dz_module_media_base_url}}/{{carrier.logo}}"/></td>
+                                        <td>{{carrier.name}}</td>
+                                        <td><button onClick="popup.open('{{carrier.name}}','{{carrier.logo}}')" >modifier</button></td>
+                                    </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
-                    <div class="dz-carriers-card-footer">
-                        <button onClick="saveSettings(this)" >Enregistrer</button>
-                    </div>
+                </div>
+                <div class="dz-carriers-card-footer">
+                    <button onClick="saveSettings(this)" >Enregistrer</button>
+                    <button onClick="terminateAllProcesses()" style="background-color:red;">Terminé tous les processus actifs</button>
+                </div>
             </div>
+            <script src="{{ asset('../modules/dolzay/views/js/settings/settings.js') }}"></script>
         </div>
-        <script src="{{ asset('../modules/dolzay/views/js/settings/settings.js') }}"></script>
 {% endblock %}

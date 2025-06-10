@@ -27,3 +27,10 @@ dz_update_carrier:
   defaults:
     _controller: 'Dolzay\Apps\Settings\Controllers\CarrierController::updateCarrier'
     _disable_module_prefix: true
+
+dz_terminate_all_processes:
+  path: /dz/terminate_all_processes
+  methods: [POST]
+  defaults:
+    _controller: 'Dolzay\Apps\Settings\Controllers\SettingsController::terminateAllProcesses'
+    _disable_module_prefix: true

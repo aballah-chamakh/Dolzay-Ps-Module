@@ -33,7 +33,7 @@ function connect_to_db(){
 }
 
 function get_osps_and_omps_ordered_by_daterange_descending($db){
-    $query = "SELECT id,employee_id,carrier,meta_data,status,started_at,'osp' as process_type FROM "._MODULE_PREFIX_."order_submit_process OSP UNION ALL SELECT id,employee_id,'' as carrier,'' as meta_data,status,started_at,'omp' as process_type FROM "._MODULE_PREFIX_."order_monitoring_process OMP WHERE status='Actif' ORDER BY started_at DESC";
+    $query = "SELECT id,employee_id,carrier,meta_data, status, started_at,'osp' as process_type FROM "._MODULE_PREFIX_."order_submit_process OSP WHERE status='Actif' UNION ALL SELECT id,employee_id,'' as carrier,'' as meta_data,status,started_at,'omp' as process_type FROM "._MODULE_PREFIX_."order_monitoring_process OMP WHERE status='Actif' ORDER BY started_at ASC";
     $stmt = $db->query($query);
     return $stmt->fetchAll();
 }
@@ -63,7 +63,9 @@ function execute_processes(){
     $last_carrier = end($carriers);
     $processes = get_osps_and_omps_ordered_by_daterange_descending($db);
     foreach($processes as $process){
+        
         if($process['process_type'] == 'osp'){
+            echo "Processing osp with id: ".$process['id']."\n";
             $carrier_name = $process['carrier'] ;
             $carrier_class_name = $carrier_name."Carrier";
             require_once dirname(__DIR__) . DIRECTORY_SEPARATOR ."CarrierApiClients".DIRECTORY_SEPARATOR .$carrier_class_name.".php";
@@ -71,15 +73,16 @@ function execute_processes(){
             $carrier_class::init($process['id'],$process['employee_id'],$db);
             $carrier_class::submit_orders();
         }else{
+            echo "Processing omp with id: ". $process['id']."\n";
             $interrupted = false;
             foreach($carriers as $carrier){
                 $carrier_class_name = $carrier['name']."Carrier";
                 require_once dirname(__DIR__) . DIRECTORY_SEPARATOR . "CarrierApiClients" . DIRECTORY_SEPARATOR . $carrier_class_name.".php";
                 $carrier_class = "\\Dolzay\\CarrierApiClients\\".$carrier_class_name;
                 $carrier_class::init($process['id'],$process['employee_id'],$db);
-                $carrier_class::monitor_orders();
+                $result = $carrier_class::monitor_orders();
 
-                if($carrier != $last_carrier && get_omp_status($db,$process['id']) == 'Interronpu' ){
+                if(array_key_exists('error_message',$result)){
                     $interrupted = true;
                     break;
                 }

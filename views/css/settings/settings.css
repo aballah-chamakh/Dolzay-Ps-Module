@@ -99,8 +99,8 @@
 
 .dz-carriers-card-footer{
     display : flex ; 
-    border-top : 1px solid #ddd; 
-    padding : 10px ;
+    flex-direction: column;
+    gap : 5px ;
     width : 100% ;
 }
 
@@ -288,12 +288,9 @@
 }
 
 
+
 @media (max-width: 650px) {
     .dz-popup{
         width: 90%;
     }
 }
-
-
-
-

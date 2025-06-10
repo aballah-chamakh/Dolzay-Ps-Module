@@ -50,6 +50,7 @@ const popup = {
         this.popupFooterEl.innerHTML = `<button onclick="updateCarrier('${carrier_name}')">Modifier</button>`
     },
     open : function(carrier_name,carrier_logo){
+        this.popupHeaderEl.style.backgroundColor = "#1a456e"; 
         this.popupHeaderEl.innerHTML = "<p>Le transporteur "+carrier_name+"</p>"
         this.popupBodyEl.innerHTML = `
             <div class="spinner-border dz-spinner" role="status" >
@@ -228,6 +229,57 @@ function updateCarrier(carrier_name){
     }
 
 }
+
+function terminateAllProcesses() {
+    popup.popupHeaderEl.style.backgroundColor = "red";
+    popup.popupHeaderEl.innerHTML = "Terminer tous les processus actifs";
+    popup.popupBodyEl.innerHTML = ` 
+    <div style="display:flex;align-items:center;gap:10px">
+            <i style="font-size:60px;color:red" class="material-icons">warning</i>
+            <p style="margin-bottom:0px;font-size:16px;">Êtes-vous sûr de vouloir terminer tous les processus actifs ?</p>
+    </div>`;
+    popup.popupFooterEl.style.display = "flex";
+    popup.popupFooterEl.style.gap = "5px";
+    popup.popupFooterEl.innerHTML = `
+            <button onclick="popup.close()" style="background-color:red;" class="dz-cancel-terminate-processes-btn">Non</button>
+            <button onclick="terminateProcessesRequest()" style="background-color:gray;" class="dz-terminate-processes-btn">Oui</button>
+    `;
+    popup.popupEl.classList.add('dz-show');
+    popupOverlay.show()
+}
+
+function terminateProcessesRequest() {
+    const cancelTerminateButton = document.querySelector('.dz-cancel-terminate-processes-btn');
+    const terminateButton = document.querySelector('.dz-terminate-processes-btn');
+    cancelTerminateButton.disabled = true;
+    terminateButton.disabled = true;
+    terminateButton.innerHTML += `<div class="spinner-border dz-btn-spinner-white" role="status" style="margin-left:10px"  >
+            <span class="sr-only">Loading...</span>
+        </div>`;
+    
+    fetch(`${dz_module_controller_base_url}/terminate_all_processes?_token=${_token}`, {
+        method: 'POST',
+        credentials: 'include', // Ensures cookies are sent with the request
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        terminateButton.lastElementChild.remove()
+        terminateButton.disabled = false;
+        terminateButton.innerText = "Oui"
+        cancelTerminateButton.disabled = false;
+        popup.close()
+    })
+    .catch(error => {
+        terminateButton.disabled = false;
+        terminateButton.innerText = "Oui"
+        cancelTerminateButton.disabled = false;
+    });
+}
+
+
 
 function saveSettings(saveButton){
     saveButton.disabled = true

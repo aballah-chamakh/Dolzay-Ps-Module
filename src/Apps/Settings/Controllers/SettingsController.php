@@ -8,6 +8,8 @@ use PrestaShopBundle\Controller\Admin\FrameworkBundleAdminController;
 use Dolzay\CustomClasses\Db\DzDb ;  
 use Dolzay\Apps\Settings\Entities\Settings ;
 use Dolzay\Apps\Settings\Entities\Carrier ;
+use Dolzay\Apps\OrderSubmitProcess\Entities\OrderSubmitProcess ;
+use Dolzay\Apps\OrderMonitoringProcess\Entities\OrderMonitoringProcess ;
 use Media ;
 use Context ;
 
@@ -93,5 +95,33 @@ class SettingsController extends FrameworkBundleAdminController
         $stmt->execute();
         $db->commit();
         return new JsonResponse(['status'=>"success",'message' => 'Settings updated successfully']);
+    }
+
+    public function terminateAllProcesses(Request $request)
+    {
+        $employee = $this->getUser();
+        $employee = new \Employee($employee->getId());
+        if ($employee->id_profile != 1) {
+            return new JsonResponse(['status' => 'unauthorized'], JsonResponse::HTTP_UNAUTHORIZED);
+        }
+
+        $db = DzDb::getInstance();
+        $db->beginTransaction();
+
+        try {
+            // Update OSP processes
+            $stmt = $db->prepare("UPDATE ".OrderSubmitProcess::TABLE_NAME." SET status = 'Terminé' WHERE status = 'Actif'");
+            $stmt->execute();
+
+            // Update OMP processes
+            $stmt = $db->prepare("UPDATE ".OrderMonitoringProcess::TABLE_NAME." SET status = 'Terminé' WHERE status = 'Actif'");
+            $stmt->execute();
+
+            $db->commit();
+            return new JsonResponse(['status' => 'success']);
+        } catch (\Exception $e) {
+            $db->rollBack();
+            return new JsonResponse(['status' => 'error', 'message' => $e->getMessage()], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }

@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
         info : {icon:`<i class="material-icons" style="color:#101B82" >info</i>`,color:'#101B82'},
         restricted : {icon:`<i class='material-icons' style="color:#D81010" >do_not_disturb_on</i>`,color:'#D81010'},
         error : {icon : `<i class="material-icons" style="color:#D81010" >error</i>`,color:'#D81010'},
-        success : {icon:`<i class="material-icons" style="color:#28C20F" >bar_chart</i>`,color:'#28C20F'},
+        success : {icon:`<i class="material-icons" style="color:#28C20F" >check_circle</i>`,color:'#28C20F'},
         result : {icon:`<i class="material-icons" style="color:#28C20F" >bar_chart</i>`,color:'#28C20F'},
         expired : {icon:`<img src='${dz_module_base_url}/uploads/expired.png' />`,color:'#D81010'}
     }
@@ -550,7 +550,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     }
                                 }
                             ]
-                            popup.open("success","Succès","Le processus de suivi des commandes a bien été lancé.",buttons)
+                            eventPopup.open("success","Succès","Le processus de suivi des commandes a bien été lancé.",buttons)
                         }
                     }else if(data.status == "no_orders_to_monitor"){
                         buttons = [
