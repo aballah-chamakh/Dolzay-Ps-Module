@@ -61,9 +61,6 @@ class AfexCarrier extends BaseCarrier {
             
             foreach($orders as $index => $order){
                 
-                // prepare the goods 
-                $goods = self::get_cart_products_str($order['cart_products']);
-
                 // prepare the payload
                 $payload = json_encode([
                     "nom"            => $order['firstname']." ".$order['lastname'],
@@ -71,7 +68,7 @@ class AfexCarrier extends BaseCarrier {
                     "gouvernorat"    => $order['city'],
                     "delegation"     => $order['delegation'],
                     "adresse"        => $order['address1'],
-                    "marchandise"    => $goods,
+                    "marchandise"    => self::get_cart_products_str($order['cart_products']),
                     "paquets"        => 1,
                     "type_envoi"     => "Livraison à domicile",
                     "cod"            => $order['total_paid'],

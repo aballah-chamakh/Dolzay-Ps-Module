@@ -71,12 +71,17 @@ class BaseCarrier {
         $stmt = self::$db->query($query);
         $orders_to_submit= $stmt->fetchAll() ;
     
-        // add the cart products to each order 
+        // add the cart products to each order & add the total  of items in the cart
         foreach($orders_to_submit as &$submitted_order){
+            // add the cart products to each order
             $query = "SELECT product_name as name, product_quantity as quantity FROM " . _DB_PREFIX_ . "order_detail WHERE id_order=" . $submitted_order['id_order'];
             $stmt = self::$db->query($query) ;
             $cart_products =  $stmt->fetchAll() ;
-            $submitted_order['cart_products'] = $cart_products ;
+            $submitted_order['cart_products'] = self::get_cart_products_str($cart_products) ;
+            // add the total of items in the cart
+            $query = "SELECT SUM(IF(pp.id_product_pack IS NULL,od.product_quantity,od.product_quantity * pp.quantity)) AS total_individual_items FROM ps_order_detail od LEFT JOIN ps_pack pp ON pp.id_product_pack = od.product_id WHERE od.id_order = ".$submitted_order['id_order'];
+            $stmt = self::$db->query($query) ;
+            $submitted_order['total_individual_items'] = $stmt->fetch()['total_individual_items'] ;
         }
     
         return $orders_to_submit ;
