@@ -6,7 +6,7 @@ Dolzay is a PrestaShop module that automatically synchronizes your store orders 
 
 Watch Dolzay in action:
 
-[![Dolzay Plugin Demo](https://img.youtube.com/vi/dJP4p4QO-TU/0.jpg)](https://youtu.be/dJP4p4QO-TU)
+[![Dolzay Plugin Demo](https://img.youtube.com/vi/dJP4p4QO-TU/maxresdefault.jpg)](https://youtu.be/dJP4p4QO-TU)
 
 Click the image to view the demo video on YouTube.
 
