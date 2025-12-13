@@ -4,11 +4,9 @@ Dolzay is a PrestaShop module that automatically synchronizes your store orders 
 
 ## Demo Preview
 
-Watch Dolzay in action:
+Click the image below to view the demo video on YouTube :
 
 [![Dolzay Plugin Demo](https://img.youtube.com/vi/dJP4p4QO-TU/maxresdefault.jpg)](https://youtu.be/dJP4p4QO-TU)
-
-Click the image to view the demo video on YouTube.
 
 ## Features
 
@@ -24,22 +22,9 @@ Click the image to view the demo video on YouTube.
 4. Locate Dolzay and click `Install`.  
 5. Configure your carrier credentials in the module settings.  
 
-## Usage
-
-- Once installed and configured, Dolzay automatically sends new orders to the carrier.  
-- Order statuses are updated in your PrestaShop store whenever there is a status change on the carrier platform.  
-- No manual syncing required.
-
 ## Requirements
 
 - PrestaShop 1.7.x  
 - PHP 7.4 or higher  
 - Access to the carrier API  
 
-## Contributing
-
-Contributions are welcome! Please fork the repository, make your changes, and submit a pull request.  
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.  
